@@ -11,6 +11,7 @@ import {
   Receipt,
   Users,
   AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +24,7 @@ interface DemoAccount {
   username: string;
   password: string;
   roleLabel: string;
-  avatarBg: string;
+  colorVar: "primary" | "accent";
   initials: string;
 }
 
@@ -40,7 +41,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     username: "admin",
     password: "Admin1234!",
     roleLabel: "Admin",
-    avatarBg: "#4f46e5",
+    colorVar: "primary",
     initials: "AP",
   },
   {
@@ -48,7 +49,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     username: "vendeur1",
     password: "Vendeur1234!",
     roleLabel: "Vendeur",
-    avatarBg: "#7c3aed",
+    colorVar: "accent",
     initials: "MK",
   },
   {
@@ -56,7 +57,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     username: "vendeur2",
     password: "Vendeur1234!",
     roleLabel: "Vendeur",
-    avatarBg: "#9333ea",
+    colorVar: "accent",
     initials: "PM",
   },
 ];
@@ -112,87 +113,121 @@ export default function LoginPage() {
 
       {/* ═══════════════════════════════════════════════════════
           LEFT BRAND PANEL — desktop only (md+)
+          Palette : charbon chaud africain — cuivre / ambre / or
       ═══════════════════════════════════════════════════════ */}
       <aside
         className="hidden md:flex flex-col justify-between p-10 relative overflow-hidden"
         style={{
           width: "50%",
-          background: "linear-gradient(160deg, hsl(222 47% 8%) 0%, hsl(240 40% 14%) 50%, hsl(260 35% 18%) 100%)",
+          background: "linear-gradient(160deg, hsl(20 22% 5%) 0%, hsl(25 20% 9%) 50%, hsl(30 16% 13%) 100%)",
         }}
       >
-        {/* Subtle grid overlay */}
+        {/* Subtle warm grid overlay */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 login-grid-overlay"
+          style={{ opacity: 0.4 }}
         />
 
-        {/* Second orb — top-left */}
+        {/* Orb cuivre — top-left */}
         <div
           aria-hidden
           className="pointer-events-none absolute rounded-full blur-3xl"
           style={{
-            width: "20rem",
-            height: "20rem",
-            background: "rgba(124,58,237,0.07)",
+            width: "22rem",
+            height: "22rem",
+            background: "radial-gradient(circle, rgba(190,90,30,0.13) 0%, transparent 70%)",
             top: 0,
             left: 0,
             transform: "translateX(-40%) translateY(-40%)",
-            animation: "floatY 6s ease-in-out infinite",
-            animationDelay: "2s",
+            animation: "floatY 7s ease-in-out infinite",
+            animationDelay: "1.5s",
           }}
         />
 
-        {/* Decorative bottom-right orb */}
+        {/* Orb or/ambre — bottom-right */}
         <div
           aria-hidden
           className="pointer-events-none absolute bottom-0 right-0 rounded-full blur-3xl"
           style={{
-            width: "24rem",
-            height: "24rem",
-            background: "rgba(99,102,241,0.09)",
-            transform: "translate(50%, 50%)",
-            animation: "floatY 4s ease-in-out infinite, pulseGlow 3s ease-in-out infinite",
+            width: "28rem",
+            height: "28rem",
+            background: "radial-gradient(circle, rgba(200,140,40,0.10) 0%, rgba(180,80,20,0.07) 50%, transparent 70%)",
+            transform: "translate(45%, 45%)",
+            animation: "floatY 5s ease-in-out infinite, pulseGlow 4s ease-in-out infinite",
           }}
         />
 
-        {/* Dots pattern 4×4 — top-right */}
+        {/* Orb vert forêt — center-right (subtil) */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute rounded-full blur-3xl"
+          style={{
+            width: "14rem",
+            height: "14rem",
+            background: "radial-gradient(circle, rgba(50,120,70,0.07) 0%, transparent 70%)",
+            top: "40%",
+            right: "-2rem",
+            animation: "floatY 9s ease-in-out infinite",
+            animationDelay: "3s",
+          }}
+        />
+
+        {/* Grille de points — top-right */}
         <div
           aria-hidden
           className="pointer-events-none absolute top-8 right-8 grid gap-2"
-          style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
+          style={{ gridTemplateColumns: "repeat(5, 1fr)" }}
         >
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div key={i} className="w-1 h-1 bg-indigo-400/10 rounded-full" />
+          {Array.from({ length: 25 }).map((_, i) => (
+            <div
+              key={i}
+              className="w-1 h-1 rounded-full"
+              style={{ background: "rgba(200,140,60,0.12)" }}
+            />
           ))}
         </div>
 
-        {/* Scanning line */}
+        {/* Ligne de scan cuivrée */}
         <div
           aria-hidden
           className="pointer-events-none absolute left-0 right-0"
-          style={{ top: "45%", height: "2px", opacity: 0.1 }}
+          style={{ top: "44%", height: "1px", opacity: 0.15 }}
         >
           <div
             style={{
               height: "100%",
               background:
-                "linear-gradient(90deg, transparent 0%, rgba(165,180,252,0.6) 40%, rgba(165,180,252,0.9) 50%, rgba(165,180,252,0.6) 60%, transparent 100%)",
+                "linear-gradient(90deg, transparent 0%, rgba(200,140,40,0.5) 35%, rgba(210,160,60,0.95) 50%, rgba(200,140,40,0.5) 65%, transparent 100%)",
               backgroundSize: "200% 100%",
-              animation: "shimmer 3s linear infinite",
+              animation: "shimmer 3.5s linear infinite",
             }}
           />
         </div>
 
+        {/* Ligne décorative horizontale fine */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-10 right-10"
+          style={{
+            top: "44.2%",
+            height: "1px",
+            background: "linear-gradient(90deg, transparent 0%, rgba(200,140,40,0.08) 50%, transparent 100%)",
+          }}
+        />
+
         {/* Top — logo + wordmark */}
         <div className="relative flex items-center gap-3">
           <div
-            className="rounded-xl p-2.5 flex items-center justify-center shrink-0"
-            style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
+            className="rounded-xl p-2.5 flex items-center justify-center shrink-0 shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 50%))",
+              boxShadow: "0 4px 20px rgba(190,100,30,0.35)",
+            }}
           >
             <Package className="w-5 h-5 text-white" />
           </div>
           <div>
-            {/* Animated letter-by-letter wordmark */}
             <p className="text-2xl font-bold text-white tracking-widest leading-none flex">
               {"INVENTORY".split("").map((letter, i) => (
                 <span
@@ -209,8 +244,8 @@ export default function LoginPage() {
               ))}
             </p>
             <p
-              className="text-xs mt-0.5 animate-fade-in-left animate-delay-200"
-              style={{ color: "rgba(165,180,252,0.7)" }}
+              className="text-xs mt-0.5 animate-fade-in-left animate-delay-200 font-medium tracking-wide"
+              style={{ color: "rgba(200,155,80,0.75)" }}
             >
               Gestion de stock &amp; ventes
             </p>
@@ -230,22 +265,38 @@ export default function LoginPage() {
               }}
             >
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "rgba(99,102,241,0.2)" }}
+                className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                style={{
+                  background: "rgba(190,100,30,0.14)",
+                  border: "1px solid rgba(200,130,40,0.18)",
+                }}
               >
-                <Icon className="w-4 h-4" style={{ color: "#a5b4fc" }} />
+                <Icon className="w-4 h-4" style={{ color: "rgba(210,155,75,0.9)" }} />
               </div>
-              <span className="text-sm" style={{ color: "#cbd5e1" }}>
+              <span className="text-sm font-medium" style={{ color: "rgba(220,200,170,0.82)" }}>
                 {label}
               </span>
             </div>
           ))}
         </div>
 
-        {/* Bottom — copyright */}
-        <p className="relative text-xs" style={{ color: "#475569" }}>
-          © 2025 NAOSERVICES · MPJ HIGH-TECH
-        </p>
+        {/* Bottom — badge sécurité + copyright */}
+        <div className="relative flex items-center justify-between">
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+            style={{
+              background: "rgba(190,100,30,0.12)",
+              border: "1px solid rgba(200,130,40,0.2)",
+              color: "rgba(210,155,75,0.8)",
+            }}
+          >
+            <ShieldCheck className="w-3 h-3" />
+            <span>Connexion sécurisée</span>
+          </div>
+          <p className="text-xs" style={{ color: "rgba(160,130,90,0.5)" }}>
+            © 2026 NAOSERVICES · MPJ HIGH-TECH
+          </p>
+        </div>
       </aside>
 
       {/* ═══════════════════════════════════════════════════════
@@ -254,14 +305,15 @@ export default function LoginPage() {
       <div
         className="md:hidden fixed top-0 left-0 right-0 z-10 flex items-center gap-3 px-6 py-5"
         style={{
-          background: "linear-gradient(135deg, #1e1b4b, #2e1065)",
+          background: "linear-gradient(135deg, hsl(20 22% 6%), hsl(25 20% 10%))",
+          borderBottom: "1px solid rgba(200,130,40,0.15)",
         }}
       >
-        <div className="relative group overflow-hidden rounded-xl p-2 flex items-center justify-center shrink-0"
-          style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
+        <div
+          className="relative group overflow-hidden rounded-xl p-2 flex items-center justify-center shrink-0 shadow-md"
+          style={{ background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 50%))" }}
         >
           <Package className="w-4 h-4 text-white" />
-          {/* Shimmer on hover */}
           <span
             aria-hidden
             className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
@@ -271,7 +323,7 @@ export default function LoginPage() {
           <p className="font-bold text-white tracking-widest text-base leading-none">
             INVENTORY
           </p>
-          <p className="text-xs mt-0.5" style={{ color: "#a5b4fc" }}>
+          <p className="text-xs mt-0.5 font-medium" style={{ color: "rgba(200,155,80,0.75)" }}>
             Gestion de stock &amp; ventes
           </p>
         </div>
@@ -292,7 +344,7 @@ export default function LoginPage() {
           </div>
 
           {/* ── Form card ── */}
-          <div className="bg-card rounded-xl border shadow p-6 space-y-4 animate-form-entrance animate-delay-100">
+          <div className="bg-card rounded-xl border shadow-sm p-6 space-y-4 animate-form-entrance animate-delay-100">
             <form onSubmit={handleLogin} className="space-y-4" noValidate>
 
               {/* Username field */}
@@ -307,7 +359,7 @@ export default function LoginPage() {
                   id="username"
                   type="text"
                   placeholder="admin"
-                  className="h-11 rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-400/60"
+                  className="h-11 rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -330,7 +382,7 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Votre mot de passe"
-                    className="h-11 rounded-lg pr-10 border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-400/60"
+                    className="h-11 rounded-lg pr-10 border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -341,15 +393,9 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={
-                      showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"
-                    }
+                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -362,17 +408,18 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Submit button — animated gradient */}
+              {/* Submit button — gradient thème */}
               <Button
                 type="submit"
-                className="h-11 w-full font-semibold text-white border-0 shadow-md hover:brightness-110 hover:shadow-lg hover:shadow-indigo-500/25 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+                className="h-11 w-full font-semibold text-white border-0 shadow-md hover:brightness-110 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
                 style={
                   isSubmitting
-                    ? { background: "rgba(99,102,241,0.5)" }
+                    ? { background: "hsl(var(--primary) / 0.5)" }
                     : {
-                        background: "linear-gradient(-45deg, #4f46e5, #7c3aed, #6366f1, #4f46e5)",
+                        background: "linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(22 80% 58%), hsl(var(--primary)))",
                         backgroundSize: "300% 300%",
                         animation: "gradientShift 4s ease infinite",
+                        boxShadow: "0 4px 18px hsl(var(--primary) / 0.3)",
                       }
                 }
                 disabled={isSubmitting}
@@ -407,12 +454,21 @@ export default function LoginPage() {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => loginAs(account.username, account.password)}
-                  className="group w-full flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:border-indigo-500/20 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group w-full flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    ["--hover-border" as string]: "hsl(var(--primary) / 0.3)",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = `hsl(var(--primary) / 0.3)`;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = "";
+                  }}
                 >
-                  {/* Colored avatar */}
+                  {/* Avatar couleur thème */}
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 transition-transform duration-200 group-hover:scale-110"
-                    style={{ background: account.avatarBg }}
+                    style={{ background: `hsl(var(--${account.colorVar}))` }}
                   >
                     {account.initials}
                   </div>
@@ -427,10 +483,10 @@ export default function LoginPage() {
                     </p>
                   </div>
 
-                  {/* Role pill */}
+                  {/* Role pill couleur thème */}
                   <span
                     className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide text-white"
-                    style={{ background: account.avatarBg }}
+                    style={{ background: `hsl(var(--${account.colorVar}))` }}
                   >
                     {account.roleLabel}
                   </span>
