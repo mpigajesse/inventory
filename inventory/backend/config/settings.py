@@ -155,6 +155,12 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
 ] + [o.strip() for o in _env_cors.split(',') if o.strip()]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https://.*\.ngrok-free\.app$',
+    r'^https://.*\.ngrok-free\.dev$',
+    r'^https://.*\.vercel\.app$',
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
 # ─── Cloudinary ───────────────────────────────────────────────────────────────
