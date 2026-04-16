@@ -599,3 +599,126 @@ html.theme-couchant {
       0 0 120px rgba(124, 58, 237, 0.08);
   }
 }
+
+/* ─── Login page — premium keyframes ──────────────────────────────────────── */
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.06;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.18;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes brandReveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0% 0 0); }
+}
+
+@keyframes featureSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes formCardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardHoverLift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-2px); }
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes dotBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: floatY 4s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  .animate-brand-reveal {
+    animation: brandReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-feature-in {
+    animation: featureSlideIn 0.5s ease-out both;
+  }
+
+  .animate-form-entrance {
+    animation: formCardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-gradient-shift {
+    animation: gradientShift 3s ease infinite;
+    background-size: 200% 200%;
+  }
+
+  .login-btn-gradient {
+    background: linear-gradient(-45deg, #4f46e5, #7c3aed, #4f46e5, #6366f1);
+    background-size: 300% 300%;
+  }
+}
+
+/* ─── Login brand panel ──────────────────────────────────────────────────── */
+
+@keyframes floatYAlt {
+  0%, 100% { transform: translate(-40%, -40%) translateY(0px); }
+  50%       { transform: translate(-40%, -40%) translateY(14px); }
+}
+
+@keyframes ringPulse {
+  0%   { transform: scale(1);   opacity: 0.6; }
+  70%  { transform: scale(1.7); opacity: 0; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+@keyframes featureIn {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@layer utilities {
+  .animate-float-alt  { animation: floatYAlt 6s ease-in-out 2s infinite; }
+  .animate-ring-pulse { animation: ringPulse 2.4s ease-out infinite; }
+
+  .brand-fade-in-left         { animation: fadeInLeft 0.55s ease both; }
+  .brand-fade-in-left-delay   { animation: fadeInLeft 0.55s ease 0.1s both; }
+  .brand-feature-in-0         { animation: featureIn 0.45s ease 0s both; }
+  .brand-feature-in-1         { animation: featureIn 0.45s ease 0.1s both; }
+  .brand-feature-in-2         { animation: featureIn 0.45s ease 0.2s both; }
+  .brand-feature-in-3         { animation: featureIn 0.45s ease 0.3s both; }
+}
