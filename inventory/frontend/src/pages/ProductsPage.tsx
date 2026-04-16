@@ -218,8 +218,107 @@ export default function ProductsPage() {
           onExport={handleExport}
         />
 
-        {/* Table */}
-        <div className="bg-card rounded-lg border overflow-hidden">
+        {/* Mobile cards — md:hidden */}
+        <div className="md:hidden space-y-2">
+          {isLoading && (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {!isLoading && typedPaginated.length === 0 && (
+            <div className="bg-card border rounded-xl py-8 text-center text-sm text-muted-foreground">
+              Aucun produit trouvé.
+            </div>
+          )}
+          {!isLoading &&
+            typedPaginated.map((product) => (
+              <div
+                key={product.id}
+                className={`bg-card border rounded-xl p-4 flex items-start justify-between gap-3 ${
+                  isSelected(product.id) ? "ring-1 ring-primary/30 bg-primary/5" : ""
+                }`}
+              >
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={isSelected(product.id)}
+                    onChange={() => toggleRow(product.id)}
+                    className="h-4 w-4 mt-1 rounded border-input accent-primary cursor-pointer shrink-0"
+                    aria-label={`Sélectionner ${product.name}`}
+                  />
+                  {product.image_url ? (
+                    <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0">
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <ProductIcon
+                      name={product.name}
+                      category={product.category_name}
+                      size="sm"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      {product.category_name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span
+                        className="text-sm font-semibold"
+                        style={{ color: "hsl(var(--primary))" }}
+                      >
+                        {product.selling_price.toLocaleString("fr-FR")} FCFA
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        · Stock : {product.stock_quantity}
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <StatusBadge
+                        label={stockStatusLabel(product.stock_status)}
+                        variant={stockStatusVariant(product.stock_status)}
+                      />
+                    </div>
+                    {product.barcode && (
+                      <p className="font-mono text-[11px] text-muted-foreground mt-1.5 truncate">
+                        {product.barcode}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-1 shrink-0">
+                  <button
+                    className="p-2 rounded-md hover:bg-secondary"
+                    title="Voir les détails"
+                    onClick={() => setModal({ type: "view", product })}
+                  >
+                    <Eye className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button
+                    className="p-2 rounded-md hover:bg-secondary"
+                    title="Modifier"
+                    onClick={() => navigate(`/products/${product.id}/edit`)}
+                  >
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button
+                    className="p-2 rounded-md hover:bg-destructive/10"
+                    title="Supprimer"
+                    onClick={() => setModal({ type: "delete", product })}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        {/* Desktop table — hidden md:block */}
+        <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>

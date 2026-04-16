@@ -229,8 +229,70 @@ export default function CategoriesPage() {
           </Button>
         </div>
 
-        {/* Table */}
-        <div className="bg-card rounded-lg border overflow-hidden">
+        {/* Mobile cards — md:hidden */}
+        <div className="md:hidden space-y-2">
+          {isLoading && (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {!isLoading && filtered.length === 0 && (
+            <div className="bg-card border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
+              <Tag className="w-8 h-8 opacity-40" />
+              <p className="text-sm">Aucune catégorie trouvée.</p>
+            </div>
+          )}
+          {!isLoading &&
+            filtered.map((category) => (
+              <div
+                key={category.id}
+                className="bg-card border rounded-xl p-4 flex items-start justify-between gap-3"
+              >
+                <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 shrink-0 mt-0.5">
+                    <Tag className="w-4 h-4 text-primary" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{category.name}</p>
+                    {category.description ? (
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        {category.description}
+                      </p>
+                    ) : (
+                      <p className="text-xs italic opacity-50 mt-0.5">
+                        Aucune description
+                      </p>
+                    )}
+                    <div className="mt-2">
+                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                        {category.product_count} produit
+                        {category.product_count !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    className="p-2 rounded-md hover:bg-secondary transition-colors"
+                    title="Modifier"
+                    onClick={() => setModal({ type: "form", category })}
+                  >
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button
+                    className="p-2 rounded-md hover:bg-destructive/10 transition-colors"
+                    title="Supprimer"
+                    onClick={() => setModal({ type: "delete", category })}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        {/* Desktop table — hidden md:block */}
+        <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>

@@ -269,32 +269,59 @@ export default function DashboardPage() {
                 Aucune vente enregistrée pour le moment.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Réf.</th>
-                      <th>Date</th>
-                      <th>Articles</th>
-                      <th>Total</th>
-                      <th>Statut</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentSales.map((sale) => (
-                      <tr key={sale.id}>
-                        <td className="font-medium">
+              <>
+                {/* Mobile cards — md:hidden */}
+                <div className="md:hidden space-y-2 p-4">
+                  {recentSales.map((sale) => (
+                    <div
+                      key={sale.id}
+                      className="bg-card border rounded-xl p-4 flex items-start justify-between gap-3"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
                           {sale.invoice_number ?? `VNT-${sale.id}`}
-                        </td>
-                        <td>{formatDate(sale.created_at)}</td>
-                        <td>{sale.items.length}</td>
-                        <td className="font-medium">{formatFcfa(sale.total_amount)}</td>
-                        <td><StatusBadge label="Terminée" variant="success" /></td>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {formatDate(sale.created_at)} · {sale.items.length} article{sale.items.length !== 1 ? "s" : ""}
+                        </p>
+                        <p className="text-sm font-semibold mt-1">
+                          {formatFcfa(sale.total_amount)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <StatusBadge label="Terminée" variant="success" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop table — hidden md:block */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Réf.</th>
+                        <th>Date</th>
+                        <th>Articles</th>
+                        <th>Total</th>
+                        <th>Statut</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {recentSales.map((sale) => (
+                        <tr key={sale.id}>
+                          <td className="font-medium">
+                            {sale.invoice_number ?? `VNT-${sale.id}`}
+                          </td>
+                          <td>{formatDate(sale.created_at)}</td>
+                          <td>{sale.items.length}</td>
+                          <td className="font-medium">{formatFcfa(sale.total_amount)}</td>
+                          <td><StatusBadge label="Terminée" variant="success" /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
 

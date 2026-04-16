@@ -810,7 +810,7 @@ export default function StockPage() {
           </div>
         )}
 
-        {/* Mobile : card list */}
+        {/* Mobile : card list — md:hidden */}
         {!isLoading && (
           <div className="md:hidden space-y-2">
             {typedPaginated.length === 0 && (
@@ -822,30 +822,55 @@ export default function StockPage() {
               const pct = item.max > 0
                 ? Math.min(100, Math.round((item.stock / item.max) * 100))
                 : 0;
+              const stockBadgeClasses =
+                item.status === "critique"
+                  ? "bg-destructive/10 text-destructive border-destructive/20"
+                  : item.status === "bas"
+                    ? "bg-warning/10 text-warning border-warning/20"
+                    : "bg-success/10 text-success border-success/20";
               return (
                 <div
                   key={item.id}
-                  className={`bg-card border rounded-lg p-3 ${isSelected(item.id) ? "border-primary/50 bg-primary/5" : ""}`}
+                  className={`bg-card border rounded-xl p-4 flex flex-col gap-3 ${
+                    isSelected(item.id) ? "border-primary/50 bg-primary/5" : ""
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                  {/* Header row : nom produit + badge statut */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
                       <input
                         type="checkbox"
                         checked={isSelected(item.id)}
                         onChange={() => toggleRow(item.id)}
-                        className="h-4 w-4 rounded border-input accent-primary cursor-pointer shrink-0"
+                        className="h-4 w-4 mt-0.5 rounded border-input accent-primary cursor-pointer shrink-0"
                         aria-label={`Sélectionner ${item.name}`}
                       />
-                      <span className="font-medium text-sm truncate">{item.name}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{item.name}</p>
+                        <p className="font-mono text-xs text-muted-foreground mt-0.5 truncate">
+                          {item.category || "—"}
+                        </p>
+                      </div>
                     </div>
                     {renderStatusBadge(item.status)}
                   </div>
-                  <div className="grid grid-cols-3 gap-1 text-xs text-muted-foreground mb-2">
-                    <span>Stock : <strong className="text-foreground">{item.stock}</strong></span>
-                    <span>Min : <strong className="text-foreground">{item.min}</strong></span>
-                    <span>Max : <strong className="text-foreground">{item.max}</strong></span>
+
+                  {/* Stock badge + seuils */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold ${stockBadgeClasses}`}
+                    >
+                      Stock : {item.stock}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Min {item.min}
+                      <span className="mx-1 opacity-40">•</span>
+                      Max {item.max}
+                    </span>
                   </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-2">
+
+                  {/* Progress bar */}
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
@@ -854,24 +879,25 @@ export default function StockPage() {
                       }}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{item.category}</span>
-                    <div className="flex gap-1">
-                      <button
-                        className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                        title="Ajuster le stock"
-                        onClick={() => setModal({ type: "adjust", item })}
-                      >
-                        <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                      <button
-                        className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                        title="Définir les seuils"
-                        onClick={() => setModal({ type: "threshold", item })}
-                      >
-                        <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                    </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-1 pt-2 border-t">
+                    <button
+                      className="p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-1 text-xs text-muted-foreground"
+                      title="Ajuster le stock"
+                      onClick={() => setModal({ type: "adjust", item })}
+                    >
+                      <ArrowUpDown className="w-4 h-4" />
+                      <span>Ajuster</span>
+                    </button>
+                    <button
+                      className="p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-1 text-xs text-muted-foreground"
+                      title="Définir les seuils"
+                      onClick={() => setModal({ type: "threshold", item })}
+                    >
+                      <SlidersHorizontal className="w-4 h-4" />
+                      <span>Seuils</span>
+                    </button>
                   </div>
                 </div>
               );

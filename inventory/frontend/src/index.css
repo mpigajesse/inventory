@@ -88,18 +88,36 @@
   #root {
     height: 100%;
     width: 100%;
+    max-width: 100%;
     overflow: hidden;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
   }
 }
 
 @layer components {
   .page-container {
     @apply p-3 md:p-6 lg:p-8 w-full max-w-[1600px];
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  @screen md {
+    .page-container {
+      max-width: 1600px;
+    }
+  }
+
+  .table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .animate-slide-in {

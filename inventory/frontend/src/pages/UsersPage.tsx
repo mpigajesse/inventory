@@ -440,7 +440,7 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Mobile : card list */}
+        {/* Mobile : card list — md:hidden */}
         {!isLoading && !isError && (
           <div className="md:hidden space-y-2">
             {typedPaginated.length === 0 && (
@@ -448,48 +448,62 @@ export default function UsersPage() {
                 Aucun utilisateur trouvé.
               </div>
             )}
-            {typedPaginated.map((user) => (
-              <div
-                key={user.id}
-                className={`bg-card border rounded-lg p-3 ${isSelected(user.id) ? "border-primary/50 bg-primary/5" : ""}`}
-              >
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2 min-w-0">
+            {typedPaginated.map((user) => {
+              const displayName = user.full_name || user.username;
+              const initials = displayName
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((s) => s[0]?.toUpperCase() ?? "")
+                .join("") || user.username.slice(0, 2).toUpperCase();
+
+              return (
+                <div
+                  key={user.id}
+                  className={`bg-card border rounded-xl p-4 flex items-start justify-between gap-3 ${isSelected(user.id) ? "border-primary/50 bg-primary/5" : ""}`}
+                >
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
                     <input
                       type="checkbox"
                       checked={isSelected(user.id)}
                       onChange={() => toggleRow(user.id)}
-                      className="h-4 w-4 rounded border-input accent-primary cursor-pointer shrink-0"
-                      aria-label={`Sélectionner ${user.full_name}`}
+                      className="h-4 w-4 mt-1 rounded border-input accent-primary cursor-pointer shrink-0"
+                      aria-label={`Sélectionner ${displayName}`}
                     />
-                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <User className="w-3.5 h-3.5 text-primary" />
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold text-primary-foreground"
+                      style={{ backgroundColor: "hsl(var(--primary))" }}
+                      aria-hidden="true"
+                    >
+                      {initials}
                     </div>
-                    <span className="font-medium text-sm truncate">{user.full_name || user.username}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{displayName}</p>
+                      <p className="font-mono text-xs text-muted-foreground mt-0.5 truncate">@{user.username}</p>
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                        <StatusBadge
+                          label={user.profile.role === "admin" ? "Admin" : "Vendeur"}
+                          variant={user.profile.role === "admin" ? "info" : "default"}
+                        />
+                        <StatusBadge
+                          label={user.is_active ? "Actif" : "Inactif"}
+                          variant={user.is_active ? "success" : "default"}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <StatusBadge
-                      label={user.profile.role === "admin" ? "Admin" : "Vendeur"}
-                      variant={user.profile.role === "admin" ? "info" : "default"}
-                    />
-                    <StatusBadge
-                      label={user.is_active ? "Actif" : "Inactif"}
-                      variant={user.is_active ? "success" : "default"}
-                    />
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      title="Révoquer l'accès"
+                      onClick={() => setRevokingUser(user)}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive/70" />
+                    </button>
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground mb-2 truncate">{user.email}</div>
-                <div className="flex items-center justify-end">
-                  <button
-                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                    title="Révoquer l'accès"
-                    onClick={() => setRevokingUser(user)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

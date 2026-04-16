@@ -336,7 +336,7 @@ export default function InvoicesPage() {
               </div>
             </div>
 
-            {/* Mobile : card list */}
+            {/* Mobile : card list — md:hidden */}
             <div className="md:hidden space-y-2">
               {typedPaginated.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground text-sm">
@@ -344,12 +344,24 @@ export default function InvoicesPage() {
                 </div>
               )}
               {typedPaginated.map((inv) => (
-                <div key={inv.id} className="bg-card border rounded-lg p-3">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="min-w-0">
-                      <p className="font-mono font-semibold text-xs text-foreground">{inv.invoice_number}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                <div
+                  key={inv.id}
+                  className="bg-card border rounded-xl p-4 flex flex-col gap-3"
+                >
+                  {/* Header row : numéro + statut */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-mono text-xs font-semibold text-foreground truncate">
+                        {inv.invoice_number}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         {inv.client_name ?? "Client comptoir"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {formatDate(inv.issued_at)}
+                        <span className="mx-1 opacity-40">•</span>
+                        {inv.items?.length ?? 0} article
+                        {(inv.items?.length ?? 0) > 1 ? "s" : ""}
                       </p>
                     </div>
                     <StatusBadge
@@ -357,31 +369,34 @@ export default function InvoicesPage() {
                       variant={STATUS_VARIANTS[inv.status]}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-2">
-                    <span>Date : <strong className="text-foreground">{formatDate(inv.issued_at)}</strong></span>
-                    <span>Articles : <strong className="text-foreground">{inv.items?.length ?? 0}</strong></span>
-                    <span className="col-span-2">
-                      Total : <strong className="text-foreground">{formatFCFA(inv.total_amount)}</strong>
+
+                  {/* Footer row : total + actions */}
+                  <div className="flex items-center justify-between gap-3 pt-2 border-t">
+                    <span
+                      className="font-bold text-base"
+                      style={{ color: "hsl(var(--primary))" }}
+                    >
+                      {formatFCFA(inv.total_amount)}
                     </span>
-                  </div>
-                  <div className="flex gap-1 justify-end">
-                    <button
-                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                      title="Voir la facture"
-                      onClick={() => setViewingInvoice(inv)}
-                    >
-                      <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                    <button
-                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                      title="Imprimer"
-                      onClick={() => {
-                        setViewingInvoice(inv);
-                        setTimeout(() => window.print(), 300);
-                      }}
-                    >
-                      <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        className="p-2 rounded-md hover:bg-secondary transition-colors"
+                        title="Voir la facture"
+                        onClick={() => setViewingInvoice(inv)}
+                      >
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                      <button
+                        className="p-2 rounded-md hover:bg-secondary transition-colors"
+                        title="Imprimer"
+                        onClick={() => {
+                          setViewingInvoice(inv);
+                          setTimeout(() => window.print(), 300);
+                        }}
+                      >
+                        <Printer className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

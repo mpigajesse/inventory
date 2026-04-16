@@ -26,6 +26,7 @@ type ActionType = "vente" | "stock" | "produit" | "connexion" | "système";
 interface LogEntry {
   id: string;
   date: string;
+  dateIso: string;
   dateSort: number;
   user: string;
   actionType: ActionType;
@@ -58,11 +59,30 @@ function formatDate(isoDate: string): string {
   });
 }
 
+function formatRelative(isoDate: string): string {
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return isoDate;
+  const diffMs = Date.now() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "à l'instant";
+  if (diffMin < 60) return `il y a ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `il y a ${diffH} h`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 7) return `il y a ${diffD} j`;
+  return d.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 function toLogEntry(log: ActivityLog): LogEntry {
   const actionType = resolveActionType(log.action, log.target_model);
   return {
     id: String(log.id),
     date: formatDate(log.created_at),
+    dateIso: log.created_at,
     dateSort: new Date(log.created_at).getTime(),
     user: log.user_name,
     actionType,
@@ -340,7 +360,7 @@ export default function ActivityLogPage() {
           </div>
         </div>
 
-        {/* Mobile : card list */}
+        {/* Mobile : card list — md:hidden */}
         <div className="md:hidden space-y-2">
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground text-sm">Chargement…</div>
@@ -350,23 +370,32 @@ export default function ActivityLogPage() {
             </div>
           ) : (
             typedPaginated.map((entry) => (
-              <div key={entry.id} className="bg-card border rounded-lg p-3">
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <ActionTypeIcon type={entry.actionType} />
-                    <span className="font-medium text-sm truncate">{entry.action}</span>
+              <div
+                key={entry.id}
+                className="bg-card border rounded-xl p-4 flex items-start justify-between gap-3"
+              >
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <ActionTypeIcon type={entry.actionType} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate" title={entry.detail}>
+                      {entry.detail || entry.action}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 min-w-0">
+                      <span className="text-xs text-foreground/80 truncate">{entry.user}</span>
+                      <span
+                        className="text-xs text-muted-foreground whitespace-nowrap shrink-0"
+                        title={entry.date}
+                      >
+                        · {formatRelative(entry.dateIso)}
+                      </span>
+                    </div>
                   </div>
+                </div>
+                <div className="shrink-0">
                   <StatusBadge
                     label={ACTION_CONFIG[entry.actionType].badge.label}
                     variant={ACTION_CONFIG[entry.actionType].badge.variant}
                   />
-                </div>
-                <p className="text-xs text-muted-foreground mb-1.5 truncate" title={entry.detail}>
-                  {entry.detail}
-                </p>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{entry.user}</span>
-                  <span className="whitespace-nowrap">{entry.date}</span>
                 </div>
               </div>
             ))

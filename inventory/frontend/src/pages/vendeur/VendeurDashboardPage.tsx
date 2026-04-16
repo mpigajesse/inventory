@@ -126,7 +126,28 @@ export default function VendeurDashboardPage() {
             <h2 className="text-sm font-semibold">Mes dernières ventes</h2>
             <StatusBadge label="Aujourd'hui" variant="info" />
           </div>
-          <div className="overflow-x-auto">
+          {/* Mobile cards — md:hidden */}
+          <div className="md:hidden space-y-2 p-4">
+            {mesDerniereVentes.map((vente) => (
+              <div
+                key={vente.id}
+                className="bg-card border rounded-xl p-4 flex items-start justify-between gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{vente.id}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    {vente.heure} · {vente.articles} article{vente.articles !== 1 ? "s" : ""}
+                  </p>
+                  <p className="text-sm font-semibold mt-1">{vente.total}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <StatusBadge label="Terminée" variant="success" />
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Desktop table — hidden md:block */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="data-table">
               <thead>
                 <tr>

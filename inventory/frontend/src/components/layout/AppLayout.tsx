@@ -46,7 +46,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen w-screen max-w-full overflow-hidden">
       <AppSidebar
         collapsed={collapsed}
         onCollapsedChange={setCollapsed}
@@ -58,7 +58,7 @@ export function AppLayout() {
         On desktop (md+): push content right with a spacer div matching sidebar width.
         On mobile: sidebar overlays content — no spacer, content uses full width.
       */}
-      <div className="flex-1 flex h-screen overflow-hidden">
+      <div className="flex-1 flex h-screen min-w-0 max-w-full overflow-hidden">
         {/* Spacer — only rendered on md+ to reserve sidebar space */}
         <div
           className={[
@@ -66,7 +66,7 @@ export function AppLayout() {
             collapsed ? "w-[60px]" : "w-[240px]",
           ].join(" ")}
         />
-        <main className="flex flex-col flex-1 h-screen overflow-y-auto min-w-0">
+        <main className="flex flex-col flex-1 h-screen min-w-0 max-w-full overflow-x-hidden overflow-y-auto">
           <PageTransition>
             <Outlet
               context={
