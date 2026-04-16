@@ -20,7 +20,13 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError('SECRET_KEY environment variable is required')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') + [
+    '.trycloudflare.com',
+    '.workers.dev',
+    '.ngrok-free.app',
+    '.ngrok-free.dev',
+    '.vercel.app',
+]
 
 # Application definition
 INSTALLED_APPS = [
