@@ -1,0 +1,6 @@
+name = "gam-tunnel-front"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+BACKEND_WORKER_URL = "https://gam-tunnel-back.geniesafriquemedia.workers.dev"

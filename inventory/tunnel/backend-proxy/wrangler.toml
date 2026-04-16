@@ -1,0 +1,4 @@
+name = "inventory-backend"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+account_id = "713e717b970688a1426c8953630853bf"

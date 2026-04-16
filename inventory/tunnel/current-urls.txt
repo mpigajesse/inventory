@@ -1,0 +1,5 @@
+# GAM Tunnel URLs - 01/12/2026 13:12:35
+FRONTEND_TUNNEL=https://toolkit-detective-logistics-act.trycloudflare.com
+BACKEND_TUNNEL=https://ear-retrieved-openings-changed.trycloudflare.com
+FRONTEND_WORKER=https://gam-tunnel-front.geniesafriquemedia.workers.dev
+BACKEND_WORKER=https://gam-tunnel-back.geniesafriquemedia.workers.dev
