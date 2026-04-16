@@ -117,7 +117,7 @@ export default function LoginPage() {
         className="hidden md:flex flex-col justify-between p-10 relative overflow-hidden"
         style={{
           width: "50%",
-          background: "linear-gradient(160deg, #0f0c29 0%, #1a1046 50%, #200f3c 100%)",
+          background: "linear-gradient(160deg, hsl(222 47% 8%) 0%, hsl(240 40% 14%) 50%, hsl(260 35% 18%) 100%)",
         }}
       >
         {/* Subtle grid overlay */}
@@ -336,7 +336,7 @@ export default function LoginPage() {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => loginAs(account.username, account.password)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:border-border/80 transition-all duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {/* Colored avatar */}
                   <div
