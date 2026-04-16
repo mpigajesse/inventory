@@ -39,8 +39,20 @@ Thumbs.db
 .cache/
 .parcel-cache/
 
+# Python virtual environment
+env/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # External tools (not part of this project)
 qwen-code-main/
+
+# Claude local config
+.claude/
 
 # Test coverage
 coverage/
