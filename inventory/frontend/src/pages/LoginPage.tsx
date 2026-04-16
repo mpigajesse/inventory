@@ -5,22 +5,42 @@ import { Package, Eye, EyeOff, Shield, ShoppingBag, Loader2 } from "lucide-react
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import type { User } from "@/contexts/AuthContext";
 
-// Local demo constants — not exported from AuthContext anymore
-const MOCK_ADMIN: User = {
-  id: '1',
-  name: 'Admin Principal',
-  email: 'admin@naoservices.ga',
-  role: 'admin',
-};
-
-const MOCK_VENDEUR: User = {
-  id: '2',
-  name: 'Marie Vendeur',
-  email: 'marie@naoservices.ga',
-  role: 'vendeur',
-};
+const DEMO_ACCOUNTS = [
+  {
+    label: 'Admin',
+    name: 'Admin Principal',
+    username: 'admin',
+    password: 'Admin1234!',
+    icon: Shield,
+    role: 'admin' as const,
+    badgeClass: 'bg-primary/10 text-primary',
+    cardClass: 'hover:border-primary/40 hover:bg-primary/5',
+    iconClass: 'bg-primary/10 text-primary group-hover:bg-primary/20',
+  },
+  {
+    label: 'Vendeur',
+    name: 'Marie Koumba',
+    username: 'vendeur1',
+    password: 'Vendeur1234!',
+    icon: ShoppingBag,
+    role: 'vendeur' as const,
+    badgeClass: 'bg-secondary text-secondary-foreground',
+    cardClass: 'hover:border-secondary/60 hover:bg-secondary/20',
+    iconClass: 'bg-secondary/50 text-secondary-foreground group-hover:bg-secondary',
+  },
+  {
+    label: 'Vendeur',
+    name: 'Paul Moussavou',
+    username: 'vendeur2',
+    password: 'Vendeur1234!',
+    icon: ShoppingBag,
+    role: 'vendeur' as const,
+    badgeClass: 'bg-secondary text-secondary-foreground',
+    cardClass: 'hover:border-secondary/60 hover:bg-secondary/20',
+    iconClass: 'bg-secondary/50 text-secondary-foreground group-hover:bg-secondary',
+  },
+];
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +49,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { login, setCurrentUser } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   async function handleLogin(e: React.FormEvent) {
@@ -46,13 +66,16 @@ export default function LoginPage() {
     }
   }
 
-  function loginAs(role: 'admin' | 'vendeur') {
-    if (role === 'admin') {
-      setCurrentUser(MOCK_ADMIN);
+  async function loginAs(u: string, p: string) {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await login(u, p);
       navigate('/dashboard');
-    } else {
-      setCurrentUser(MOCK_VENDEUR);
-      navigate('/vendeur/dashboard');
+    } catch {
+      setError('Identifiants incorrects. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -123,46 +146,38 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Connexion rapide — comptes de démonstration */}
+        {/* Comptes de démonstration */}
         <div className="mt-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground whitespace-nowrap">ou connexion rapide</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">comptes de démonstration</span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
-          <div className="space-y-2.5">
-            <button
-              onClick={() => loginAs('admin')}
-              className="w-full flex items-center gap-3 p-3 rounded-lg border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
-            >
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                <Shield className="w-4 h-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-tight">{MOCK_ADMIN.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{MOCK_ADMIN.email}</p>
-              </div>
-              <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">
-                Admin
-              </span>
-            </button>
-
-            <button
-              onClick={() => loginAs('vendeur')}
-              className="w-full flex items-center gap-3 p-3 rounded-lg border bg-card hover:border-secondary/60 hover:bg-secondary/20 transition-all text-left group"
-            >
-              <div className="w-9 h-9 rounded-full bg-secondary/50 flex items-center justify-center shrink-0 group-hover:bg-secondary transition-colors">
-                <ShoppingBag className="w-4 h-4 text-secondary-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-tight">{MOCK_VENDEUR.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{MOCK_VENDEUR.email}</p>
-              </div>
-              <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground uppercase tracking-wide">
-                Vendeur
-              </span>
-            </button>
+          <div className="space-y-2">
+            {DEMO_ACCOUNTS.map((account) => {
+              const Icon = account.icon;
+              return (
+                <button
+                  key={account.username}
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => loginAs(account.username, account.password)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border bg-card transition-all text-left group disabled:opacity-50 ${account.cardClass}`}
+                >
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${account.iconClass}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold leading-tight">{account.name}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{account.username} / {account.password}</p>
+                  </div>
+                  <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${account.badgeClass}`}>
+                    {account.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
