@@ -24,87 +24,155 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Plus, Phone, Mail, Edit, Trash2, History, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { clientService } from "@/services/clientService";
+import type { Client } from "@/services/clientService";
+import type { Sale } from "@/services/salesService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-interface Client {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  notes: string;
-  purchases: number;
-  total: string;
-  lastPurchase: string;
+function formatFcfa(amount: number): string {
+  return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
 }
 
-interface MockPurchase {
-  date: string;
-  articles: string;
-  total: string;
-  paid: boolean;
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR");
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
 
-const INITIAL_CLIENTS: Client[] = [
-  { id: 1, name: "Jean Mouloungui", phone: "+241 07 12 34 56", email: "jean@email.com", notes: "", purchases: 15, total: "234 000 FCFA", lastPurchase: "14/04/2026" },
-  { id: 2, name: "Marie Obiang", phone: "+241 06 78 90 12", email: "", notes: "Cliente régulière", purchases: 8, total: "156 000 FCFA", lastPurchase: "13/04/2026" },
-  { id: 3, name: "Paul Ndong", phone: "+241 07 45 67 89", email: "paul.n@email.com", notes: "", purchases: 23, total: "412 000 FCFA", lastPurchase: "12/04/2026" },
-  { id: 4, name: "Sophie Mintsa", phone: "+241 06 23 45 67", email: "", notes: "", purchases: 5, total: "67 000 FCFA", lastPurchase: "10/04/2026" },
-  { id: 5, name: "André Nzé", phone: "+241 07 89 01 23", email: "andre.nze@email.com", notes: "Gros client", purchases: 31, total: "580 000 FCFA", lastPurchase: "14/04/2026" },
-];
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
 
-const MOCK_PURCHASES: Record<number, MockPurchase[]> = {
-  1: [
-    { date: "14/04/2026", articles: "Riz 25kg × 2, Huile 5L × 1", total: "34 000 FCFA", paid: true },
-    { date: "10/04/2026", articles: "Sucre 5kg × 3", total: "18 000 FCFA", paid: true },
-    { date: "05/04/2026", articles: "Farine 10kg × 2, Sel 1kg × 5", total: "27 500 FCFA", paid: false },
-  ],
-  2: [
-    { date: "13/04/2026", articles: "Savon × 10, Lessive 2kg × 2", total: "22 000 FCFA", paid: true },
-    { date: "07/04/2026", articles: "Huile 5L × 3", total: "36 000 FCFA", paid: true },
-  ],
-  3: [
-    { date: "12/04/2026", articles: "Riz 25kg × 5", total: "75 000 FCFA", paid: true },
-    { date: "09/04/2026", articles: "Farine 10kg × 4, Sucre 5kg × 2", total: "48 000 FCFA", paid: true },
-    { date: "03/04/2026", articles: "Huile 5L × 6, Sel 1kg × 10", total: "81 000 FCFA", paid: false },
-  ],
-  4: [
-    { date: "10/04/2026", articles: "Savon × 5", total: "7 500 FCFA", paid: true },
-  ],
-  5: [
-    { date: "14/04/2026", articles: "Riz 25kg × 10, Huile 5L × 5", total: "168 000 FCFA", paid: true },
-    { date: "11/04/2026", articles: "Farine 10kg × 8", total: "96 000 FCFA", paid: true },
-    { date: "06/04/2026", articles: "Sucre 5kg × 10, Sel 1kg × 20", total: "82 000 FCFA", paid: true },
-  ],
-};
+function ClientCardSkeleton() {
+  return (
+    <div className="bg-card rounded-lg border p-5 animate-pulse">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-muted shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3.5 bg-muted rounded w-3/4" />
+          <div className="h-3 bg-muted rounded w-1/2" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="h-3 bg-muted rounded w-2/3" />
+        <div className="h-3 bg-muted rounded w-1/2" />
+      </div>
+      <div className="flex items-center justify-between mt-4 pt-4 border-t">
+        <div className="space-y-1">
+          <div className="h-3 bg-muted rounded w-16" />
+          <div className="h-4 bg-muted rounded w-24" />
+        </div>
+        <div className="space-y-1 items-end flex flex-col">
+          <div className="h-3 bg-muted rounded w-20" />
+          <div className="h-4 bg-muted rounded w-16" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Purchase history modal content ──────────────────────────────────────────
+
+interface HistoryModalProps {
+  client: Client | null;
+  onClose: () => void;
+}
+
+function HistoryModal({ client, onClose }: HistoryModalProps) {
+  const { data: purchases = [], isLoading } = useQuery<Sale[]>({
+    queryKey: ["client-purchases", client?.id],
+    queryFn: () => clientService.getPurchases(client!.id),
+    enabled: client !== null,
+  });
+
+  return (
+    <Dialog open={client !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Historique — {client?.name}</DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="space-y-3 py-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-muted rounded animate-pulse" />
+            ))}
+          </div>
+        ) : purchases.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            Aucun achat enregistré.
+          </p>
+        ) : (
+          <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+            {purchases.map((sale) => (
+              <div key={sale.id} className="rounded-md border p-3 text-sm space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{formatDate(sale.created_at)}</span>
+                  <StatusBadge
+                    label={sale.amount_paid >= sale.total_amount ? "Payé" : "Impayé"}
+                    variant={sale.amount_paid >= sale.total_amount ? "success" : "warning"}
+                  />
+                </div>
+                {sale.invoice_number && (
+                  <p className="text-muted-foreground text-xs">
+                    Facture {sale.invoice_number}
+                  </p>
+                )}
+                <p className="font-semibold text-sm">{formatFcfa(sale.total_amount)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Fermer</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ClientsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
-  const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
-  const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
 
-  // Only modals kept here: history and delete confirmation
+  const [search, setSearch] = useState("");
   const [historyClient, setHistoryClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
 
-  const filtered = clients.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.includes(search)
-  );
+  // ── Fetch clients ────────────────────────────────────────────────────────────
+  const { data, isLoading } = useQuery({
+    queryKey: ["clients", search],
+    queryFn: () =>
+      clientService.getAll(search ? { search } : undefined),
+  });
+
+  const clients: Client[] = data?.results ?? [];
+
+  // ── Delete mutation ──────────────────────────────────────────────────────────
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => clientService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      setDeletingClient(null);
+    },
+  });
 
   function handleDelete() {
     if (!deletingClient) return;
-    setClients(prev => prev.filter(c => c.id !== deletingClient.id));
-    setDeletingClient(null);
+    deleteMutation.mutate(deletingClient.id);
   }
-
-  const purchases = historyClient ? (MOCK_PURCHASES[historyClient.id] ?? []) : [];
 
   return (
     <>
@@ -124,124 +192,123 @@ export default function ClientsPage() {
           </Button>
         </div>
 
-        {/* Cards */}
-        {filtered.length === 0 ? (
+        {/* Loading skeleton */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => <ClientCardSkeleton key={i} />)}
+          </div>
+        ) : clients.length === 0 ? (
           <EmptyState
             message="Aucun client trouvé."
             icon={<Users className="w-10 h-10" />}
           />
         ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(client => (
-            <div key={client.id} className="bg-card rounded-lg border p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
-                  {client.name.split(" ").map(n => n[0]).join("")}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{client.name}</p>
-                  <p className="text-xs text-muted-foreground">{client.purchases} achat{client.purchases !== 1 ? "s" : ""}</p>
-                </div>
-                {/* Action buttons */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                    title="Voir historique"
-                    onClick={() => setHistoryClient(client)}
-                  >
-                    <History className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
-                  <button
-                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                    title="Modifier"
-                    onClick={() => navigate(`/clients/${client.id}/edit`)}
-                  >
-                    <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
-                  <button
-                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                    title="Supprimer"
-                    onClick={() => setDeletingClient(client)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="w-3.5 h-3.5 shrink-0" />
-                  <span>{client.phone}</span>
-                </div>
-                {client.email && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{client.email}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {clients.map((client) => (
+              <div
+                key={client.id}
+                className="bg-card rounded-lg border p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+              >
+                {/* Header row */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
+                    {initials(client.name)}
                   </div>
-                )}
-              </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{client.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {client.purchases_count} achat{client.purchases_count !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      title="Voir historique"
+                      onClick={() => setHistoryClient(client)}
+                    >
+                      <History className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                    <button
+                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      title="Modifier"
+                      onClick={() => navigate(`/clients/${client.id}/edit`)}
+                    >
+                      <Edit className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                    <button
+                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      title="Supprimer"
+                      onClick={() => setDeletingClient(client)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+                    </button>
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                <div>
-                  <p className="text-xs text-muted-foreground">Total achats</p>
-                  <p className="text-sm font-semibold">{client.total}</p>
+                {/* Contact info */}
+                <div className="space-y-2 text-xs">
+                  {client.phone && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="w-3.5 h-3.5 shrink-0" />
+                      <span>{client.phone}</span>
+                    </div>
+                  )}
+                  {client.email && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{client.email}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Dernier achat</p>
-                  <p className="text-sm">{client.lastPurchase}</p>
+
+                {/* Footer stats */}
+                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total achats</p>
+                    <p className="text-sm font-semibold">{formatFcfa(client.total_purchases)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Membre depuis</p>
+                    <p className="text-sm">{formatDate(client.created_at)}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
         )}
       </div>
 
       {/* ── Modal : Historique des achats ── */}
-      <Dialog open={!!historyClient} onOpenChange={open => { if (!open) setHistoryClient(null); }}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Historique — {historyClient?.name}</DialogTitle>
-          </DialogHeader>
-          {purchases.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">Aucun achat enregistré.</p>
-          ) : (
-            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-              {purchases.map((p, i) => (
-                <div key={i} className="rounded-md border p-3 text-sm space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{p.date}</span>
-                    <StatusBadge label={p.paid ? "Payé" : "Impayé"} variant={p.paid ? "success" : "warning"} />
-                  </div>
-                  <p className="text-muted-foreground text-xs">{p.articles}</p>
-                  <p className="font-semibold text-sm">{p.total}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setHistoryClient(null)}>Fermer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <HistoryModal
+        client={historyClient}
+        onClose={() => setHistoryClient(null)}
+      />
 
       {/* ── AlertDialog : Supprimer client ── */}
-      <AlertDialog open={!!deletingClient} onOpenChange={open => { if (!open) setDeletingClient(null); }}>
+      <AlertDialog
+        open={!!deletingClient}
+        onOpenChange={(open) => { if (!open) setDeletingClient(null); }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous êtes sur le point de supprimer <strong>{deletingClient?.name}</strong>.
+              Vous êtes sur le point de supprimer{" "}
+              <strong>{deletingClient?.name}</strong>.
               Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Annuler
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDelete}
+              disabled={deleteMutation.isPending}
             >
-              Supprimer
+              {deleteMutation.isPending ? "Suppression…" : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

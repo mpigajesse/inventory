@@ -23,23 +23,32 @@ export interface Product {
 
 export const productService = {
   getAll: (params?: Record<string, string>) =>
-    api.get<{ results: Product[]; count: number }>('/products/', { params }),
+    api.get<{ results: Product[]; count: number }>('/products/', { params }).then(r => r.data),
 
   getById: (id: number) =>
-    api.get<Product>(`/products/${id}/`),
+    api.get<Product>(`/products/${id}/`).then(r => r.data),
 
   create: (data: FormData | Partial<Product>) =>
-    api.post<Product>('/products/', data),
+    api.post<Product>('/products/', data).then(r => r.data),
 
   update: (id: number, data: FormData | Partial<Product>) =>
-    api.patch<Product>(`/products/${id}/`, data),
+    api.patch<Product>(`/products/${id}/`, data).then(r => r.data),
 
   delete: (id: number) =>
-    api.delete(`/products/${id}/`),
+    api.delete(`/products/${id}/`).then(r => r.data),
 
   getByBarcode: (code: string) =>
-    api.get<Product>(`/products/barcode/${code}/`),
+    api.get<Product>(`/products/barcode/${code}/`).then(r => r.data),
 
   getCategories: () =>
-    api.get<Category[]>('/products/categories/'),
+    api.get<Category[]>('/products/categories/').then(r => r.data),
+
+  createCategory: (data: Partial<Category>) =>
+    api.post<Category>('/products/categories/', data).then(r => r.data),
+
+  updateCategory: (id: number, data: Partial<Category>) =>
+    api.patch<Category>(`/products/categories/${id}/`, data).then(r => r.data),
+
+  deleteCategory: (id: number) =>
+    api.delete(`/products/categories/${id}/`).then(r => r.data),
 };

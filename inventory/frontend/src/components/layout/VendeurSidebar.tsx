@@ -44,14 +44,14 @@ export function VendeurSidebar({
 }: VendeurSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { setCurrentUser } = useAuth();
+  const { logout } = useAuth();
 
   const handleNavClick = () => {
     onMobileOpenChange(false);
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    await logout();
     navigate("/auth/login");
   };
 

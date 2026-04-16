@@ -17,6 +17,7 @@ import {
   Truck,
   QrCode,
   ShieldCheck,
+  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { label: "Notifications", path: "/notifications", icon: Bell, badge: 5 },
   { label: "Point de vente", path: "/pos", icon: ShoppingCart },
   { label: "Produits", path: "/products", icon: Package },
+  { label: "Catégories", path: "/categories", icon: Tag },
   { label: "Codes-barres", path: "/barcodes", icon: QrCode },
   { label: "Stock", path: "/stock", icon: Warehouse },
   { label: "Factures", path: "/invoices", icon: FileText },
@@ -59,14 +61,14 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { setCurrentUser } = useAuth();
+  const { logout } = useAuth();
 
   const handleNavClick = () => {
     onMobileOpenChange(false);
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    await logout();
     navigate("/auth/login");
   };
 

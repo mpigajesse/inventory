@@ -13,5 +13,7 @@ def create_user_profile(sender, instance: User, created: bool, **kwargs) -> None
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance: User, **kwargs) -> None:
-    if hasattr(instance, 'profile'):
+    try:
         instance.profile.save()
+    except UserProfile.DoesNotExist:
+        pass

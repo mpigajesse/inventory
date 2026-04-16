@@ -1,4 +1,5 @@
 import { useOutletContext } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -30,64 +31,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Shield, User, Edit, Trash2, UserX, Eye, EyeOff } from "lucide-react";
+import { Plus, Shield, User, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useTableManager } from "@/hooks/useTableManager";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "@/components/ui/use-toast";
+import { userService, type UserListItem } from "@/services/userService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type UserRole = "admin" | "vendeur";
-type UserStatus = "active" | "inactive";
-
-interface AppUser {
-  id: number;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  lastLogin: string;
-}
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const INITIAL_USERS: AppUser[] = [
-  { id: 1, name: "Admin Principal", email: "admin@naoservices.ga", role: "admin", status: "active", lastLogin: "14/04/2026 08:30" },
-  { id: 2, name: "Fatou Mbaye", email: "fatou@naoservices.ga", role: "vendeur", status: "active", lastLogin: "14/04/2026 09:00" },
-  { id: 3, name: "Moussa Diallo", email: "moussa@naoservices.ga", role: "vendeur", status: "active", lastLogin: "13/04/2026 18:45" },
-  { id: 4, name: "Aïcha Nkoghe", email: "aicha@naoservices.ga", role: "vendeur", status: "inactive", lastLogin: "10/04/2026 12:00" },
-];
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
 const createUserSchema = z.object({
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  first_name: z.string().min(1, "Le prénom est requis"),
+  last_name: z.string().min(1, "Le nom est requis"),
+  username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
   email: z.string().email("Email invalide"),
   role: z.enum(["admin", "vendeur"], { required_error: "Sélectionnez un rôle" }),
+  phone: z.string().optional(),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
 });
 
-const editUserSchema = z.object({
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  email: z.string().email("Email invalide"),
-  role: z.enum(["admin", "vendeur"], { required_error: "Sélectionnez un rôle" }),
-  status: z.enum(["active", "inactive"], { required_error: "Sélectionnez un statut" }),
-});
-
 type CreateUserFormValues = z.infer<typeof createUserSchema>;
-type EditUserFormValues = z.infer<typeof editUserSchema>;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface CreateUserFormProps {
   onSubmit: (values: CreateUserFormValues) => void;
   onCancel: () => void;
+  isSubmitting: boolean;
 }
 
-function CreateUserForm({ onSubmit, onCancel }: CreateUserFormProps) {
+function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -97,45 +77,109 @@ function CreateUserForm({ onSubmit, onCancel }: CreateUserFormProps) {
     formState: { errors },
   } = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: { name: "", email: "", role: "vendeur", password: "" },
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      username: "",
+      email: "",
+      role: "vendeur",
+      phone: "",
+      password: "",
+    },
   });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="create-name">Nom complet <span className="text-destructive">*</span></Label>
-        <Input id="create-name" placeholder="Ex : Fatou Mbaye" {...register("name")} />
-        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="create-email">Email <span className="text-destructive">*</span></Label>
-        <Input id="create-email" type="email" placeholder="utilisateur@naoservices.ga" {...register("email")} />
-        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>Rôle <span className="text-destructive">*</span></Label>
-        <Controller
-          control={control}
-          name="role"
-          render={({ field }) => (
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un rôle" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="vendeur">Vendeur</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="create-first-name">
+            Prénom <span className="text-destructive">*</span>
+          </Label>
+          <Input id="create-first-name" placeholder="Ex : Fatou" {...register("first_name")} />
+          {errors.first_name && (
+            <p className="text-xs text-destructive">{errors.first_name.message}</p>
           )}
-        />
-        {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="create-last-name">
+            Nom <span className="text-destructive">*</span>
+          </Label>
+          <Input id="create-last-name" placeholder="Ex : Mbaye" {...register("last_name")} />
+          {errors.last_name && (
+            <p className="text-xs text-destructive">{errors.last_name.message}</p>
+          )}
+        </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="create-password">Mot de passe temporaire <span className="text-destructive">*</span></Label>
+        <Label htmlFor="create-username">
+          Nom d'utilisateur <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="create-username"
+          placeholder="Ex : fatou.mbaye"
+          {...register("username")}
+        />
+        {errors.username && (
+          <p className="text-xs text-destructive">{errors.username.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="create-email">
+          Email <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="create-email"
+          type="email"
+          placeholder="utilisateur@naoservices.ga"
+          {...register("email")}
+        />
+        {errors.email && (
+          <p className="text-xs text-destructive">{errors.email.message}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>
+            Rôle <span className="text-destructive">*</span>
+          </Label>
+          <Controller
+            control={control}
+            name="role"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="vendeur">Vendeur</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.role && (
+            <p className="text-xs text-destructive">{errors.role.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="create-phone">Téléphone</Label>
+          <Input
+            id="create-phone"
+            placeholder="+241 07 XX XX XX"
+            {...register("phone")}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="create-password">
+          Mot de passe temporaire <span className="text-destructive">*</span>
+        </Label>
         <div className="relative">
           <Input
             id="create-password"
@@ -152,93 +196,19 @@ function CreateUserForm({ onSubmit, onCancel }: CreateUserFormProps) {
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
-        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+        {errors.password && (
+          <p className="text-xs text-destructive">{errors.password.message}</p>
+        )}
       </div>
 
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>Annuler</Button>
-        <Button type="submit">Créer l'utilisateur</Button>
-      </DialogFooter>
-    </form>
-  );
-}
-
-interface EditUserFormProps {
-  defaultValues: EditUserFormValues;
-  onSubmit: (values: EditUserFormValues) => void;
-  onCancel: () => void;
-}
-
-function EditUserForm({ defaultValues, onSubmit, onCancel }: EditUserFormProps) {
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<EditUserFormValues>({
-    resolver: zodResolver(editUserSchema),
-    defaultValues,
-  });
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="edit-name">Nom complet <span className="text-destructive">*</span></Label>
-        <Input id="edit-name" placeholder="Ex : Fatou Mbaye" {...register("name")} />
-        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="edit-email">Email <span className="text-destructive">*</span></Label>
-        <Input id="edit-email" type="email" placeholder="utilisateur@naoservices.ga" {...register("email")} />
-        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>Rôle</Label>
-          <Controller
-            control={control}
-            name="role"
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Rôle" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="vendeur">Vendeur</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-          {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Statut</Label>
-          <Controller
-            control={control}
-            name="status"
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Actif</SelectItem>
-                  <SelectItem value="inactive">Inactif</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-          {errors.status && <p className="text-xs text-destructive">{errors.status.message}</p>}
-        </div>
-      </div>
-
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>Annuler</Button>
-        <Button type="submit">Enregistrer</Button>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          Annuler
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Créer l'utilisateur
+        </Button>
       </DialogFooter>
     </form>
   );
@@ -253,15 +223,65 @@ const ROLE_FILTER_OPTIONS = [
 
 export default function UsersPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
-  const [users, setUsers] = useState<AppUser[]>(INITIAL_USERS);
+  const queryClient = useQueryClient();
+
   const [showCreate, setShowCreate] = useState(false);
-  const [editingUser, setEditingUser] = useState<AppUser | null>(null);
-  const [revokingUser, setRevokingUser] = useState<AppUser | null>(null);
+  const [revokingUser, setRevokingUser] = useState<UserListItem | null>(null);
   const [roleFilter, setRoleFilter] = useState("");
 
-  // Pré-filtre par rôle
+  // ── Data ──────────────────────────────────────────────────────────────────
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => userService.getAll(),
+  });
+
+  const users: UserListItem[] = data?.results ?? [];
+
+  const createMutation = useMutation({
+    mutationFn: (values: CreateUserFormValues) =>
+      userService.create({
+        username: values.username,
+        email: values.email,
+        first_name: values.first_name,
+        last_name: values.last_name,
+        password: values.password,
+        role: values.role,
+        phone: values.phone,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setShowCreate(false);
+      toast({ title: "Utilisateur créé avec succès." });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur lors de la création",
+        description: "Vérifiez les informations saisies.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => userService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setRevokingUser(null);
+      toast({ title: "Accès révoqué." });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur lors de la révocation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // ── Filtering ─────────────────────────────────────────────────────────────
+
   const roleFiltered = roleFilter
-    ? users.filter((u) => u.role === roleFilter)
+    ? users.filter((u) => u.profile.role === (roleFilter as UserRole))
     : users;
 
   const {
@@ -276,49 +296,22 @@ export default function UsersPage() {
     isAllSelected,
     isIndeterminate,
   } = useTableManager(roleFiltered as unknown as Record<string, unknown>[], {
-    searchKeys: ["name", "email"] as never[],
+    searchKeys: ["full_name", "email", "username"] as never[],
   });
 
-  const typedPaginated = paginated as unknown as AppUser[];
+  const typedPaginated = paginated as unknown as UserListItem[];
   const allPageIds = typedPaginated.map((u) => u.id);
 
   function handleCreate(values: CreateUserFormValues) {
-    const newUser: AppUser = {
-      id: Math.max(0, ...users.map(u => u.id)) + 1,
-      name: values.name,
-      email: values.email,
-      role: values.role,
-      status: "active",
-      lastLogin: "Jamais",
-    };
-    setUsers(prev => [...prev, newUser]);
-    setShowCreate(false);
-  }
-
-  function handleEdit(values: EditUserFormValues) {
-    if (!editingUser) return;
-    setUsers(prev =>
-      prev.map(u =>
-        u.id === editingUser.id ? { ...u, ...values } : u
-      )
-    );
-    setEditingUser(null);
+    createMutation.mutate(values);
   }
 
   function handleRevoke() {
     if (!revokingUser) return;
-    setUsers(prev => prev.filter(u => u.id !== revokingUser.id));
-    setRevokingUser(null);
+    deleteMutation.mutate(revokingUser.id);
   }
 
-  function handleDisableSelection() {
-    setUsers(prev =>
-      prev.map(u =>
-        selectedIds.has(u.id) ? { ...u, status: "inactive" as UserStatus } : u
-      )
-    );
-    clearSelection();
-  }
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -344,17 +337,6 @@ export default function UsersPage() {
           isIndeterminate={isIndeterminate(allPageIds)}
           onToggleAll={() => toggleAll(allPageIds)}
           selectedCount={selectedIds.size}
-          bulkActions={
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDisableSelection}
-              className="border-warning text-warning hover:bg-warning/10"
-            >
-              <UserX className="w-3.5 h-3.5 mr-1.5" />
-              Désactiver la sélection
-            </Button>
-          }
           filterValue={roleFilter}
           filterOptions={ROLE_FILTER_OPTIONS}
           filterPlaceholder="Tous les rôles"
@@ -364,76 +346,84 @@ export default function UsersPage() {
           }}
         />
 
+        {/* Loading / error states */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Chargement des utilisateurs…</span>
+          </div>
+        )}
+
+        {isError && !isLoading && (
+          <div className="flex items-center justify-center py-16 text-destructive text-sm">
+            Impossible de charger les utilisateurs. Vérifiez la connexion au serveur.
+          </div>
+        )}
+
         {/* Desktop : tableau normal */}
-        <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th className="w-10 px-4">
-                    <span className="sr-only">Sélection</span>
-                  </th>
-                  <SortableHeader label="Utilisateur" sortKey="name" currentSort={sort} onSort={toggleSort} />
-                  <th>Email</th>
-                  <SortableHeader label="Rôle" sortKey="role" currentSort={sort} onSort={toggleSort} />
-                  <th>Statut</th>
-                  <th>Dernière connexion</th>
-                  <th className="w-20">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {typedPaginated.length === 0 && (
+        {!isLoading && !isError && (
+          <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Aucun utilisateur trouvé.
-                    </td>
+                    <th className="w-10 px-4">
+                      <span className="sr-only">Sélection</span>
+                    </th>
+                    <SortableHeader label="Utilisateur" sortKey="full_name" currentSort={sort} onSort={toggleSort} />
+                    <th>Email</th>
+                    <SortableHeader label="Rôle" sortKey="profile.role" currentSort={sort} onSort={toggleSort} />
+                    <th>Statut</th>
+                    <th className="w-20">Actions</th>
                   </tr>
-                )}
-                {typedPaginated.map((user) => (
-                  <tr
-                    key={user.id}
-                    className={isSelected(user.id) ? "bg-primary/5" : undefined}
-                  >
-                    <td className="w-10">
-                      <input
-                        type="checkbox"
-                        checked={isSelected(user.id)}
-                        onChange={() => toggleRow(user.id)}
-                        className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
-                        aria-label={`Sélectionner ${user.name}`}
-                      />
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <User className="w-4 h-4 text-primary" />
+                </thead>
+                <tbody>
+                  {typedPaginated.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                        Aucun utilisateur trouvé.
+                      </td>
+                    </tr>
+                  )}
+                  {typedPaginated.map((user) => (
+                    <tr
+                      key={user.id}
+                      className={isSelected(user.id) ? "bg-primary/5" : undefined}
+                    >
+                      <td className="w-10">
+                        <input
+                          type="checkbox"
+                          checked={isSelected(user.id)}
+                          onChange={() => toggleRow(user.id)}
+                          className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                          aria-label={`Sélectionner ${user.full_name}`}
+                        />
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <span className="font-medium block">{user.full_name || user.username}</span>
+                            <span className="text-xs text-muted-foreground">@{user.username}</span>
+                          </div>
                         </div>
-                        <span className="font-medium">{user.name}</span>
-                      </div>
-                    </td>
-                    <td className="text-muted-foreground">{user.email}</td>
-                    <td>
-                      <StatusBadge
-                        label={user.role === "admin" ? "Admin" : "Vendeur"}
-                        variant={user.role === "admin" ? "info" : "default"}
-                      />
-                    </td>
-                    <td>
-                      <StatusBadge
-                        label={user.status === "active" ? "Actif" : "Inactif"}
-                        variant={user.status === "active" ? "success" : "default"}
-                      />
-                    </td>
-                    <td className="text-muted-foreground text-xs">{user.lastLogin}</td>
-                    <td>
-                      <div className="flex items-center gap-1">
-                        <button
-                          className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                          title="Modifier"
-                          onClick={() => setEditingUser(user)}
-                        >
-                          <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
+                      </td>
+                      <td className="text-muted-foreground">{user.email}</td>
+                      <td>
+                        <StatusBadge
+                          label={user.profile.role === "admin" ? "Admin" : "Vendeur"}
+                          variant={user.profile.role === "admin" ? "info" : "default"}
+                        />
+                      </td>
+                      <td>
+                        <StatusBadge
+                          label={user.is_active ? "Actif" : "Inactif"}
+                          variant={user.is_active ? "success" : "default"}
+                        />
+                      </td>
+                      <td>
                         <button
                           className="p-1.5 rounded-md hover:bg-secondary transition-colors"
                           title="Révoquer l'accès"
@@ -441,65 +431,55 @@ export default function UsersPage() {
                         >
                           <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Mobile : card list */}
-        <div className="md:hidden space-y-2">
-          {typedPaginated.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              Aucun utilisateur trouvé.
-            </div>
-          )}
-          {typedPaginated.map((user) => (
-            <div
-              key={user.id}
-              className={`bg-card border rounded-lg p-3 ${isSelected(user.id) ? "border-primary/50 bg-primary/5" : ""}`}
-            >
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <input
-                    type="checkbox"
-                    checked={isSelected(user.id)}
-                    onChange={() => toggleRow(user.id)}
-                    className="h-4 w-4 rounded border-input accent-primary cursor-pointer shrink-0"
-                    aria-label={`Sélectionner ${user.name}`}
-                  />
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <User className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <span className="font-medium text-sm truncate">{user.name}</span>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <StatusBadge
-                    label={user.role === "admin" ? "Admin" : "Vendeur"}
-                    variant={user.role === "admin" ? "info" : "default"}
-                  />
-                  <StatusBadge
-                    label={user.status === "active" ? "Actif" : "Inactif"}
-                    variant={user.status === "active" ? "success" : "default"}
-                  />
-                </div>
+        {!isLoading && !isError && (
+          <div className="md:hidden space-y-2">
+            {typedPaginated.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                Aucun utilisateur trouvé.
               </div>
-              <div className="text-xs text-muted-foreground mb-2 truncate">{user.email}</div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  Connexion : <strong className="text-foreground">{user.lastLogin}</strong>
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                    title="Modifier"
-                    onClick={() => setEditingUser(user)}
-                  >
-                    <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
+            )}
+            {typedPaginated.map((user) => (
+              <div
+                key={user.id}
+                className={`bg-card border rounded-lg p-3 ${isSelected(user.id) ? "border-primary/50 bg-primary/5" : ""}`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={isSelected(user.id)}
+                      onChange={() => toggleRow(user.id)}
+                      className="h-4 w-4 rounded border-input accent-primary cursor-pointer shrink-0"
+                      aria-label={`Sélectionner ${user.full_name}`}
+                    />
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <User className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <span className="font-medium text-sm truncate">{user.full_name || user.username}</span>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <StatusBadge
+                      label={user.profile.role === "admin" ? "Admin" : "Vendeur"}
+                      variant={user.profile.role === "admin" ? "info" : "default"}
+                    />
+                    <StatusBadge
+                      label={user.is_active ? "Actif" : "Inactif"}
+                      variant={user.is_active ? "success" : "default"}
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground mb-2 truncate">{user.email}</div>
+                <div className="flex items-center justify-end">
                   <button
                     className="p-1.5 rounded-md hover:bg-secondary transition-colors"
                     title="Révoquer l'accès"
@@ -509,58 +489,44 @@ export default function UsersPage() {
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Modal : Nouvel utilisateur ── */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(open) => { if (!createMutation.isPending) setShowCreate(open); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Nouvel utilisateur</DialogTitle>
           </DialogHeader>
-          <CreateUserForm onSubmit={handleCreate} onCancel={() => setShowCreate(false)} />
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Modal : Modifier utilisateur ── */}
-      <Dialog open={!!editingUser} onOpenChange={open => { if (!open) setEditingUser(null); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Modifier l'utilisateur</DialogTitle>
-          </DialogHeader>
-          {editingUser && (
-            <EditUserForm
-              defaultValues={{
-                name: editingUser.name,
-                email: editingUser.email,
-                role: editingUser.role,
-                status: editingUser.status,
-              }}
-              onSubmit={handleEdit}
-              onCancel={() => setEditingUser(null)}
-            />
-          )}
+          <CreateUserForm
+            onSubmit={handleCreate}
+            onCancel={() => setShowCreate(false)}
+            isSubmitting={createMutation.isPending}
+          />
         </DialogContent>
       </Dialog>
 
       {/* ── AlertDialog : Révoquer accès ── */}
-      <AlertDialog open={!!revokingUser} onOpenChange={open => { if (!open) setRevokingUser(null); }}>
+      <AlertDialog open={!!revokingUser} onOpenChange={(open) => { if (!open) setRevokingUser(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Révoquer l'accès ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Révoquer l'accès de <strong>{revokingUser?.name}</strong> supprimera définitivement
-              son compte. Cette action est irréversible.
+              Révoquer l'accès de{" "}
+              <strong>{revokingUser?.full_name || revokingUser?.username}</strong> supprimera
+              définitivement son compte. Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleRevoke}
+              disabled={deleteMutation.isPending}
             >
+              {deleteMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Révoquer l'accès
             </AlertDialogAction>
           </AlertDialogFooter>

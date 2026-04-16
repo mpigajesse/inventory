@@ -16,7 +16,9 @@ load_dotenv(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-in-production')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError('SECRET_KEY environment variable is required')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
@@ -83,8 +85,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': dj_database_url.parse(
         os.environ['DATABASE_URL'],
-        conn_max_age=600,
-        conn_health_checks=True,
+        conn_max_age=0,  # Supabase pooler: disable persistent connections
     )
 }
 
@@ -150,6 +151,8 @@ _env_cors = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
     'http://localhost:5173',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:5173',
 ] + [o.strip() for o in _env_cors.split(',') if o.strip()]
 
 CORS_ALLOW_CREDENTIALS = True

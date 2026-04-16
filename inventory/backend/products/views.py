@@ -13,6 +13,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
+    pagination_class = None  # categories are few — return plain list, not paginated
 
 
 class ProductViewSet(viewsets.ModelViewSet):

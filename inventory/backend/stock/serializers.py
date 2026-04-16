@@ -29,9 +29,15 @@ class StockAdjustmentSerializer(serializers.Serializer):
     note = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, data):
+        qty = data['quantity']
+        movement_type = data['movement_type']
+        if movement_type in ('entry', 'exit') and qty <= 0:
+            raise serializers.ValidationError(
+                {'quantity': 'La quantité doit être supérieure à zéro.'}
+            )
         stock = self.context.get('stock')
-        if data['movement_type'] == 'exit' and stock:
-            if data['quantity'] > stock.quantity:
+        if movement_type == 'exit' and stock:
+            if qty > stock.quantity:
                 raise serializers.ValidationError(
                     {'quantity': 'Stock insuffisant pour cette sortie.'}
                 )

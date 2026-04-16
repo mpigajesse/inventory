@@ -1,4 +1,5 @@
 import { useOutletContext } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,19 +12,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { User, Shield, KeyRound, Settings2, Save, Clock, Eye, EyeOff } from "lucide-react";
+import { User, Shield, KeyRound, Settings2, Save, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { userService } from "@/services/userService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
-// ─── Types & Schemas ──────────────────────────────────────────────────────────
+// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const profileSchema = z.object({
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  first_name: z.string().min(1, "Le prénom est requis"),
+  last_name: z.string().min(1, "Le nom est requis"),
   email: z.string().email("Email invalide"),
-  phone: z.string().min(8, "Numéro de téléphone invalide").or(z.literal("")),
 });
 
 const passwordSchema = z
@@ -46,15 +50,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 type PreferencesFormValues = z.infer<typeof preferencesSchema>;
 
-// ─── Mock current user ────────────────────────────────────────────────────────
-
-const CURRENT_USER = {
-  name: "Admin Principal",
-  email: "admin@naoservices.ga",
-  phone: "+241 07 40 13 02",
-  role: "admin" as const,
-  lastLogin: "Aujourd'hui à 08:30",
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getInitials(name: string): string {
   return name
@@ -65,10 +61,38 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-// ─── Sub-sections ─────────────────────────────────────────────────────────────
+// ─── Profile section ──────────────────────────────────────────────────────────
 
 function ProfileSection() {
-  const [saved, setSaved] = useState(false);
+  const { currentUser, setCurrentUser } = useAuth();
+  const queryClient = useQueryClient();
+
+  const updateMutation = useMutation({
+    mutationFn: (data: ProfileFormValues) => userService.updateMe(data),
+    onSuccess: (updatedUser) => {
+      setCurrentUser({
+        id: String(updatedUser.id),
+        name: updatedUser.full_name || updatedUser.username,
+        email: updatedUser.email,
+        role: updatedUser.profile.role,
+        avatar: updatedUser.profile.avatar_url || undefined,
+      });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      toast({ title: "Profil mis à jour avec succès." });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur lors de la mise à jour",
+        description: "Vérifiez les informations saisies.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Derive first/last name from currentUser.name as best-effort default
+  const nameParts = (currentUser?.name ?? "").split(" ");
+  const defaultFirstName = nameParts[0] ?? "";
+  const defaultLastName = nameParts.slice(1).join(" ");
 
   const {
     register,
@@ -77,15 +101,14 @@ function ProfileSection() {
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: CURRENT_USER.name,
-      email: CURRENT_USER.email,
-      phone: CURRENT_USER.phone,
+      first_name: defaultFirstName,
+      last_name: defaultLastName,
+      email: currentUser?.email ?? "",
     },
   });
 
-  function onSubmit(_values: ProfileFormValues) {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  function onSubmit(values: ProfileFormValues) {
+    updateMutation.mutate(values);
   }
 
   return (
@@ -93,20 +116,17 @@ function ProfileSection() {
       {/* Avatar + identity */}
       <div className="flex items-center gap-4 mb-6">
         <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold shrink-0">
-          {getInitials(CURRENT_USER.name)}
+          {getInitials(currentUser?.name ?? "?")}
         </div>
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <p className="font-semibold">{CURRENT_USER.name}</p>
+            <p className="font-semibold">{currentUser?.name}</p>
             <StatusBadge
-              label={CURRENT_USER.role === "admin" ? "Admin" : "Vendeur"}
-              variant={CURRENT_USER.role === "admin" ? "info" : "default"}
+              label={currentUser?.role === "admin" ? "Admin" : "Vendeur"}
+              variant={currentUser?.role === "admin" ? "info" : "default"}
             />
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span>Dernière connexion : {CURRENT_USER.lastLogin}</span>
-          </div>
+          <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
         </div>
       </div>
 
@@ -119,20 +139,30 @@ function ProfileSection() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="profile-name">
-              Nom complet <span className="text-destructive">*</span>
+            <Label htmlFor="profile-first-name">
+              Prénom <span className="text-destructive">*</span>
             </Label>
-            <Input id="profile-name" placeholder="Ex : Jean Mouloungui" {...register("name")} />
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
+            <Input
+              id="profile-first-name"
+              placeholder="Ex : Jean"
+              {...register("first_name")}
+            />
+            {errors.first_name && (
+              <p className="text-xs text-destructive">{errors.first_name.message}</p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="profile-phone">Téléphone</Label>
-            <Input id="profile-phone" placeholder="+241 07 XX XX XX" {...register("phone")} />
-            {errors.phone && (
-              <p className="text-xs text-destructive">{errors.phone.message}</p>
+            <Label htmlFor="profile-last-name">
+              Nom <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="profile-last-name"
+              placeholder="Ex : Mouloungui"
+              {...register("last_name")}
+            />
+            {errors.last_name && (
+              <p className="text-xs text-destructive">{errors.last_name.message}</p>
             )}
           </div>
 
@@ -153,9 +183,13 @@ function ProfileSection() {
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit">
-            <Save className="w-4 h-4 mr-2" />
-            {saved ? "Enregistré !" : "Enregistrer"}
+          <Button type="submit" disabled={updateMutation.isPending}>
+            {updateMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {updateMutation.isPending ? "Enregistrement…" : "Enregistrer"}
           </Button>
         </div>
       </form>
@@ -163,11 +197,28 @@ function ProfileSection() {
   );
 }
 
+// ─── Security section ─────────────────────────────────────────────────────────
+
 function SecuritySection() {
-  const [saved, setSaved] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const changePasswordMutation = useMutation({
+    mutationFn: ({ current, next }: { current: string; next: string }) =>
+      userService.changePassword(current, next),
+    onSuccess: () => {
+      reset();
+      toast({ title: "Mot de passe modifié avec succès." });
+    },
+    onError: () => {
+      toast({
+        title: "Échec du changement de mot de passe",
+        description: "Le mot de passe actuel est peut-être incorrect.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const {
     register,
@@ -179,10 +230,8 @@ function SecuritySection() {
     defaultValues: { current: "", next: "", confirm: "" },
   });
 
-  function onSubmit(_values: PasswordFormValues) {
-    setSaved(true);
-    reset();
-    setTimeout(() => setSaved(false), 2000);
+  function onSubmit(values: PasswordFormValues) {
+    changePasswordMutation.mutate({ current: values.current, next: values.next });
   }
 
   return (
@@ -208,7 +257,7 @@ function SecuritySection() {
               type="button"
               onClick={() => setShowCurrentPassword(!showCurrentPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={showCurrentPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              aria-label={showCurrentPassword ? "Masquer" : "Afficher"}
             >
               {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -233,7 +282,7 @@ function SecuritySection() {
               type="button"
               onClick={() => setShowNewPassword(!showNewPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={showNewPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              aria-label={showNewPassword ? "Masquer" : "Afficher"}
             >
               {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -258,7 +307,7 @@ function SecuritySection() {
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              aria-label={showConfirmPassword ? "Masquer" : "Afficher"}
             >
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -269,15 +318,21 @@ function SecuritySection() {
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit" variant="outline">
-            <Shield className="w-4 h-4 mr-2" />
-            {saved ? "Mot de passe modifié !" : "Changer le mot de passe"}
+          <Button type="submit" variant="outline" disabled={changePasswordMutation.isPending}>
+            {changePasswordMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Shield className="w-4 h-4 mr-2" />
+            )}
+            {changePasswordMutation.isPending ? "Modification…" : "Changer le mot de passe"}
           </Button>
         </div>
       </form>
     </div>
   );
 }
+
+// ─── Preferences section ──────────────────────────────────────────────────────
 
 function PreferencesSection() {
   const [saved, setSaved] = useState(false);
@@ -291,6 +346,7 @@ function PreferencesSection() {
   });
 
   function onSubmit(_values: PreferencesFormValues) {
+    // Preferences are UI-only (no backend endpoint). Persist locally if needed.
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }

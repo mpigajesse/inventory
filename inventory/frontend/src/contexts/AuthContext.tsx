@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { authService, AuthUser } from '@/services/authService';
 
 export type UserRole = 'admin' | 'vendeur';
 
@@ -13,25 +14,20 @@ export interface User {
 interface AuthContextValue {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
 }
 
-const MOCK_USERS: User[] = [
-  {
-    id: '1',
-    name: 'Admin Principal',
-    email: 'admin@naoservices.ga',
-    role: 'admin',
-  },
-  {
-    id: '2',
-    name: 'Marie Vendeur',
-    email: 'marie@naoservices.ga',
-    role: 'vendeur',
-  },
-];
-
-export const MOCK_ADMIN = MOCK_USERS[0];
-export const MOCK_VENDEUR = MOCK_USERS[1];
+function mapApiUserToUser(apiUser: AuthUser): User {
+  return {
+    id: String(apiUser.id),
+    name: apiUser.full_name || apiUser.username,
+    email: apiUser.email,
+    role: apiUser.profile.role,
+    avatar: apiUser.profile.avatar_url || undefined,
+  };
+}
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -40,10 +36,43 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [currentUser, setCurrentUser] = useState<User | null>(MOCK_ADMIN);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // On mount: restore session from stored access_token
+  useEffect(() => {
+    if (!authService.isAuthenticated()) {
+      setIsLoading(false);
+      return;
+    }
+
+    authService
+      .getMe()
+      .then((apiUser) => {
+        setCurrentUser(mapApiUserToUser(apiUser));
+      })
+      .catch(() => {
+        // Token is invalid or expired — clear storage
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
+  async function login(username: string, password: string): Promise<void> {
+    const { user: apiUser } = await authService.login({ username, password });
+    setCurrentUser(mapApiUserToUser(apiUser));
+  }
+
+  async function logout(): Promise<void> {
+    await authService.logout();
+    setCurrentUser(null);
+  }
 
   return (
-    <AuthContext.Provider value={{ currentUser, setCurrentUser }}>
+    <AuthContext.Provider value={{ currentUser, setCurrentUser, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

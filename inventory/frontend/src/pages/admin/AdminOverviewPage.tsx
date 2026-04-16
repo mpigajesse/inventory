@@ -1,4 +1,5 @@
 import { useOutletContext, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,9 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import { useState } from "react";
+import { dashboardService } from "@/services/dashboardService";
+import { activityService } from "@/services/activityService";
+import type { ActivityLog } from "@/services/activityService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -55,46 +59,6 @@ interface AdminUser {
   lastLogin: string;
 }
 
-type ActivityType = "login" | "sale" | "product" | "stock" | "system";
-
-interface ActivityEntry {
-  id: string;
-  type: ActivityType;
-  description: string;
-  user: string;
-  timestamp: string;
-}
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const SYSTEM_INFO = {
-  version: "1.0.0",
-  installDate: "01/04/2026",
-  activeUsers: 3,
-  totalProducts: 142,
-  monthlyTransactions: 698,
-};
-
-const INITIAL_USERS: AdminUser[] = [
-  { id: 1, name: "Admin Principal", email: "admin@naoservices.ga", role: "admin", status: "active", lastLogin: "14/04/2026 08:30" },
-  { id: 2, name: "Fatou Mbaye", email: "fatou@naoservices.ga", role: "vendeur", status: "active", lastLogin: "14/04/2026 09:00" },
-  { id: 3, name: "Moussa Diallo", email: "moussa@naoservices.ga", role: "vendeur", status: "active", lastLogin: "13/04/2026 18:45" },
-  { id: 4, name: "Aïcha Nkoghe", email: "aicha@naoservices.ga", role: "vendeur", status: "inactive", lastLogin: "10/04/2026 12:00" },
-];
-
-const RECENT_ACTIVITY: ActivityEntry[] = [
-  { id: "log-01", type: "sale", description: "Vente VNT-005 enregistrée — 56 500 FCFA (4 articles)", user: "Fatou Mbaye", timestamp: "14/04/2026 14:20" },
-  { id: "log-02", type: "login", description: "Connexion au système", user: "Admin Principal", timestamp: "14/04/2026 08:30" },
-  { id: "log-03", type: "product", description: "Nouveau produit ajouté : Eau Tangui 1.5L", user: "Admin Principal", timestamp: "14/04/2026 08:45" },
-  { id: "log-04", type: "sale", description: "Vente VNT-004 enregistrée — 23 000 FCFA (2 articles)", user: "Moussa Diallo", timestamp: "14/04/2026 13:08" },
-  { id: "log-05", type: "stock", description: "Stock mis à jour : Lait Nido 400g → 3 unités", user: "Admin Principal", timestamp: "14/04/2026 11:30" },
-  { id: "log-06", type: "login", description: "Connexion au système", user: "Fatou Mbaye", timestamp: "14/04/2026 09:00" },
-  { id: "log-07", type: "product", description: "Produit modifié : Huile Dinor 1L — prix mis à jour", user: "Admin Principal", timestamp: "13/04/2026 17:00" },
-  { id: "log-08", type: "sale", description: "Vente VNT-003 enregistrée — 78 000 FCFA (5 articles)", user: "Moussa Diallo", timestamp: "13/04/2026 15:30" },
-  { id: "log-09", type: "system", description: "Sauvegarde automatique des données", user: "Système", timestamp: "13/04/2026 12:00" },
-  { id: "log-10", type: "login", description: "Connexion au système", user: "Moussa Diallo", timestamp: "13/04/2026 08:00" },
-];
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
@@ -106,13 +70,23 @@ function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: 
   );
 }
 
+type ActivityType = "login" | "sale" | "product" | "stock" | "system";
+
 const ACTIVITY_CONFIG: Record<ActivityType, { icon: React.ElementType; bg: string; color: string }> = {
   login: { icon: LogIn, bg: "bg-primary/10", color: "text-primary" },
   sale: { icon: ShoppingBag, bg: "bg-success/10", color: "text-success" },
   product: { icon: Tag, bg: "bg-warning/10", color: "text-warning" },
-  stock: { icon: Package, bg: "bg-info/10 bg-primary/10", color: "text-primary" },
+  stock: { icon: Package, bg: "bg-primary/10", color: "text-primary" },
   system: { icon: Settings, bg: "bg-muted", color: "text-muted-foreground" },
 };
+
+function resolveActivityType(action: string, targetModel: string): ActivityType {
+  if (targetModel === "sale" || targetModel === "saleitem") return "sale";
+  if (targetModel === "product") return "product";
+  if (targetModel === "stock" || targetModel === "stockmovement") return "stock";
+  if (action === "login" || action === "logout") return "login";
+  return "system";
+}
 
 function ActivityIcon({ type }: { type: ActivityType }) {
   const { icon: Icon, bg, color } = ACTIVITY_CONFIG[type];
@@ -123,13 +97,38 @@ function ActivityIcon({ type }: { type: ActivityType }) {
   );
 }
 
+function formatActivityDate(isoDate: string): string {
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return isoDate;
+  return d.toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AdminOverviewPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
 
-  const [users, setUsers] = useState<AdminUser[]>(INITIAL_USERS);
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: dashboardService.getStats,
+  });
+
+  const { data: activityData, isLoading: activityLoading } = useQuery({
+    queryKey: ['activity'],
+    queryFn: () => activityService.getAll({ page_size: '10' }),
+  });
+
+  const recentActivity: ActivityLog[] = activityData?.results ?? [];
+
+  // User management still uses local state (no userService yet)
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [disablingUser, setDisablingUser] = useState<AdminUser | null>(null);
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
 
@@ -164,11 +163,23 @@ export default function AdminOverviewPage() {
           <SectionHeader icon={Info} title="Informations système" />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
-              { icon: Tag, label: "Version", value: SYSTEM_INFO.version },
-              { icon: Calendar, label: "Date d'installation", value: SYSTEM_INFO.installDate },
-              { icon: Users, label: "Utilisateurs actifs", value: String(SYSTEM_INFO.activeUsers) },
-              { icon: Package, label: "Produits en catalogue", value: String(SYSTEM_INFO.totalProducts) },
-              { icon: ShoppingCart, label: "Transactions ce mois", value: String(SYSTEM_INFO.monthlyTransactions) },
+              { icon: Tag, label: "Version", value: "1.0.0" },
+              { icon: Calendar, label: "Date d'installation", value: "01/04/2026" },
+              {
+                icon: Users,
+                label: "Utilisateurs actifs",
+                value: statsLoading ? "—" : String(stats?.clients.total ?? 0),
+              },
+              {
+                icon: Package,
+                label: "Produits en catalogue",
+                value: statsLoading ? "—" : String(stats?.stock.total_products ?? 0),
+              },
+              {
+                icon: ShoppingCart,
+                label: "Transactions ce mois",
+                value: statsLoading ? "—" : String(stats?.month.sales_count ?? 0),
+              },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="bg-card border rounded-lg p-4 flex flex-col gap-2">
                 <div className="flex items-center gap-2">
@@ -216,61 +227,69 @@ export default function AdminOverviewPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id}>
-                      <td>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <Users className="w-4 h-4 text-primary" />
-                          </div>
-                          <span className="font-medium">{user.name}</span>
-                        </div>
-                      </td>
-                      <td className="text-muted-foreground">{user.email}</td>
-                      <td>
-                        <Select
-                          value={user.role}
-                          onValueChange={(val) => handleRoleChange(user.id, val as UserRole)}
-                        >
-                          <SelectTrigger className="h-7 w-28 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="vendeur">Vendeur</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td>
-                        <StatusBadge
-                          label={user.status === "active" ? "Actif" : "Inactif"}
-                          variant={user.status === "active" ? "success" : "default"}
-                        />
-                      </td>
-                      <td className="text-muted-foreground text-xs">{user.lastLogin}</td>
-                      <td>
-                        <div className="flex items-center gap-1">
-                          <button
-                            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                            title="Désactiver"
-                            onClick={() => setDisablingUser(user)}
-                            disabled={user.status === "inactive"}
-                          >
-                            <UserX className="w-3.5 h-3.5" />
-                            Désactiver
-                          </button>
-                          <button
-                            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                            title="Réinitialiser le mot de passe"
-                            onClick={() => setResetUser(user)}
-                          >
-                            <RefreshCcw className="w-3.5 h-3.5" />
-                            MDP
-                          </button>
-                        </div>
+                  {users.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-6 text-muted-foreground text-sm">
+                        Gérez les utilisateurs depuis la page dédiée.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    users.map((user) => (
+                      <tr key={user.id}>
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <Users className="w-4 h-4 text-primary" />
+                            </div>
+                            <span className="font-medium">{user.name}</span>
+                          </div>
+                        </td>
+                        <td className="text-muted-foreground">{user.email}</td>
+                        <td>
+                          <Select
+                            value={user.role}
+                            onValueChange={(val) => handleRoleChange(user.id, val as UserRole)}
+                          >
+                            <SelectTrigger className="h-7 w-28 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="vendeur">Vendeur</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td>
+                          <StatusBadge
+                            label={user.status === "active" ? "Actif" : "Inactif"}
+                            variant={user.status === "active" ? "success" : "default"}
+                          />
+                        </td>
+                        <td className="text-muted-foreground text-xs">{user.lastLogin}</td>
+                        <td>
+                          <div className="flex items-center gap-1">
+                            <button
+                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                              title="Désactiver"
+                              onClick={() => setDisablingUser(user)}
+                              disabled={user.status === "inactive"}
+                            >
+                              <UserX className="w-3.5 h-3.5" />
+                              Désactiver
+                            </button>
+                            <button
+                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                              title="Réinitialiser le mot de passe"
+                              onClick={() => setResetUser(user)}
+                            >
+                              <RefreshCcw className="w-3.5 h-3.5" />
+                              MDP
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -296,27 +315,39 @@ export default function AdminOverviewPage() {
           </div>
 
           <div className="bg-card rounded-lg border p-4">
-            <div className="space-y-3">
-              {RECENT_ACTIVITY.map((entry, idx) => (
-                <div key={entry.id} className="flex items-start gap-3">
-                  {/* Ligne verticale de connexion sauf pour le dernier élément */}
-                  <div className="flex flex-col items-center">
-                    <ActivityIcon type={entry.type} />
-                    {idx < RECENT_ACTIVITY.length - 1 && (
-                      <div className="w-px flex-1 bg-border mt-1 min-h-[12px]" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 pb-1">
-                    <p className="text-sm font-medium leading-snug">{entry.description}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-muted-foreground">{entry.user}</span>
-                      <span className="text-muted-foreground/40 text-xs">·</span>
-                      <span className="text-xs text-muted-foreground">{entry.timestamp}</span>
+            {activityLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Chargement…</p>
+            ) : recentActivity.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Aucune activité récente.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {recentActivity.map((entry, idx) => {
+                  const type = resolveActivityType(entry.action, entry.target_model);
+                  return (
+                    <div key={entry.id} className="flex items-start gap-3">
+                      <div className="flex flex-col items-center">
+                        <ActivityIcon type={type} />
+                        {idx < recentActivity.length - 1 && (
+                          <div className="w-px flex-1 bg-border mt-1 min-h-[12px]" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 pb-1">
+                        <p className="text-sm font-medium leading-snug">{entry.description}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-muted-foreground">{entry.user_name}</span>
+                          <span className="text-muted-foreground/40 text-xs">·</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatActivityDate(entry.created_at)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 

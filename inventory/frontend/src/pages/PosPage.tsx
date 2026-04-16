@@ -1,33 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Minus, Trash2, ShoppingCart, Banknote, CheckCircle, X, Printer } from "lucide-react";
+import { Search, Plus, Minus, Trash2, ShoppingCart, Banknote, CheckCircle, X, Printer, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductIcon } from "@/components/ui/ProductIcon";
+import { toast } from "@/hooks/use-toast";
+import { productService } from "@/services/productService";
+import { salesService } from "@/services/salesService";
+import type { SaleCreatePayload } from "@/services/salesService";
+import type { Product as ApiProduct } from "@/services/productService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
-interface Product {
+// ─── Local types ─────────────────────────────────────────────────────────────
+
+interface CartItem {
   id: number;
   name: string;
-  barcode: string;
+  barcode: string | null;
   price: number;
   category: string;
-}
-
-interface CartItem extends Product {
+  stock: number;
   qty: number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatTicketNumber(n: number): string {
-  const year = new Date().getFullYear();
-  const seq = String(n).padStart(4, "0");
-  return `TKT-${year}-${seq}`;
-}
 
 function formatDateTime(): { date: string; time: string } {
   const now = new Date();
@@ -55,8 +55,6 @@ function Receipt({ items, total, amountGiven, change, ticketNumber, date, time }
     hour: "2-digit", minute: "2-digit", second: "2-digit",
   });
 
-  // Column widths for the items table (monospace, 40-char wide)
-  // Format: NAME (left, 18) | QTY (right, 3) | P.U (right, 8) | TOTAL (right, 9)
   const COL_NAME = 18;
   const COL_QTY  = 3;
   const COL_PU   = 8;
@@ -206,20 +204,7 @@ function Receipt({ items, total, amountGiven, change, ticketNumber, date, time }
   );
 }
 
-const catalog: Product[] = [
-  { id: 1, name: "Lait Nido 400g", barcode: "6001068002802", price: 3500, category: "Alimentaire" },
-  { id: 2, name: "Huile Dinor 1L", barcode: "6001068002819", price: 2500, category: "Alimentaire" },
-  { id: 3, name: "Riz Uncle Ben's 5kg", barcode: "6001068002826", price: 8000, category: "Alimentaire" },
-  { id: 4, name: "Coca-Cola 1.5L", barcode: "5449000000996", price: 1200, category: "Boissons" },
-  { id: 5, name: "Savon Palmolive", barcode: "8714789763378", price: 800, category: "Hygiène" },
-  { id: 6, name: "Pâtes Panzani 500g", barcode: "3038350012005", price: 1500, category: "Alimentaire" },
-  { id: 7, name: "Sucre en poudre 1kg", barcode: "3256220010015", price: 1000, category: "Alimentaire" },
-  { id: 8, name: "Eau Tangui 1.5L", barcode: "6291041500213", price: 500, category: "Boissons" },
-  { id: 9, name: "Biscuits Belvita", barcode: "7622300689421", price: 1800, category: "Alimentaire" },
-  { id: 10, name: "Détergent Omo 1kg", barcode: "8717163711040", price: 3200, category: "Entretien" },
-  { id: 11, name: "Mayonnaise 500ml", barcode: "3250390003120", price: 2200, category: "Alimentaire" },
-  { id: 12, name: "Tomate concentrée", barcode: "8005250020116", price: 900, category: "Alimentaire" },
-];
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function PosPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
@@ -228,10 +213,7 @@ export default function PosPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [amountGiven, setAmountGiven] = useState("");
   const [saleComplete, setSaleComplete] = useState(false);
-  // Mobile tab: "catalog" | "cart"
   const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
-  // Compteur auto des tickets — persisté en mémoire pendant la session
-  const [ticketCounter, setTicketCounter] = useState(1);
   const [currentTicket, setCurrentTicket] = useState({ number: "", date: "", time: "" });
   const [flashItem, setFlashItem] = useState<number | null>(null);
 
@@ -242,25 +224,110 @@ export default function PosPage() {
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
   const change = Math.max(0, Number(amountGiven) - total);
 
-  // Impression via react-to-print
+  // ─── Stock warnings ───────────────────────────────────────────────────────
+
+  const stockWarnings = cart.filter(item => item.qty > item.stock);
+
+  // ─── Catalog query ────────────────────────────────────────────────────────
+
+  const { data: catalogData } = useQuery({
+    queryKey: ["products-pos", search],
+    queryFn: () =>
+      productService
+        .getAll(search ? { search } : undefined)
+        .then(res => res.results),
+    staleTime: 30_000,
+  });
+
+  const catalog: ApiProduct[] = catalogData ?? [];
+
+  // ─── Sale mutation ────────────────────────────────────────────────────────
+
+  const saleMutation = useMutation({
+    mutationFn: (payload: SaleCreatePayload) => salesService.create(payload),
+    onSuccess: (sale) => {
+      const { date, time } = formatDateTime();
+      setCurrentTicket({
+        number: sale.invoice_number ?? `VTE-${sale.id}`,
+        date,
+        time,
+      });
+      setSaleComplete(true);
+      toast({ title: `Vente enregistrée — ${sale.invoice_number ?? sale.id}` });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur lors de la vente",
+        description: "Stock insuffisant ou erreur serveur. Vérifiez les quantités.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // ─── Print ────────────────────────────────────────────────────────────────
+
   const handlePrint = useReactToPrint({
     contentRef: receiptRef,
     documentTitle: currentTicket.number,
   });
 
-  // Barcode scanner: intercepts keyboard input
+  // ─── Barcode scanner (USB keyboard emulation) ─────────────────────────────
+
+  const addToCart = useCallback((product: ApiProduct) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item =>
+          item.id === product.id ? { ...item, qty: item.qty + 1 } : item
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: product.id,
+          name: product.name,
+          barcode: product.barcode,
+          price: product.selling_price,
+          category: product.category_name,
+          stock: product.stock_quantity,
+          qty: 1,
+        },
+      ];
+    });
+    setFlashItem(product.id);
+    setTimeout(() => setFlashItem(null), 600);
+    setMobileTab("cart");
+
+    if (product.stock_quantity < 1) {
+      toast({
+        title: "Stock insuffisant",
+        description: `${product.name} est en rupture de stock.`,
+        variant: "destructive",
+      });
+    }
+  }, []);
+
   useEffect(() => {
     let buffer = "";
     let timeout: ReturnType<typeof setTimeout>;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       if (showPayment || saleComplete) return;
       if (document.activeElement === searchRef.current) return;
 
       if (e.key === "Enter" && buffer.length > 3) {
-        const found = catalog.find(p => p.barcode === buffer);
-        if (found) addToCart(found);
+        const code = buffer;
         buffer = "";
+        try {
+          const res = await productService.getByBarcode(code);
+          addToCart(res);
+        } catch {
+          toast({
+            title: "Produit non trouvé",
+            description: `Code-barres : ${code}`,
+            variant: "destructive",
+          });
+        }
         return;
       }
 
@@ -276,23 +343,9 @@ export default function PosPage() {
       window.removeEventListener("keydown", handleKeyDown);
       clearTimeout(timeout);
     };
-  }, [showPayment, saleComplete, cart]);
+  }, [showPayment, saleComplete, addToCart]);
 
-  const addToCart = useCallback((product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item =>
-          item.id === product.id ? { ...item, qty: item.qty + 1 } : item
-        );
-      }
-      return [...prev, { ...product, qty: 1 }];
-    });
-    setFlashItem(product.id);
-    setTimeout(() => setFlashItem(null), 600);
-    // On mobile, switch to cart tab when item added
-    setMobileTab("cart");
-  }, []);
+  // ─── Cart actions ─────────────────────────────────────────────────────────
 
   const updateQty = (id: number, delta: number) => {
     setCart(prev =>
@@ -306,17 +359,31 @@ export default function PosPage() {
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
+  // ─── Payment confirmation ─────────────────────────────────────────────────
+
   const handlePayment = () => {
-    if (Number(amountGiven) >= total) {
-      const { date, time } = formatDateTime();
-      setCurrentTicket({
-        number: formatTicketNumber(ticketCounter),
-        date,
-        time,
+    if (Number(amountGiven) < total) return;
+    if (stockWarnings.length > 0) {
+      toast({
+        title: "Stock insuffisant",
+        description: `Quantité demandée dépasse le stock disponible pour : ${stockWarnings.map(i => i.name).join(", ")}`,
+        variant: "destructive",
       });
-      setTicketCounter(prev => prev + 1);
-      setSaleComplete(true);
+      return;
     }
+
+    const payload: SaleCreatePayload = {
+      items: cart.map(item => ({
+        product_id: item.id,
+        quantity: item.qty,
+        unit_price: item.price,
+      })),
+      payment_method: "cash",
+      amount_paid: Number(amountGiven),
+      client_id: null,
+    };
+
+    saleMutation.mutate(payload);
   };
 
   const resetSale = () => {
@@ -326,21 +393,18 @@ export default function PosPage() {
     setSaleComplete(false);
     setSearch("");
     setMobileTab("catalog");
+    saleMutation.reset();
   };
 
-  const filtered = catalog.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.barcode.includes(search)
-  );
-
   const quickAmounts = [500, 1000, 2000, 5000, 10000, 25000, 50000];
+
+  // ─── Success screen ───────────────────────────────────────────────────────
 
   if (saleComplete) {
     return (
       <>
         <Topbar title="Point de vente" subtitle="Caisse rapide" onMenuClick={onMenuClick} />
 
-        {/* CSS impression : seule la zone du ticket est imprimée */}
         <style>{`
           @media print {
             @page { size: 80mm auto; margin: 4mm; }
@@ -353,7 +417,6 @@ export default function PosPage() {
         <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto bg-muted/30">
           <div className="w-full max-w-sm animate-slide-in">
 
-            {/* Confirmation banner */}
             <div className="text-center mb-5">
               <div className="relative inline-flex mb-3">
                 <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center ring-4 ring-success/10">
@@ -364,7 +427,6 @@ export default function PosPage() {
               <p className="text-xs text-muted-foreground font-mono tracking-widest">{currentTicket.number}</p>
             </div>
 
-            {/* Monnaie pill — big and clear for the cashier */}
             <div className="bg-success/10 border border-success/20 rounded-xl p-4 mb-5 text-center">
               <p className="text-xs font-medium text-success/80 uppercase tracking-widest mb-1">Monnaie à rendre</p>
               <p className="text-3xl font-black text-success tracking-tight">{change.toLocaleString()} FCFA</p>
@@ -374,7 +436,6 @@ export default function PosPage() {
               </div>
             </div>
 
-            {/* Ticket preview — styled like a real thermique printout on screen */}
             <div
               className="mb-5 overflow-hidden"
               style={{
@@ -386,7 +447,6 @@ export default function PosPage() {
                 position: "relative",
               }}
             >
-              {/* Torn-edge top effect */}
               <div style={{
                 position: "absolute", top: 0, left: 0, right: 0, height: "6px",
                 background: "repeating-linear-gradient(90deg, #fff 0px, #fff 5px, #f3f4f6 5px, #f3f4f6 10px)",
@@ -402,14 +462,12 @@ export default function PosPage() {
                   time={currentTicket.time}
                 />
               </div>
-              {/* Torn-edge bottom effect */}
               <div style={{
                 position: "absolute", bottom: 0, left: 0, right: 0, height: "6px",
                 background: "repeating-linear-gradient(90deg, #fff 0px, #fff 5px, #f3f4f6 5px, #f3f4f6 10px)",
               }} />
             </div>
 
-            {/* Zone réservée à l'impression (masquée à l'écran) */}
             <div ref={receiptRef} id="receipt-printable">
               <Receipt
                 items={cart}
@@ -422,7 +480,6 @@ export default function PosPage() {
               />
             </div>
 
-            {/* Boutons */}
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1 gap-2 h-11" onClick={() => handlePrint()}>
                 <Printer className="w-4 h-4" />
@@ -438,15 +495,12 @@ export default function PosPage() {
     );
   }
 
+  // ─── Main POS screen ──────────────────────────────────────────────────────
+
   return (
     <>
       <Topbar title="Point de vente" subtitle="Scan code-barres ou recherche rapide" onMenuClick={onMenuClick} />
 
-      {/*
-        Layout:
-        - Mobile (< md): stacked with tabs to switch between catalog and cart
-        - Desktop (md+): side-by-side (catalog left, cart right)
-      */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
 
         {/* ── Mobile tabs ── */}
@@ -484,7 +538,6 @@ export default function PosPage() {
         <div
           className={cn(
             "flex flex-col min-w-0 md:flex-1 md:border-r",
-            // Mobile: show only when catalog tab active, fill remaining height
             mobileTab === "catalog" ? "flex flex-1 overflow-hidden" : "hidden md:flex"
           )}
         >
@@ -503,21 +556,39 @@ export default function PosPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {filtered.map(product => (
-                <button
-                  key={product.id}
-                  onClick={() => addToCart(product)}
-                  className="bg-card rounded-lg border p-3 text-left hover:border-primary/30 hover:shadow-sm transition-all active:scale-[0.97]"
-                >
-                  <div className="mb-2">
-                    <ProductIcon name={product.name} category={product.category} size="md" />
-                  </div>
-                  <p className="text-xs font-medium leading-tight line-clamp-2">{product.name}</p>
-                  <p className="text-sm font-semibold mt-1 text-primary">{product.price.toLocaleString()} F</p>
-                </button>
-              ))}
-            </div>
+            {catalog.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
+                <Search className="w-8 h-8 mb-2 opacity-30" />
+                <p className="text-sm">Aucun produit trouvé</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {catalog.map(product => (
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    className={cn(
+                      "bg-card rounded-lg border p-3 text-left hover:border-primary/30 hover:shadow-sm transition-all active:scale-[0.97]",
+                      product.stock_quantity === 0 && "opacity-50 cursor-not-allowed"
+                    )}
+                    disabled={product.stock_quantity === 0}
+                    title={product.stock_quantity === 0 ? "Rupture de stock" : undefined}
+                  >
+                    <div className="mb-2">
+                      <ProductIcon name={product.name} category={product.category_name} size="md" />
+                    </div>
+                    <p className="text-xs font-medium leading-tight line-clamp-2">{product.name}</p>
+                    <p className="text-sm font-semibold mt-1 text-primary">{product.selling_price.toLocaleString()} F</p>
+                    {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
+                      <p className="text-[10px] text-warning mt-0.5">Stock : {product.stock_quantity}</p>
+                    )}
+                    {product.stock_quantity === 0 && (
+                      <p className="text-[10px] text-destructive mt-0.5">Rupture</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -525,7 +596,6 @@ export default function PosPage() {
         <div
           className={cn(
             "flex flex-col bg-card md:w-[380px] md:shrink-0",
-            // Mobile: show only when cart tab active, fill remaining height
             mobileTab === "cart" ? "flex-1 overflow-hidden" : "hidden md:flex"
           )}
         >
@@ -547,6 +617,17 @@ export default function PosPage() {
             )}
           </div>
 
+          {/* Stock warnings banner */}
+          {stockWarnings.length > 0 && (
+            <div className="mx-3 mt-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 flex items-start gap-2 text-xs text-warning shrink-0">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>
+                Quantité insuffisante en stock :{" "}
+                {stockWarnings.map(i => `${i.name} (stock : ${i.stock})`).join(", ")}
+              </span>
+            </div>
+          )}
+
           {/* Cart items */}
           <div className="flex-1 overflow-y-auto">
             {cart.length === 0 ? (
@@ -562,13 +643,20 @@ export default function PosPage() {
                     key={item.id}
                     className={cn(
                       "px-4 py-3 flex items-center gap-3 transition-colors duration-300",
-                      flashItem === item.id && "bg-primary/10"
+                      flashItem === item.id && "bg-primary/10",
+                      item.qty > item.stock && "bg-warning/5"
                     )}
                   >
                     <ProductIcon name={item.name} category={item.category} size="sm" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate">{item.name}</p>
                       <p className="text-xs text-muted-foreground">{item.price.toLocaleString()} F × {item.qty}</p>
+                      {item.qty > item.stock && (
+                        <p className="text-[10px] text-warning flex items-center gap-0.5 mt-0.5">
+                          <AlertTriangle className="w-2.5 h-2.5" />
+                          Stock : {item.stock}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <button
@@ -656,17 +744,31 @@ export default function PosPage() {
                   )}
 
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setShowPayment(false)} className="flex-1">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowPayment(false)}
+                      className="flex-1"
+                      disabled={saleMutation.isPending}
+                    >
                       <X className="w-4 h-4 mr-1" />
                       Retour
                     </Button>
                     <Button
                       onClick={handlePayment}
-                      disabled={Number(amountGiven) < total}
+                      disabled={Number(amountGiven) < total || saleMutation.isPending || stockWarnings.length > 0}
                       className="flex-1"
                     >
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Valider
+                      {saleMutation.isPending ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                          Enregistrement…
+                        </span>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Valider
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>

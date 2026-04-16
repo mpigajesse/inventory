@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   AlertTriangle,
@@ -10,178 +10,25 @@ import {
   X,
   CheckCheck,
   ShoppingCart,
+  Loader2,
 } from "lucide-react";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/ui/StatCard";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/use-toast";
+import {
+  notificationService,
+  type Notification,
+} from "@/services/notificationService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+import { useState } from "react";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type NotifType = "stock_critique" | "stock_bas" | "vente" | "facture" | "systeme" | "utilisateur";
-
-interface Notification {
-  id: number;
-  type: NotifType;
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  actionUrl?: string;
-}
-
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  {
-    id: 1,
-    type: "stock_critique",
-    title: "Stock critique — Lait Nido 400g",
-    message: "Il ne reste que 2 unités. Réapprovisionnement urgent nécessaire.",
-    timestamp: "2026-04-16T08:15:00",
-    read: false,
-    actionUrl: "/stock",
-  },
-  {
-    id: 2,
-    type: "vente",
-    title: "Vente enregistrée",
-    message: "Vente N°VNT-024 validée pour 45 000 FCFA (3 articles).",
-    timestamp: "2026-04-16T09:32:00",
-    read: false,
-    actionUrl: "/invoices",
-  },
-  {
-    id: 3,
-    type: "stock_critique",
-    title: "Stock critique — Riz Uncle Ben's 5kg",
-    message: "Il ne reste que 1 unité. Rupture imminente.",
-    timestamp: "2026-04-16T09:50:00",
-    read: false,
-    actionUrl: "/stock",
-  },
-  {
-    id: 4,
-    type: "utilisateur",
-    title: "Nouvel utilisateur créé",
-    message: "Le compte caissier 'Marie Obiang' a été créé avec succès.",
-    timestamp: "2026-04-16T10:05:00",
-    read: false,
-    actionUrl: "/users",
-  },
-  {
-    id: 5,
-    type: "facture",
-    title: "Facture impayée — Client Épicerie Centrale",
-    message: "La facture FAC-0187 de 128 500 FCFA est en retard de 7 jours.",
-    timestamp: "2026-04-16T10:30:00",
-    read: false,
-    actionUrl: "/invoices",
-  },
-  {
-    id: 6,
-    type: "stock_bas",
-    title: "Stock bas — Huile Dinor 1L",
-    message: "Stock actuel : 5 unités (seuil minimum : 15).",
-    timestamp: "2026-04-16T11:00:00",
-    read: true,
-    actionUrl: "/stock",
-  },
-  {
-    id: 7,
-    type: "vente",
-    title: "Vente enregistrée",
-    message: "Vente N°VNT-025 validée pour 12 500 FCFA (1 article).",
-    timestamp: "2026-04-16T11:20:00",
-    read: true,
-    actionUrl: "/invoices",
-  },
-  {
-    id: 8,
-    type: "systeme",
-    title: "Sauvegarde automatique effectuée",
-    message: "Les données ont été sauvegardées avec succès à 11h00.",
-    timestamp: "2026-04-16T11:00:00",
-    read: true,
-  },
-  {
-    id: 9,
-    type: "stock_bas",
-    title: "Stock bas — Savon Palmolive",
-    message: "Stock actuel : 4 unités (seuil minimum : 12).",
-    timestamp: "2026-04-15T17:45:00",
-    read: true,
-    actionUrl: "/stock",
-  },
-  {
-    id: 10,
-    type: "facture",
-    title: "Facture payée — Client Supermarché Gabonais",
-    message: "La facture FAC-0183 de 75 000 FCFA a été réglée.",
-    timestamp: "2026-04-15T16:10:00",
-    read: true,
-    actionUrl: "/invoices",
-  },
-  {
-    id: 11,
-    type: "systeme",
-    title: "Mise à jour disponible",
-    message: "Une nouvelle version de l'application est disponible. Actualisez pour bénéficier des améliorations.",
-    timestamp: "2026-04-15T14:00:00",
-    read: true,
-  },
-  {
-    id: 12,
-    type: "vente",
-    title: "Vente enregistrée",
-    message: "Vente N°VNT-023 validée pour 78 000 FCFA (5 articles).",
-    timestamp: "2026-04-15T13:08:00",
-    read: true,
-    actionUrl: "/invoices",
-  },
-  {
-    id: 13,
-    type: "stock_critique",
-    title: "Stock critique — Farine Moulins Gabon 1kg",
-    message: "Il ne reste que 3 unités. Action requise rapidement.",
-    timestamp: "2026-04-15T10:55:00",
-    read: true,
-    actionUrl: "/stock",
-  },
-  {
-    id: 14,
-    type: "utilisateur",
-    title: "Connexion suspecte détectée",
-    message: "Une connexion depuis un nouvel appareil a été enregistrée pour l'admin.",
-    timestamp: "2026-04-15T09:20:00",
-    read: true,
-    actionUrl: "/users",
-  },
-  {
-    id: 15,
-    type: "stock_bas",
-    title: "Stock bas — Sucre en poudre 1kg",
-    message: "Stock actuel : 8 unités (seuil minimum : 20).",
-    timestamp: "2026-04-14T16:30:00",
-    read: true,
-    actionUrl: "/stock",
-  },
-  {
-    id: 16,
-    type: "facture",
-    title: "Rappel — Facture FAC-0180 en attente",
-    message: "La facture de 43 000 FCFA n'a pas encore été réglée.",
-    timestamp: "2026-04-14T09:00:00",
-    read: true,
-    actionUrl: "/invoices",
-  },
-  {
-    id: 17,
-    type: "systeme",
-    title: "Rapport journalier généré",
-    message: "Le rapport du 14/04/2026 est disponible : 24 ventes, 215 000 FCFA.",
-    timestamp: "2026-04-14T23:59:00",
-    read: true,
-  },
-];
-
 type TabKey = "toutes" | "non_lues" | "stock" | "ventes" | "systeme";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const TAB_LABELS: Record<TabKey, string> = {
   toutes: "Toutes",
@@ -191,7 +38,7 @@ const TAB_LABELS: Record<TabKey, string> = {
   systeme: "Système",
 };
 
-const TYPE_ICON: Record<NotifType, React.ComponentType<{ className?: string }>> = {
+const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
   stock_critique: AlertTriangle,
   stock_bas: Package,
   vente: ShoppingCart,
@@ -200,7 +47,7 @@ const TYPE_ICON: Record<NotifType, React.ComponentType<{ className?: string }>> 
   utilisateur: UserCog,
 };
 
-const TYPE_COLOR: Record<NotifType, string> = {
+const TYPE_COLOR: Record<string, string> = {
   stock_critique: "text-destructive bg-destructive/10",
   stock_bas: "text-warning bg-warning/10",
   vente: "text-success bg-success/10",
@@ -209,8 +56,33 @@ const TYPE_COLOR: Record<NotifType, string> = {
   utilisateur: "text-purple-500 bg-purple-500/10",
 };
 
+// Map API notification_type to our internal notif type for icon/color resolution
+const NOTIF_TYPE_MAP: Record<string, NotifType> = {
+  stock_critique: "stock_critique",
+  low_stock: "stock_bas",
+  sale: "vente",
+  invoice: "facture",
+  system: "systeme",
+  user: "utilisateur",
+};
+
+// Map API notification_type to action URL
+const ACTION_URL_MAP: Record<string, string> = {
+  stock_critique: "/stock",
+  low_stock: "/stock",
+  sale: "/invoices",
+  invoice: "/invoices",
+  user: "/users",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function resolveType(notification_type: string): NotifType {
+  return NOTIF_TYPE_MAP[notification_type] ?? "systeme";
+}
+
 function relativeTime(isoString: string): string {
-  const now = new Date("2026-04-16T12:00:00");
+  const now = new Date();
   const date = new Date(isoString);
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
@@ -228,69 +100,122 @@ function relativeTime(isoString: string): string {
 function filterByTab(notifications: Notification[], tab: TabKey): Notification[] {
   switch (tab) {
     case "non_lues":
-      return notifications.filter((n) => !n.read);
+      return notifications.filter((n) => !n.is_read);
     case "stock":
-      return notifications.filter((n) => n.type === "stock_critique" || n.type === "stock_bas");
+      return notifications.filter(
+        (n) => n.notification_type === "stock_critique" || n.notification_type === "low_stock"
+      );
     case "ventes":
-      return notifications.filter((n) => n.type === "vente" || n.type === "facture");
+      return notifications.filter(
+        (n) => n.notification_type === "sale" || n.notification_type === "invoice"
+      );
     case "systeme":
-      return notifications.filter((n) => n.type === "systeme" || n.type === "utilisateur");
+      return notifications.filter(
+        (n) => n.notification_type === "system" || n.notification_type === "user"
+      );
     default:
       return notifications;
   }
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function NotificationsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [activeTab, setActiveTab] = useState<TabKey>("toutes");
   const [removingId, setRemovingId] = useState<number | null>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // ── Queries & mutations ────────────────────────────────────────────────────
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => notificationService.getAll(),
+    refetchInterval: 60_000, // refresh every minute
+  });
+
+  const notifications: Notification[] = data?.results ?? [];
+
+  const markReadMutation = useMutation({
+    mutationFn: (id: number) => notificationService.markRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: () => {
+      toast({ title: "Impossible de marquer comme lu", variant: "destructive" });
+    },
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => notificationService.markAllRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast({ title: "Toutes les notifications marquées comme lues." });
+    },
+    onError: () => {
+      toast({ title: "Erreur lors de la mise à jour", variant: "destructive" });
+    },
+  });
+
+  // ── Derived values ─────────────────────────────────────────────────────────
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
   const stockAlertCount = notifications.filter(
-    (n) => n.type === "stock_critique" || n.type === "stock_bas"
+    (n) => n.notification_type === "stock_critique" || n.notification_type === "low_stock"
   ).length;
+  const todayStr = new Date().toISOString().slice(0, 10);
   const salesTodayCount = notifications.filter(
-    (n) => n.type === "vente" && n.timestamp.startsWith("2026-04-16")
+    (n) => n.notification_type === "sale" && n.created_at.startsWith(todayStr)
   ).length;
 
   const tabCounts: Record<TabKey, number> = {
     toutes: notifications.length,
     non_lues: unreadCount,
-    stock: notifications.filter((n) => n.type === "stock_critique" || n.type === "stock_bas").length,
-    ventes: notifications.filter((n) => n.type === "vente" || n.type === "facture").length,
-    systeme: notifications.filter((n) => n.type === "systeme" || n.type === "utilisateur").length,
+    stock: notifications.filter(
+      (n) => n.notification_type === "stock_critique" || n.notification_type === "low_stock"
+    ).length,
+    ventes: notifications.filter(
+      (n) => n.notification_type === "sale" || n.notification_type === "invoice"
+    ).length,
+    systeme: notifications.filter(
+      (n) => n.notification_type === "system" || n.notification_type === "user"
+    ).length,
   };
 
   const displayed = filterByTab(notifications, activeTab);
 
-  const markAsRead = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
+  // ── Handlers ───────────────────────────────────────────────────────────────
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
+  function handleMarkAllRead() {
+    if (markAllReadMutation.isPending) return;
+    markAllReadMutation.mutate();
+  }
 
-  const deleteNotification = (id: number, e: React.MouseEvent) => {
+  function handleNotifClick(notif: Notification) {
+    if (!notif.is_read) {
+      markReadMutation.mutate(notif.id);
+    }
+    const url = ACTION_URL_MAP[notif.notification_type];
+    if (url) {
+      navigate(url);
+    }
+  }
+
+  function handleDelete(id: number, e: React.MouseEvent) {
     e.stopPropagation();
     setRemovingId(id);
+    // Optimistically hide then invalidate — no dedicated delete endpoint assumed.
+    // If the API provides one, call it here.
     setTimeout(() => {
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
       setRemovingId(null);
+      // mark read as a proxy for "dismiss"
+      markReadMutation.mutate(id);
     }, 300);
-  };
+  }
 
-  const handleNotifClick = (notif: Notification) => {
-    markAsRead(notif.id);
-    if (notif.actionUrl) {
-      navigate(notif.actionUrl);
-    }
-  };
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -346,13 +271,25 @@ export default function NotificationsPage() {
         <div className="bg-card rounded-lg border">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b">
-            <h2 className="text-sm font-semibold">Centre de notifications</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold">Centre de notifications</h2>
+              {unreadCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
             {unreadCount > 0 && (
               <button
-                onClick={markAllAsRead}
-                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                onClick={handleMarkAllRead}
+                disabled={markAllReadMutation.isPending}
+                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors disabled:opacity-50"
               >
-                <CheckCheck className="w-3.5 h-3.5" />
+                {markAllReadMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <CheckCheck className="w-3.5 h-3.5" />
+                )}
                 Tout marquer comme lu
               </button>
             )}
@@ -390,80 +327,100 @@ export default function NotificationsPage() {
             ))}
           </div>
 
-          {/* List */}
-          <div className="divide-y divide-border">
-            {displayed.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <Bell className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm">Aucune notification dans cette catégorie</p>
-              </div>
-            ) : (
-              displayed.map((notif) => {
-                const Icon = TYPE_ICON[notif.type];
-                const colorClass = TYPE_COLOR[notif.type];
-                return (
-                  <div
-                    key={notif.id}
-                    onClick={() => handleNotifClick(notif)}
-                    className={cn(
-                      "group relative flex items-start gap-4 px-5 py-4 cursor-pointer transition-all duration-300 overflow-hidden",
-                      notif.read
-                        ? "hover:bg-muted/40"
-                        : "bg-primary/[0.03] hover:bg-primary/[0.06]",
-                      removingId === notif.id && "opacity-0 scale-95 max-h-0 py-0"
-                    )}
-                  >
-                    {/* Unread dot */}
-                    <span
-                      className={cn(
-                        "absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary transition-all duration-300",
-                        notif.read ? "opacity-0 scale-0" : "opacity-100 scale-100"
-                      )}
-                    />
+          {/* Loading / error */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm">Chargement des notifications…</span>
+            </div>
+          )}
 
-                    {/* Icon */}
+          {isError && !isLoading && (
+            <div className="flex items-center justify-center py-16 text-destructive text-sm">
+              Impossible de charger les notifications.
+            </div>
+          )}
+
+          {/* List */}
+          {!isLoading && !isError && (
+            <div className="divide-y divide-border">
+              {displayed.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <Bell className="w-10 h-10 mb-3 opacity-30" />
+                  <p className="text-sm">Aucune notification dans cette catégorie</p>
+                </div>
+              ) : (
+                displayed.map((notif) => {
+                  const resolvedType = resolveType(notif.notification_type);
+                  const Icon = TYPE_ICON[resolvedType] ?? Settings;
+                  const colorClass = TYPE_COLOR[resolvedType] ?? TYPE_COLOR["systeme"];
+
+                  return (
                     <div
+                      key={notif.id}
+                      onClick={() => handleNotifClick(notif)}
                       className={cn(
-                        "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
-                        colorClass
+                        "group relative flex items-start gap-4 px-5 py-4 cursor-pointer transition-all duration-300 overflow-hidden",
+                        notif.is_read
+                          ? "hover:bg-muted/40"
+                          : "bg-primary/[0.03] hover:bg-primary/[0.06]",
+                        removingId === notif.id && "opacity-0 scale-95 max-h-0 py-0"
                       )}
                     >
-                      <Icon className="w-4 h-4" />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <p
+                      {/* Unread dot */}
+                      <span
                         className={cn(
-                          "text-sm leading-snug",
-                          notif.read ? "font-normal text-foreground" : "font-semibold text-foreground"
+                          "absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary transition-all duration-300",
+                          notif.is_read ? "opacity-0 scale-0" : "opacity-100 scale-100"
+                        )}
+                      />
+
+                      {/* Icon */}
+                      <div
+                        className={cn(
+                          "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                          colorClass
                         )}
                       >
-                        {notif.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                        {notif.message}
-                      </p>
-                    </div>
+                        <Icon className="w-4 h-4" />
+                      </div>
 
-                    {/* Timestamp + delete */}
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                        {relativeTime(notif.timestamp)}
-                      </span>
-                      <button
-                        onClick={(e) => deleteNotification(notif.id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted transition-all"
-                        aria-label="Supprimer"
-                      >
-                        <X className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={cn(
+                            "text-sm leading-snug",
+                            notif.is_read
+                              ? "font-normal text-foreground"
+                              : "font-semibold text-foreground"
+                          )}
+                        >
+                          {notif.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          {notif.message}
+                        </p>
+                      </div>
+
+                      {/* Timestamp + dismiss */}
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                          {relativeTime(notif.created_at)}
+                        </span>
+                        <button
+                          onClick={(e) => handleDelete(notif.id, e)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted transition-all"
+                          aria-label="Supprimer"
+                        >
+                          <X className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>

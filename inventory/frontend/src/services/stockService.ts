@@ -52,6 +52,11 @@ export const stockService = {
       .post<StockItem>(`/stock/${stockId}/adjust/`, data)
       .then((res) => res.data),
 
+  updateThresholds: (stockId: number, data: { min_threshold?: number; max_threshold?: number }) =>
+    api
+      .patch<StockItem>(`/stock/${stockId}/thresholds/`, data)
+      .then((res) => res.data),
+
   getMovements: (params?: Record<string, string>) =>
     api
       .get<PaginatedResponse<StockMovement>>('/stock/movements/', { params })

@@ -38,13 +38,18 @@ class DashboardStatsView(APIView):
         total_products = Product.objects.filter(is_active=True).count()
         total_clients = Client.objects.filter(is_active=True).count()
 
-        sales_by_day = list(
-            Sale.objects.filter(created_at__date__gte=week_ago)
+        sales_by_day = [
+            {
+                'day': row['day'].isoformat(),
+                'total': row['total'],
+                'count': row['count'],
+            }
+            for row in Sale.objects.filter(created_at__date__gte=week_ago)
             .annotate(day=TruncDate('created_at'))
             .values('day')
             .annotate(total=Sum('total_amount'), count=Count('id'))
             .order_by('day')
-        )
+        ]
 
         top_products = list(
             SaleItem.objects.filter(sale__created_at__date__gte=month_ago)

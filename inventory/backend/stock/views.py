@@ -25,6 +25,27 @@ class StockViewSet(viewsets.ReadOnlyModelViewSet):
         stocks = self.get_queryset().filter(quantity__lte=F('min_threshold'))
         return Response(StockSerializer(stocks, many=True).data)
 
+    @action(detail=True, methods=['patch'], url_path='thresholds')
+    def update_thresholds(self, request, pk=None):
+        """Met à jour les seuils min/max d'un stock."""
+        stock = self.get_object()
+        min_threshold = request.data.get('min_threshold')
+        max_threshold = request.data.get('max_threshold')
+        if min_threshold is None and max_threshold is None:
+            return Response(
+                {'detail': 'Au moins un seuil (min_threshold ou max_threshold) est requis.'},
+                status=400,
+            )
+        if min_threshold is not None:
+            stock.min_threshold = int(min_threshold)
+        if max_threshold is not None:
+            stock.max_threshold = int(max_threshold)
+        stock.save(update_fields=[
+            f for f in ('min_threshold', 'max_threshold')
+            if request.data.get(f) is not None
+        ])
+        return Response(StockSerializer(stock).data)
+
     @action(detail=True, methods=['post'], url_path='adjust')
     def adjust(self, request, pk=None):
         """Applique une entrée, sortie ou correction sur un stock."""

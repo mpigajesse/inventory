@@ -1,24 +1,58 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, Eye, EyeOff, Shield, ShoppingBag } from "lucide-react";
+import { Package, Eye, EyeOff, Shield, ShoppingBag, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { MOCK_ADMIN, MOCK_VENDEUR } from "@/contexts/AuthContext";
+import type { User } from "@/contexts/AuthContext";
+
+// Local demo constants — not exported from AuthContext anymore
+const MOCK_ADMIN: User = {
+  id: '1',
+  name: 'Admin Principal',
+  email: 'admin@naoservices.ga',
+  role: 'admin',
+};
+
+const MOCK_VENDEUR: User = {
+  id: '2',
+  name: 'Marie Vendeur',
+  email: 'marie@naoservices.ga',
+  role: 'vendeur',
+};
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const { setCurrentUser } = useAuth();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { login, setCurrentUser } = useAuth();
   const navigate = useNavigate();
 
-  function loginAs(role: "admin" | "vendeur") {
-    if (role === "admin") {
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await login(username, password);
+      navigate('/dashboard');
+    } catch {
+      setError('Identifiants incorrects. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function loginAs(role: 'admin' | 'vendeur') {
+    if (role === 'admin') {
       setCurrentUser(MOCK_ADMIN);
-      navigate("/dashboard");
+      navigate('/dashboard');
     } else {
       setCurrentUser(MOCK_VENDEUR);
-      navigate("/vendeur/dashboard");
+      navigate('/vendeur/dashboard');
     }
   }
 
@@ -34,29 +68,59 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-card rounded-lg border p-4 sm:p-6">
-          <div className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label className="text-xs">Email</Label>
-              <Input type="email" placeholder="admin@naoservices.ga" className="mt-1.5" />
+              <Label className="text-xs" htmlFor="username">Identifiant</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="admin"
+                className="mt-1.5"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                disabled={isSubmitting}
+                autoComplete="username"
+              />
             </div>
             <div>
-              <Label className="text-xs">Mot de passe</Label>
+              <Label className="text-xs" htmlFor="password">Mot de passe</Label>
               <div className="relative mt-1.5">
-                <Input type={showPassword ? "text" : "password"} placeholder="Votre mot de passe" />
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Votre mot de passe"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
-            <Button className="w-full" onClick={() => loginAs("admin")}>
-              Se connecter
+
+            {error && (
+              <p className="text-xs text-destructive">{error}</p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Connexion en cours…
+                </>
+              ) : (
+                'Se connecter'
+              )}
             </Button>
-          </div>
+          </form>
         </div>
 
         {/* Connexion rapide — comptes de démonstration */}
@@ -69,7 +133,7 @@ export default function LoginPage() {
 
           <div className="space-y-2.5">
             <button
-              onClick={() => loginAs("admin")}
+              onClick={() => loginAs('admin')}
               className="w-full flex items-center gap-3 p-3 rounded-lg border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
             >
               <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
@@ -85,7 +149,7 @@ export default function LoginPage() {
             </button>
 
             <button
-              onClick={() => loginAs("vendeur")}
+              onClick={() => loginAs('vendeur')}
               className="w-full flex items-center gap-3 p-3 rounded-lg border bg-card hover:border-secondary/60 hover:bg-secondary/20 transition-all text-left group"
             >
               <div className="w-9 h-9 rounded-full bg-secondary/50 flex items-center justify-center shrink-0 group-hover:bg-secondary transition-colors">

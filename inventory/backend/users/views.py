@@ -2,13 +2,22 @@ from django.contrib.auth.models import User
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import UserProfile
-from .serializers import UserSerializer, UserCreateSerializer, ChangePasswordSerializer, MeSerializer
+from .serializers import (
+    UserSerializer, UserCreateSerializer, ChangePasswordSerializer,
+    MeSerializer, CustomTokenObtainPairSerializer,
+)
 
 
 class IsAdminRole(permissions.BasePermission):
     def has_permission(self, request, view):
         return hasattr(request.user, 'profile') and request.user.profile.role == 'admin'
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -37,7 +46,7 @@ class MeView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        return self.request.user
+        return User.objects.select_related('profile').get(pk=self.request.user.pk)
 
 
 class ChangePasswordView(generics.UpdateAPIView):
@@ -55,6 +64,13 @@ class ChangePasswordView(generics.UpdateAPIView):
             )
         user.set_password(serializer.validated_data['new_password'])
         user.save()
+        # Blacklist the current refresh token so existing sessions are invalidated
+        refresh_token = request.data.get('refresh')
+        if refresh_token:
+            try:
+                RefreshToken(refresh_token).blacklist()
+            except TokenError:
+                pass
         return Response({'detail': 'Mot de passe modifié avec succès.'})
 
 
@@ -62,10 +78,18 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response(
+                {'detail': 'Le token de rafraîchissement est requis.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
-            refresh_token = request.data.get('refresh')
             token = RefreshToken(refresh_token)
             token.blacklist()
-        except Exception:
-            pass
+        except TokenError:
+            return Response(
+                {'detail': 'Token invalide ou déjà révoqué.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response({'detail': 'Déconnexion réussie.'})

@@ -3,6 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { PageTransition } from "./PageTransition";
 import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface AppLayoutContext {
@@ -11,16 +12,12 @@ export interface AppLayoutContext {
 }
 
 export function AppLayout() {
-  const { currentUser } = useAuth();
+  const { currentUser, isLoading } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
 
-  if (currentUser?.role === "vendeur") {
-    return <Navigate to="/vendeur/dashboard" replace />;
-  }
-
-  // Global Ctrl+K listener — opens the command palette from anywhere
+  // Global Ctrl+K listener — must be before any early return (Rules of Hooks)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -31,6 +28,22 @@ export function AppLayout() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/auth/login" replace />;
+  }
+
+  if (currentUser.role === "vendeur") {
+    return <Navigate to="/vendeur/dashboard" replace />;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">

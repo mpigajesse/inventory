@@ -1,11 +1,14 @@
 import { useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TableToolbar, exportToCsv } from "@/components/ui/TableToolbar";
 import { TablePagination } from "@/components/ui/TablePagination";
 import { SortableHeader } from "@/components/ui/SortableHeader";
 import { useTableManager } from "@/hooks/useTableManager";
+import { activityService } from "@/services/activityService";
+import type { ActivityLog } from "@/services/activityService";
 import {
   LogIn,
   ShoppingBag,
@@ -23,37 +26,52 @@ type ActionType = "vente" | "stock" | "produit" | "connexion" | "système";
 interface LogEntry {
   id: string;
   date: string;
-  dateSort: number; // timestamp pour le tri
+  dateSort: number;
   user: string;
   actionType: ActionType;
   action: string;
   detail: string;
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const MOCK_LOGS: LogEntry[] = [
-  { id: "log-01", date: "14/04/2026 14:20", dateSort: 20260414_1420, user: "Fatou Mbaye", actionType: "vente", action: "Vente enregistrée", detail: "VNT-005 — 56 500 FCFA (4 articles)" },
-  { id: "log-02", date: "14/04/2026 13:08", dateSort: 20260414_1308, user: "Moussa Diallo", actionType: "vente", action: "Vente enregistrée", detail: "VNT-004 — 23 000 FCFA (2 articles)" },
-  { id: "log-03", date: "14/04/2026 11:42", dateSort: 20260414_1142, user: "Fatou Mbaye", actionType: "vente", action: "Vente enregistrée", detail: "VNT-003 — 78 000 FCFA (5 articles)" },
-  { id: "log-04", date: "14/04/2026 11:30", dateSort: 20260414_1130, user: "Admin Principal", actionType: "stock", action: "Mise à jour stock", detail: "Lait Nido 400g : 12 → 3 unités" },
-  { id: "log-05", date: "14/04/2026 10:15", dateSort: 20260414_1015, user: "Moussa Diallo", actionType: "vente", action: "Vente enregistrée", detail: "VNT-002 — 12 500 FCFA (1 article)" },
-  { id: "log-06", date: "14/04/2026 09:00", dateSort: 20260414_0900, user: "Fatou Mbaye", actionType: "connexion", action: "Connexion", detail: "Session ouverte depuis 192.168.1.12" },
-  { id: "log-07", date: "14/04/2026 08:45", dateSort: 20260414_0845, user: "Admin Principal", actionType: "produit", action: "Nouveau produit", detail: "Eau Tangui 1.5L ajouté au catalogue" },
-  { id: "log-08", date: "14/04/2026 08:30", dateSort: 20260414_0830, user: "Admin Principal", actionType: "connexion", action: "Connexion", detail: "Session ouverte depuis 192.168.1.1" },
-  { id: "log-09", date: "13/04/2026 18:45", dateSort: 20260413_1845, user: "Moussa Diallo", actionType: "connexion", action: "Déconnexion", detail: "Session fermée après 10h05" },
-  { id: "log-10", date: "13/04/2026 17:00", dateSort: 20260413_1700, user: "Admin Principal", actionType: "produit", action: "Produit modifié", detail: "Huile Dinor 1L — prix : 2 500 → 2 700 FCFA" },
-  { id: "log-11", date: "13/04/2026 15:30", dateSort: 20260413_1530, user: "Moussa Diallo", actionType: "vente", action: "Vente enregistrée", detail: "VNT-001 — 45 000 FCFA (3 articles)" },
-  { id: "log-12", date: "13/04/2026 14:00", dateSort: 20260413_1400, user: "Admin Principal", actionType: "stock", action: "Mise à jour stock", detail: "Riz Uncle Ben's 5kg : 10 → 2 unités" },
-  { id: "log-13", date: "13/04/2026 12:00", dateSort: 20260413_1200, user: "Système", actionType: "système", action: "Sauvegarde automatique", detail: "Sauvegarde complète effectuée avec succès" },
-  { id: "log-14", date: "13/04/2026 10:20", dateSort: 20260413_1020, user: "Admin Principal", actionType: "produit", action: "Produit désactivé", detail: "Biscuits Belvita — stock épuisé" },
-  { id: "log-15", date: "13/04/2026 09:15", dateSort: 20260413_0915, user: "Aïcha Nkoghe", actionType: "connexion", action: "Connexion", detail: "Session ouverte depuis 192.168.1.15" },
-  { id: "log-16", date: "13/04/2026 08:00", dateSort: 20260413_0800, user: "Moussa Diallo", actionType: "connexion", action: "Connexion", detail: "Session ouverte depuis 192.168.1.10" },
-  { id: "log-17", date: "12/04/2026 17:45", dateSort: 20260412_1745, user: "Système", actionType: "système", action: "Alerte stock bas", detail: "4 produits sous le seuil minimum" },
-  { id: "log-18", date: "12/04/2026 16:30", dateSort: 20260412_1630, user: "Admin Principal", actionType: "stock", action: "Réapprovisionnement", detail: "Savon Palmolive : +50 unités reçues" },
-  { id: "log-19", date: "12/04/2026 11:00", dateSort: 20260412_1100, user: "Admin Principal", actionType: "produit", action: "Nouveau produit", detail: "Biscuits Belvita — code-barres 8712345000012" },
-  { id: "log-20", date: "12/04/2026 08:30", dateSort: 20260412_0830, user: "Admin Principal", actionType: "connexion", action: "Connexion", detail: "Session ouverte depuis 192.168.1.1" },
-];
+function resolveActionType(action: string, targetModel: string): ActionType {
+  const model = targetModel?.toLowerCase() ?? "";
+  const act = action?.toLowerCase() ?? "";
+
+  if (model === "sale" || model === "saleitem") return "vente";
+  if (model === "product") return "produit";
+  if (model === "stock" || model === "stockmovement") return "stock";
+  if (act === "login" || act === "logout") return "connexion";
+  return "système";
+}
+
+function formatDate(isoDate: string): string {
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return isoDate;
+  return d.toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function toLogEntry(log: ActivityLog): LogEntry {
+  const actionType = resolveActionType(log.action, log.target_model);
+  return {
+    id: String(log.id),
+    date: formatDate(log.created_at),
+    dateSort: new Date(log.created_at).getTime(),
+    user: log.user_name,
+    actionType,
+    action: log.action,
+    detail: log.description,
+  };
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACTION_TYPE_OPTIONS = [
   { value: "vente", label: "Ventes" },
@@ -62,11 +80,6 @@ const ACTION_TYPE_OPTIONS = [
   { value: "connexion", label: "Connexions" },
   { value: "système", label: "Système" },
 ];
-
-const USER_OPTIONS = [...new Set(MOCK_LOGS.map((l) => l.user))].map((u) => ({
-  value: u,
-  label: u,
-}));
 
 const CSV_COLUMNS = [
   { key: "date", label: "Date / Heure" },
@@ -104,20 +117,37 @@ export default function ActivityLogPage() {
   const [userFilter, setUserFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['activity'],
+    queryFn: () => activityService.getAll(),
+  });
+
+  // Map API logs to display entries
+  const allLogs: LogEntry[] = useMemo(
+    () => (data?.results ?? []).map(toLogEntry),
+    [data]
+  );
+
+  // Derive unique user options from loaded data
+  const userOptions = useMemo(
+    () => [...new Set(allLogs.map((l) => l.user))].map((u) => ({ value: u, label: u })),
+    [allLogs]
+  );
+
   // Pre-filter by type, user, and date before passing to useTableManager
   const preFiltered = useMemo(() => {
-    return MOCK_LOGS.filter((entry) => {
+    return allLogs.filter((entry) => {
       if (typeFilter && entry.actionType !== typeFilter) return false;
       if (userFilter && entry.user !== userFilter) return false;
       if (dateFilter) {
-        // dateFilter is YYYY-MM-DD, date in DD/MM/YYYY
+        // dateFilter is YYYY-MM-DD, date in DD/MM/YYYY HH:MM
         const [day, month, year] = entry.date.split(" ")[0].split("/");
         const entryDate = `${year}-${month}-${day}`;
         if (entryDate !== dateFilter) return false;
       }
       return true;
     });
-  }, [typeFilter, userFilter, dateFilter]);
+  }, [allLogs, typeFilter, userFilter, dateFilter]);
 
   const {
     paginated,
@@ -168,11 +198,20 @@ export default function ActivityLogPage() {
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-primary" />
             <span className="text-sm text-muted-foreground">
-              {totalItems} entrée{totalItems > 1 ? "s" : ""}
-              {hasActiveFilters ? " (filtrées)" : ""}
+              {isLoading
+                ? "Chargement…"
+                : isError
+                ? "Erreur de chargement"
+                : `${totalItems} entrée${totalItems > 1 ? "s" : ""}${hasActiveFilters ? " (filtrées)" : ""}`}
             </span>
           </div>
         </div>
+
+        {isError && (
+          <p className="text-sm text-destructive mb-4">
+            Impossible de charger le journal d'activité. Vérifiez votre connexion.
+          </p>
+        )}
 
         {/* ── Filtres ── */}
         <div className="flex flex-wrap gap-3 mb-4 p-3 bg-card border rounded-lg">
@@ -200,7 +239,7 @@ export default function ActivityLogPage() {
               className="h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer min-w-[160px]"
             >
               <option value="">Tous les utilisateurs</option>
-              {USER_OPTIONS.map((opt) => (
+              {userOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -259,36 +298,43 @@ export default function ActivityLogPage() {
                 </tr>
               </thead>
               <tbody>
-                {typedPaginated.length === 0 && (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                      Chargement…
+                    </td>
+                  </tr>
+                ) : typedPaginated.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="text-center py-8 text-muted-foreground">
                       Aucune entrée ne correspond aux filtres sélectionnés.
                     </td>
                   </tr>
+                ) : (
+                  typedPaginated.map((entry) => (
+                    <tr key={entry.id}>
+                      <td>
+                        <ActionTypeIcon type={entry.actionType} />
+                      </td>
+                      <td className="text-muted-foreground text-xs whitespace-nowrap">{entry.date}</td>
+                      <td>
+                        <span className="font-medium text-sm">{entry.user}</span>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <StatusBadge
+                            label={ACTION_CONFIG[entry.actionType].badge.label}
+                            variant={ACTION_CONFIG[entry.actionType].badge.variant}
+                          />
+                          <span className="text-sm">{entry.action}</span>
+                        </div>
+                      </td>
+                      <td className="text-muted-foreground text-xs max-w-xs truncate" title={entry.detail}>
+                        {entry.detail}
+                      </td>
+                    </tr>
+                  ))
                 )}
-                {typedPaginated.map((entry) => (
-                  <tr key={entry.id}>
-                    <td>
-                      <ActionTypeIcon type={entry.actionType} />
-                    </td>
-                    <td className="text-muted-foreground text-xs whitespace-nowrap">{entry.date}</td>
-                    <td>
-                      <span className="font-medium text-sm">{entry.user}</span>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge
-                          label={ACTION_CONFIG[entry.actionType].badge.label}
-                          variant={ACTION_CONFIG[entry.actionType].badge.variant}
-                        />
-                        <span className="text-sm">{entry.action}</span>
-                      </div>
-                    </td>
-                    <td className="text-muted-foreground text-xs max-w-xs truncate" title={entry.detail}>
-                      {entry.detail}
-                    </td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </div>
@@ -296,32 +342,35 @@ export default function ActivityLogPage() {
 
         {/* Mobile : card list */}
         <div className="md:hidden space-y-2">
-          {typedPaginated.length === 0 && (
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">Chargement…</div>
+          ) : typedPaginated.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               Aucune entrée ne correspond aux filtres sélectionnés.
             </div>
-          )}
-          {typedPaginated.map((entry) => (
-            <div key={entry.id} className="bg-card border rounded-lg p-3">
-              <div className="flex items-start justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <ActionTypeIcon type={entry.actionType} />
-                  <span className="font-medium text-sm truncate">{entry.action}</span>
+          ) : (
+            typedPaginated.map((entry) => (
+              <div key={entry.id} className="bg-card border rounded-lg p-3">
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ActionTypeIcon type={entry.actionType} />
+                    <span className="font-medium text-sm truncate">{entry.action}</span>
+                  </div>
+                  <StatusBadge
+                    label={ACTION_CONFIG[entry.actionType].badge.label}
+                    variant={ACTION_CONFIG[entry.actionType].badge.variant}
+                  />
                 </div>
-                <StatusBadge
-                  label={ACTION_CONFIG[entry.actionType].badge.label}
-                  variant={ACTION_CONFIG[entry.actionType].badge.variant}
-                />
+                <p className="text-xs text-muted-foreground mb-1.5 truncate" title={entry.detail}>
+                  {entry.detail}
+                </p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">{entry.user}</span>
+                  <span className="whitespace-nowrap">{entry.date}</span>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mb-1.5 truncate" title={entry.detail}>
-                {entry.detail}
-              </p>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">{entry.user}</span>
-                <span className="whitespace-nowrap">{entry.date}</span>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* ── Pagination ── */}

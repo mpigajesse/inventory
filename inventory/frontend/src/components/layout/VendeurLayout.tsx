@@ -1,15 +1,28 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { VendeurSidebar } from "./VendeurSidebar";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function VendeurLayout() {
-  const { currentUser } = useAuth();
+  const { currentUser, isLoading } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  if (currentUser?.role === "admin") {
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/auth/login" replace />;
+  }
+
+  if (currentUser.role === "admin") {
     return <Navigate to="/dashboard" replace />;
   }
 

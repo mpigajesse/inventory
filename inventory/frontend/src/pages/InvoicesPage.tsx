@@ -1,4 +1,5 @@
 import { useOutletContext } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -16,147 +17,54 @@ import {
 import { Eye, Printer, Download, Package } from "lucide-react";
 import { useState } from "react";
 import { useTableManager } from "@/hooks/useTableManager";
+import { invoiceService } from "@/services/invoiceService";
+import type { Invoice } from "@/services/invoiceService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface InvoiceItem {
-  name: string;
-  qty: number;
-  unitPrice: number;
-}
-
-interface Invoice {
-  id: string;
-  date: string;
-  client: string;
-  items: InvoiceItem[];
-  totalAmount: number;
-  paidAmount: number;
-  paid: boolean;
-}
-
-type StatusFilter = "all" | "paid" | "unpaid";
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_INVOICES: Invoice[] = [
-  {
-    id: "FAC-2026-001",
-    date: "14/04/2026",
-    client: "Client comptoir",
-    paid: true,
-    totalAmount: 45000,
-    paidAmount: 45000,
-    items: [
-      { name: "Riz 25kg", qty: 2, unitPrice: 12500 },
-      { name: "Huile 5L", qty: 1, unitPrice: 8000 },
-      { name: "Sucre 5kg", qty: 2, unitPrice: 6000 },
-    ],
-  },
-  {
-    id: "FAC-2026-002",
-    date: "14/04/2026",
-    client: "Jean Mouloungui",
-    paid: true,
-    totalAmount: 12500,
-    paidAmount: 12500,
-    items: [
-      { name: "Farine 10kg", qty: 1, unitPrice: 12500 },
-    ],
-  },
-  {
-    id: "FAC-2026-003",
-    date: "13/04/2026",
-    client: "Client comptoir",
-    paid: true,
-    totalAmount: 78000,
-    paidAmount: 78000,
-    items: [
-      { name: "Riz 25kg", qty: 3, unitPrice: 12500 },
-      { name: "Huile 5L", qty: 2, unitPrice: 8000 },
-      { name: "Sucre 5kg", qty: 4, unitPrice: 6000 },
-      { name: "Sel 1kg", qty: 5, unitPrice: 600 },
-      { name: "Savon", qty: 10, unitPrice: 800 },
-    ],
-  },
-  {
-    id: "FAC-2026-004",
-    date: "13/04/2026",
-    client: "Marie Obiang",
-    paid: false,
-    totalAmount: 23000,
-    paidAmount: 0,
-    items: [
-      { name: "Lessive 2kg", qty: 2, unitPrice: 4500 },
-      { name: "Savon ×5", qty: 1, unitPrice: 4000 },
-      { name: "Huile 5L", qty: 1, unitPrice: 8000 },
-    ],
-  },
-  {
-    id: "FAC-2026-005",
-    date: "12/04/2026",
-    client: "Client comptoir",
-    paid: true,
-    totalAmount: 56500,
-    paidAmount: 60000,
-    items: [
-      { name: "Riz 25kg", qty: 2, unitPrice: 12500 },
-      { name: "Farine 10kg", qty: 2, unitPrice: 12500 },
-      { name: "Sucre 5kg", qty: 1, unitPrice: 6000 },
-      { name: "Sel 1kg", qty: 5, unitPrice: 600 },
-    ],
-  },
-  {
-    id: "FAC-2026-006",
-    date: "12/04/2026",
-    client: "Paul Ndong",
-    paid: true,
-    totalAmount: 92000,
-    paidAmount: 92000,
-    items: [
-      { name: "Riz 25kg", qty: 5, unitPrice: 12500 },
-      { name: "Huile 5L", qty: 4, unitPrice: 8000 },
-      { name: "Farine 10kg", qty: 1, unitPrice: 12500 },
-    ],
-  },
-  {
-    id: "FAC-2026-007",
-    date: "11/04/2026",
-    client: "Client comptoir",
-    paid: true,
-    totalAmount: 18000,
-    paidAmount: 20000,
-    items: [
-      { name: "Sucre 5kg", qty: 2, unitPrice: 6000 },
-      { name: "Sel 1kg", qty: 10, unitPrice: 600 },
-    ],
-  },
-  {
-    id: "FAC-2026-008",
-    date: "11/04/2026",
-    client: "Client comptoir",
-    paid: false,
-    totalAmount: 8000,
-    paidAmount: 0,
-    items: [
-      { name: "Huile 5L", qty: 1, unitPrice: 8000 },
-    ],
-  },
-];
+type StatusFilter = "all" | "paid" | "partial" | "unpaid" | "cancelled";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatFCFA(amount: number): string {
-  return amount.toLocaleString("fr-FR") + " FCFA";
+function formatFCFA(amount: number | string): string {
+  return Number(amount).toLocaleString("fr-FR") + " FCFA";
 }
+
+function formatDate(iso: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("fr-FR");
+}
+
+// ─── Status helpers ───────────────────────────────────────────────────────────
+
+const STATUS_LABELS: Record<Invoice["status"], string> = {
+  paid: "Payée",
+  partial: "Partielle",
+  unpaid: "Impayée",
+  cancelled: "Annulée",
+};
+
+const STATUS_VARIANTS: Record<
+  Invoice["status"],
+  "success" | "warning" | "danger" | "default"
+> = {
+  paid: "success",
+  partial: "warning",
+  unpaid: "danger",
+  cancelled: "default",
+};
 
 // ─── Status filter tabs ───────────────────────────────────────────────────────
 
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Toutes" },
   { value: "paid", label: "Payées" },
+  { value: "partial", label: "Partielles" },
   { value: "unpaid", label: "Impayées" },
+  { value: "cancelled", label: "Annulées" },
 ];
 
 // ─── Invoice detail (modal content) ──────────────────────────────────────────
@@ -167,7 +75,10 @@ interface InvoiceDetailProps {
 }
 
 function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
-  const rendu = invoice.paidAmount - invoice.totalAmount;
+  const balanceDue = Number(invoice.balance_due);
+  const amountPaid = Number(invoice.amount_paid);
+  const totalAmount = Number(invoice.total_amount);
+  const changeGiven = amountPaid - totalAmount;
 
   return (
     <>
@@ -184,12 +95,12 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
             </div>
           </div>
           <div className="text-right">
-            <p className="font-mono font-semibold text-base">{invoice.id}</p>
-            <p className="text-xs text-muted-foreground">{invoice.date}</p>
+            <p className="font-mono font-semibold text-base">{invoice.invoice_number}</p>
+            <p className="text-xs text-muted-foreground">{formatDate(invoice.issued_at)}</p>
             <div className="mt-1">
               <StatusBadge
-                label={invoice.paid ? "Payée" : "Impayée"}
-                variant={invoice.paid ? "success" : "warning"}
+                label={STATUS_LABELS[invoice.status]}
+                variant={STATUS_VARIANTS[invoice.status]}
               />
             </div>
           </div>
@@ -200,32 +111,36 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
         {/* Client */}
         <div>
           <p className="text-xs text-muted-foreground mb-0.5">Client</p>
-          <p className="font-medium">{invoice.client}</p>
+          <p className="font-medium">{invoice.client_name ?? "Client comptoir"}</p>
         </div>
 
         <Separator />
 
         {/* Items table */}
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left font-medium text-muted-foreground pb-2">Article</th>
-              <th className="text-center font-medium text-muted-foreground pb-2 w-12">Qté</th>
-              <th className="text-right font-medium text-muted-foreground pb-2 w-28">Prix unit.</th>
-              <th className="text-right font-medium text-muted-foreground pb-2 w-28">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.items.map((item, i) => (
-              <tr key={i} className="border-b last:border-0">
-                <td className="py-2 pr-2">{item.name}</td>
-                <td className="py-2 text-center text-muted-foreground">{item.qty}</td>
-                <td className="py-2 text-right text-muted-foreground">{formatFCFA(item.unitPrice)}</td>
-                <td className="py-2 text-right font-medium">{formatFCFA(item.qty * item.unitPrice)}</td>
+        {invoice.items && invoice.items.length > 0 ? (
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left font-medium text-muted-foreground pb-2">Article</th>
+                <th className="text-center font-medium text-muted-foreground pb-2 w-12">Qté</th>
+                <th className="text-right font-medium text-muted-foreground pb-2 w-28">Prix unit.</th>
+                <th className="text-right font-medium text-muted-foreground pb-2 w-28">Total</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {invoice.items.map((item) => (
+                <tr key={item.id} className="border-b last:border-0">
+                  <td className="py-2 pr-2">{item.product_name}</td>
+                  <td className="py-2 text-center text-muted-foreground">{item.quantity}</td>
+                  <td className="py-2 text-right text-muted-foreground">{formatFCFA(item.unit_price)}</td>
+                  <td className="py-2 text-right font-medium">{formatFCFA(item.subtotal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-xs text-muted-foreground text-center py-2">Aucun article</p>
+        )}
 
         <Separator />
 
@@ -233,22 +148,22 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
         <div className="space-y-1.5">
           <div className="flex justify-between font-semibold text-base">
             <span>Total</span>
-            <span>{formatFCFA(invoice.totalAmount)}</span>
+            <span>{formatFCFA(totalAmount)}</span>
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Somme payée</span>
-            <span>{formatFCFA(invoice.paidAmount)}</span>
+            <span>{formatFCFA(amountPaid)}</span>
           </div>
-          {rendu > 0 && (
+          {changeGiven > 0 && (
             <div className="flex justify-between text-success font-medium">
               <span>Monnaie rendue</span>
-              <span>{formatFCFA(rendu)}</span>
+              <span>{formatFCFA(changeGiven)}</span>
             </div>
           )}
-          {!invoice.paid && (
+          {balanceDue > 0 && (
             <div className="flex justify-between text-warning font-medium">
               <span>Reste à payer</span>
-              <span>{formatFCFA(invoice.totalAmount - invoice.paidAmount)}</span>
+              <span>{formatFCFA(balanceDue)}</span>
             </div>
           )}
         </div>
@@ -272,12 +187,15 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
 
-  // Pré-filtre par statut avant le hook
-  const statusFiltered = MOCK_INVOICES.filter(inv => {
-    if (statusFilter === "paid") return inv.paid;
-    if (statusFilter === "unpaid") return !inv.paid;
-    return true;
+  const { data, isLoading } = useQuery({
+    queryKey: ["invoices", statusFilter],
+    queryFn: () =>
+      invoiceService.getAll(
+        statusFilter !== "all" ? { status: statusFilter } : undefined
+      ),
   });
+
+  const invoices = data?.results ?? [];
 
   const {
     paginated,
@@ -293,12 +211,17 @@ export default function InvoicesPage() {
     setPageSize,
     rangeStart,
     rangeEnd,
-  } = useTableManager(statusFiltered as unknown as Record<string, unknown>[], {
+  } = useTableManager(invoices as unknown as Record<string, unknown>[], {
     initialPageSize: 10,
-    searchKeys: ["id", "client"] as never[],
+    searchKeys: ["invoice_number", "client_name"] as never[],
   });
 
   const typedPaginated = paginated as unknown as Invoice[];
+
+  // Count badges for filter tabs
+  const allInvoices = data?.results ?? [];
+  const countByStatus = (status: Invoice["status"]) =>
+    allInvoices.filter((inv) => inv.status === status).length;
 
   return (
     <>
@@ -319,8 +242,8 @@ export default function InvoicesPage() {
         />
 
         {/* Onglets filtre statut */}
-        <div className="flex items-center gap-1 mb-4 bg-muted/40 rounded-lg p-1 w-fit">
-          {STATUS_FILTERS.map(f => (
+        <div className="flex flex-wrap items-center gap-1 mb-4 bg-muted/40 rounded-lg p-1 w-fit">
+          {STATUS_FILTERS.map((f) => (
             <button
               key={f.value}
               onClick={() => setStatusFilter(f.value)}
@@ -331,137 +254,161 @@ export default function InvoicesPage() {
               }`}
             >
               {f.label}
-              {f.value !== "all" && (
+              {f.value !== "all" && !isLoading && (
                 <span className="ml-1.5 text-xs opacity-60">
-                  ({MOCK_INVOICES.filter(inv =>
-                    f.value === "paid" ? inv.paid : !inv.paid
-                  ).length})
+                  ({countByStatus(f.value as Invoice["status"])})
                 </span>
               )}
             </button>
           ))}
         </div>
 
-        {/* Desktop : tableau normal */}
-        <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>N° Facture</th>
-                  <SortableHeader label="Date" sortKey="date" currentSort={sort} onSort={toggleSort} />
-                  <th>Client</th>
-                  <th>Articles</th>
-                  <SortableHeader label="Total" sortKey="totalAmount" currentSort={sort} onSort={toggleSort} />
-                  <th>Statut</th>
-                  <th className="w-20">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {typedPaginated.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Aucune facture trouvée.
-                    </td>
-                  </tr>
-                )}
-                {typedPaginated.map((inv) => (
-                  <tr key={inv.id}>
-                    <td className="font-medium font-mono text-xs">{inv.id}</td>
-                    <td>{inv.date}</td>
-                    <td>{inv.client}</td>
-                    <td>{inv.items.length}</td>
-                    <td className="font-medium">{formatFCFA(inv.totalAmount)}</td>
-                    <td>
-                      <StatusBadge
-                        label={inv.paid ? "Payée" : "Impayée"}
-                        variant={inv.paid ? "success" : "warning"}
-                      />
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-1">
-                        <button
-                          className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                          title="Voir la facture"
-                          onClick={() => setViewingInvoice(inv)}
-                        >
-                          <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                          title="Imprimer"
-                          onClick={() => { setViewingInvoice(inv); setTimeout(() => window.print(), 300); }}
-                        >
-                          <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+            Chargement des factures…
           </div>
-        </div>
+        )}
 
-        {/* Mobile : card list */}
-        <div className="md:hidden space-y-2">
-          {typedPaginated.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              Aucune facture trouvée.
+        {/* Desktop : tableau normal */}
+        {!isLoading && (
+          <>
+            <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>N° Facture</th>
+                      <SortableHeader label="Date" sortKey="issued_at" currentSort={sort} onSort={toggleSort} />
+                      <th>Client</th>
+                      <th>Articles</th>
+                      <SortableHeader label="Total" sortKey="total_amount" currentSort={sort} onSort={toggleSort} />
+                      <th>Statut</th>
+                      <th className="w-20">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {typedPaginated.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                          Aucune facture trouvée.
+                        </td>
+                      </tr>
+                    )}
+                    {typedPaginated.map((inv) => (
+                      <tr key={inv.id}>
+                        <td className="font-medium font-mono text-xs">{inv.invoice_number}</td>
+                        <td>{formatDate(inv.issued_at)}</td>
+                        <td>{inv.client_name ?? "Client comptoir"}</td>
+                        <td>{inv.items?.length ?? 0}</td>
+                        <td className="font-medium">{formatFCFA(inv.total_amount)}</td>
+                        <td>
+                          <StatusBadge
+                            label={STATUS_LABELS[inv.status]}
+                            variant={STATUS_VARIANTS[inv.status]}
+                          />
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1">
+                            <button
+                              className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                              title="Voir la facture"
+                              onClick={() => setViewingInvoice(inv)}
+                            >
+                              <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                              title="Imprimer"
+                              onClick={() => {
+                                setViewingInvoice(inv);
+                                setTimeout(() => window.print(), 300);
+                              }}
+                            >
+                              <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
-          {typedPaginated.map((inv) => (
-            <div key={inv.id} className="bg-card border rounded-lg p-3">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="min-w-0">
-                  <p className="font-mono font-semibold text-xs text-foreground">{inv.id}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{inv.client}</p>
+
+            {/* Mobile : card list */}
+            <div className="md:hidden space-y-2">
+              {typedPaginated.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  Aucune facture trouvée.
                 </div>
-                <StatusBadge
-                  label={inv.paid ? "Payée" : "Impayée"}
-                  variant={inv.paid ? "success" : "warning"}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-2">
-                <span>Date : <strong className="text-foreground">{inv.date}</strong></span>
-                <span>Articles : <strong className="text-foreground">{inv.items.length}</strong></span>
-                <span className="col-span-2">Total : <strong className="text-foreground">{formatFCFA(inv.totalAmount)}</strong></span>
-              </div>
-              <div className="flex gap-1 justify-end">
-                <button
-                  className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                  title="Voir la facture"
-                  onClick={() => setViewingInvoice(inv)}
-                >
-                  <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-                <button
-                  className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                  title="Imprimer"
-                  onClick={() => { setViewingInvoice(inv); setTimeout(() => window.print(), 300); }}
-                >
-                  <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              </div>
+              )}
+              {typedPaginated.map((inv) => (
+                <div key={inv.id} className="bg-card border rounded-lg p-3">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <p className="font-mono font-semibold text-xs text-foreground">{inv.invoice_number}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {inv.client_name ?? "Client comptoir"}
+                      </p>
+                    </div>
+                    <StatusBadge
+                      label={STATUS_LABELS[inv.status]}
+                      variant={STATUS_VARIANTS[inv.status]}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-2">
+                    <span>Date : <strong className="text-foreground">{formatDate(inv.issued_at)}</strong></span>
+                    <span>Articles : <strong className="text-foreground">{inv.items?.length ?? 0}</strong></span>
+                    <span className="col-span-2">
+                      Total : <strong className="text-foreground">{formatFCFA(inv.total_amount)}</strong>
+                    </span>
+                  </div>
+                  <div className="flex gap-1 justify-end">
+                    <button
+                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      title="Voir la facture"
+                      onClick={() => setViewingInvoice(inv)}
+                    >
+                      <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                    <button
+                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      title="Imprimer"
+                      onClick={() => {
+                        setViewingInvoice(inv);
+                        setTimeout(() => window.print(), 300);
+                      }}
+                    >
+                      <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Pagination */}
-        <TablePagination
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={totalItems}
-          rangeStart={rangeStart}
-          rangeEnd={rangeEnd}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-        />
+            {/* Pagination */}
+            <TablePagination
+              page={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={totalItems}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
+          </>
+        )}
       </div>
 
       {/* ── Modal : Voir facture ── */}
-      <Dialog open={!!viewingInvoice} onOpenChange={open => { if (!open) setViewingInvoice(null); }}>
+      <Dialog
+        open={!!viewingInvoice}
+        onOpenChange={(open) => {
+          if (!open) setViewingInvoice(null);
+        }}
+      >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Détail de la facture</DialogTitle>

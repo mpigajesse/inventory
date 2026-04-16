@@ -17,8 +17,8 @@ class ClientSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def get_total_purchases(self, obj: Client) -> int:
-        from django.db.models import Sum
-        return obj.sales.aggregate(total=Sum('total_amount'))['total'] or 0
+        # Delegate to the model property — single source of truth, avoids duplicate query.
+        return obj.total_purchases
 
     def get_purchases_count(self, obj: Client) -> int:
         return obj.sales.count()

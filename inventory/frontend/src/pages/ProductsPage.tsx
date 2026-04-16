@@ -29,69 +29,84 @@ import {
   Pencil,
   Trash2,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { productService } from "@/services/productService";
+import type { Product } from "@/services/productService";
 import { useTableManager } from "@/hooks/useTableManager";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type Category = "Alimentaire" | "Boissons" | "Hygiène" | "Entretien" | "Autre";
-
-interface Product {
-  id: number;
-  name: string;
-  barcode: string;
-  price: number;
-  stock: number;
-  category: Category;
-  image?: string; // base64 data URL (uploaded image)
-  notes?: string;
-}
-
-// ─── Initial data ─────────────────────────────────────────────────────────────
-
-const INITIAL_PRODUCTS: Product[] = [
-  { id: 1, name: "Lait Nido 400g", barcode: "6001068002802", price: 3500, stock: 3, category: "Alimentaire" },
-  { id: 2, name: "Huile Dinor 1L", barcode: "6001068002819", price: 2500, stock: 5, category: "Alimentaire" },
-  { id: 3, name: "Riz Uncle Ben's 5kg", barcode: "6001068002826", price: 8000, stock: 2, category: "Alimentaire" },
-  { id: 4, name: "Coca-Cola 1.5L", barcode: "5449000000996", price: 1200, stock: 45, category: "Boissons" },
-  { id: 5, name: "Savon Palmolive", barcode: "8714789763378", price: 800, stock: 4, category: "Hygiène" },
-  { id: 6, name: "Pâtes Panzani 500g", barcode: "3038350012005", price: 1500, stock: 22, category: "Alimentaire" },
-  { id: 7, name: "Sucre en poudre 1kg", barcode: "3256220010015", price: 1000, stock: 30, category: "Alimentaire" },
-  { id: 8, name: "Eau Tangui 1.5L", barcode: "6291041500213", price: 500, stock: 60, category: "Boissons" },
-  { id: 9, name: "Biscuits Belvita", barcode: "7622300689421", price: 1800, stock: 15, category: "Alimentaire" },
-  { id: 10, name: "Détergent Omo 1kg", barcode: "8717163711040", price: 3200, stock: 8, category: "Entretien" },
-];
-
-// ─── Main page ────────────────────────────────────────────────────────────────
 
 type ModalState =
   | { type: "none" }
   | { type: "view"; product: Product }
   | { type: "delete"; product: Product };
 
-const CATEGORY_FILTER_OPTIONS = [
-  { value: "Alimentaire", label: "Alimentaire" },
-  { value: "Boissons", label: "Boissons" },
-  { value: "Hygiène", label: "Hygiène" },
-  { value: "Entretien", label: "Entretien" },
-  { value: "Autre", label: "Autre" },
-];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function stockStatusVariant(status: Product["stock_status"]): "danger" | "warning" | "success" {
+  if (status === "critique") return "danger";
+  if (status === "bas") return "warning";
+  return "success";
+}
+
+function stockStatusLabel(status: Product["stock_status"]): string {
+  if (status === "critique") return "Critique";
+  if (status === "bas") return "Bas";
+  return "Normal";
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const queryClient = useQueryClient();
+
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [categoryFilter, setCategoryFilter] = useState("");
 
-  // Données filtrées par catégorie (avant le pipeline du hook)
+  // ── Data fetching ──────────────────────────────────────────────────────────
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["products"],
+    queryFn: () => productService.getAll(),
+  });
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => productService.getCategories(),
+  });
+
+  const products: Product[] = data?.results ?? [];
+
+  const categoryFilterOptions = (categoriesData ?? []).map((c) => ({
+    value: c.name,
+    label: c.name,
+  }));
+
+  // ── Delete mutation ────────────────────────────────────────────────────────
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => productService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      setModal({ type: "none" });
+    },
+  });
+
+  // ── Category pre-filter (before table pipeline) ────────────────────────────
+
   const categoryFiltered = categoryFilter
-    ? products.filter((p) => p.category === categoryFilter)
+    ? products.filter((p) => p.category_name === categoryFilter)
     : products;
+
+  // ── Table manager ──────────────────────────────────────────────────────────
 
   const {
     paginated,
@@ -123,26 +138,28 @@ export default function ProductsPage() {
   const typedPaginated = paginated as unknown as Product[];
   const allPageIds = typedPaginated.map((p) => p.id);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // ── Handlers ───────────────────────────────────────────────────────────────
 
   function handleDelete() {
     if (modal.type !== "delete") return;
-    setProducts((prev) => prev.filter((p) => p.id !== modal.product.id));
-    setModal({ type: "none" });
+    deleteMutation.mutate(modal.product.id);
   }
 
   function handleDeleteSelection() {
-    setProducts((prev) => prev.filter((p) => !selectedIds.has(p.id)));
-    clearSelection();
+    const ids = Array.from(selectedIds) as number[];
+    Promise.all(ids.map((id) => productService.delete(id))).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      clearSelection();
+    });
   }
 
   function handleExport() {
     const cols = [
       { key: "name", label: "Nom" },
       { key: "barcode", label: "Code-barres" },
-      { key: "category", label: "Catégorie" },
-      { key: "price", label: "Prix (FCFA)" },
-      { key: "stock", label: "Stock" },
+      { key: "category_name", label: "Catégorie" },
+      { key: "selling_price", label: "Prix vente (FCFA)" },
+      { key: "stock_quantity", label: "Stock" },
     ];
     exportToCsv(filtered as unknown as Record<string, unknown>[], cols, "produits");
   }
@@ -191,7 +208,7 @@ export default function ProductsPage() {
             </Button>
           }
           filterValue={categoryFilter}
-          filterOptions={CATEGORY_FILTER_OPTIONS}
+          filterOptions={categoryFilterOptions}
           filterPlaceholder="Toutes catégories"
           onFilterChange={(val) => {
             setCategoryFilter(val);
@@ -213,21 +230,28 @@ export default function ProductsPage() {
                   <SortableHeader label="Produit" sortKey="name" currentSort={sort} onSort={toggleSort} />
                   <th>Code-barres</th>
                   <th>Catégorie</th>
-                  <SortableHeader label="Prix" sortKey="price" currentSort={sort} onSort={toggleSort} />
-                  <SortableHeader label="Stock" sortKey="stock" currentSort={sort} onSort={toggleSort} />
+                  <SortableHeader label="Prix vente" sortKey="selling_price" currentSort={sort} onSort={toggleSort} />
+                  <SortableHeader label="Stock" sortKey="stock_quantity" currentSort={sort} onSort={toggleSort} />
                   <th>Statut</th>
                   <th className="w-28 text-right pr-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {typedPaginated.length === 0 && (
+                {isLoading && (
+                  <tr>
+                    <td colSpan={8} className="text-center py-10">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                    </td>
+                  </tr>
+                )}
+                {!isLoading && typedPaginated.length === 0 && (
                   <tr>
                     <td colSpan={8} className="text-center py-8 text-muted-foreground">
                       Aucun produit trouvé.
                     </td>
                   </tr>
                 )}
-                {typedPaginated.map((product) => (
+                {!isLoading && typedPaginated.map((product) => (
                   <tr
                     key={product.id}
                     className={isSelected(product.id) ? "bg-primary/5" : undefined}
@@ -243,10 +267,10 @@ export default function ProductsPage() {
                     </td>
                     <td>
                       <div className="flex items-center gap-3">
-                        {product.image ? (
+                        {product.image_url ? (
                           <div className="w-8 h-8 rounded overflow-hidden shrink-0">
                             <img
-                              src={product.image}
+                              src={product.image_url}
                               alt={product.name}
                               className="w-full h-full object-cover"
                             />
@@ -254,7 +278,7 @@ export default function ProductsPage() {
                         ) : (
                           <ProductIcon
                             name={product.name}
-                            category={product.category}
+                            category={product.category_name}
                             size="sm"
                           />
                         )}
@@ -262,17 +286,16 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="font-mono text-xs">{product.barcode || "—"}</td>
-                    <td>{product.category}</td>
-                    <td className="font-medium">{product.price.toLocaleString("fr-FR")} FCFA</td>
-                    <td>{product.stock}</td>
+                    <td>{product.category_name}</td>
+                    <td className="font-medium">
+                      {product.selling_price.toLocaleString("fr-FR")} FCFA
+                    </td>
+                    <td>{product.stock_quantity}</td>
                     <td>
-                      {product.stock <= 5 ? (
-                        <StatusBadge label="Critique" variant="danger" />
-                      ) : product.stock <= 15 ? (
-                        <StatusBadge label="Bas" variant="warning" />
-                      ) : (
-                        <StatusBadge label="Normal" variant="success" />
-                      )}
+                      <StatusBadge
+                        label={stockStatusLabel(product.stock_status)}
+                        variant={stockStatusVariant(product.stock_status)}
+                      />
                     </td>
                     <td>
                       <div className="flex items-center justify-end gap-1 pr-2">
@@ -338,10 +361,10 @@ export default function ProductsPage() {
             <div className="py-4 space-y-4">
               {/* Image */}
               <div className="flex justify-center">
-                {modal.product.image ? (
+                {modal.product.image_url ? (
                   <div className="w-24 h-24 rounded-xl overflow-hidden">
                     <img
-                      src={modal.product.image}
+                      src={modal.product.image_url}
                       alt={modal.product.name}
                       className="w-full h-full object-cover"
                     />
@@ -349,7 +372,7 @@ export default function ProductsPage() {
                 ) : (
                   <ProductIcon
                     name={modal.product.name}
-                    category={modal.product.category}
+                    category={modal.product.category_name}
                     size="xl"
                   />
                 )}
@@ -363,15 +386,23 @@ export default function ProductsPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">Catégorie</p>
-                  <p className="font-medium">{modal.product.category}</p>
+                  <p className="font-medium">{modal.product.category_name}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">Prix</p>
-                  <p className="font-medium">{modal.product.price.toLocaleString("fr-FR")} FCFA</p>
+                  <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">Prix de vente</p>
+                  <p className="font-medium">
+                    {modal.product.selling_price.toLocaleString("fr-FR")} FCFA
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">Prix d'achat</p>
+                  <p className="font-medium">
+                    {modal.product.purchase_price.toLocaleString("fr-FR")} FCFA
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">Stock actuel</p>
-                  <p className="font-medium">{modal.product.stock} unités</p>
+                  <p className="font-medium">{modal.product.stock_quantity} unités</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">Code-barres</p>
@@ -379,22 +410,12 @@ export default function ProductsPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">Statut</p>
-                  {modal.product.stock <= 5 ? (
-                    <StatusBadge label="Critique" variant="danger" />
-                  ) : modal.product.stock <= 15 ? (
-                    <StatusBadge label="Bas" variant="warning" />
-                  ) : (
-                    <StatusBadge label="Normal" variant="success" />
-                  )}
+                  <StatusBadge
+                    label={stockStatusLabel(modal.product.stock_status)}
+                    variant={stockStatusVariant(modal.product.stock_status)}
+                  />
                 </div>
               </div>
-
-              {modal.product.notes && (
-                <div>
-                  <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">Notes</p>
-                  <p className="text-sm bg-muted rounded-md px-3 py-2">{modal.product.notes}</p>
-                </div>
-              )}
             </div>
             <DialogFooter>
               <Button
@@ -437,7 +458,11 @@ export default function ProductsPage() {
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={handleDelete}
+                disabled={deleteMutation.isPending}
               >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : null}
                 Supprimer
               </AlertDialogAction>
             </AlertDialogFooter>

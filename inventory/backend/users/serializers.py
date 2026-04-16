@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import UserProfile
 
 
@@ -52,12 +53,29 @@ class ChangePasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True, min_length=6)
 
 
+class MeProfileSerializer(serializers.ModelSerializer):
+    """Only phone and avatar are writable for self-update — role/is_active are read-only."""
+    avatar_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active']
+        read_only_fields = ['role', 'is_active']
+
+    def get_avatar_url(self, obj):
+        return obj.avatar.url if obj.avatar else None
+
+
 class MeSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer()
+    profile = MeProfileSerializer()
+    full_name = serializers.SerializerMethodField()
+
+    def get_full_name(self, obj):
+        return obj.get_full_name() or obj.username
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'profile']
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})
@@ -69,3 +87,16 @@ class MeSerializer(serializers.ModelSerializer):
                 setattr(instance.profile, attr, val)
             instance.profile.save()
         return instance
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data['user_id'] = self.user.pk
+        data['username'] = self.user.username
+        data['full_name'] = self.user.get_full_name() or self.user.username
+        try:
+            data['role'] = self.user.profile.role
+        except UserProfile.DoesNotExist:
+            data['role'] = 'vendeur'
+        return data

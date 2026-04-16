@@ -29,6 +29,7 @@ const ClientFormPage = lazy(() => import("./pages/clients/ClientFormPage"));
 const SupplierFormPage = lazy(() => import("./pages/suppliers/SupplierFormPage"));
 const VendeurDashboardPage = lazy(() => import("./pages/vendeur/VendeurDashboardPage"));
 const VendeurPosPage = lazy(() => import("./pages/vendeur/VendeurPosPage"));
+const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const AdminOverviewPage = lazy(() => import("./pages/admin/AdminOverviewPage"));
 const ActivityLogPage = lazy(() => import("./pages/admin/ActivityLogPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -50,7 +51,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Navigate to="/auth/login" replace />} />
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/clients/:id/edit" element={<ClientFormPage />} />
               <Route path="/suppliers/new" element={<SupplierFormPage />} />
               <Route path="/suppliers/:id/edit" element={<SupplierFormPage />} />
+              <Route path="/categories" element={<CategoriesPage />} />
             </Route>
 
             {/* Espace vendeur */}

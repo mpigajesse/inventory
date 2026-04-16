@@ -10,8 +10,11 @@ class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.filter(is_active=True)
     serializer_class = SupplierSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    # DjangoFilterBackend added so filterset_fields is honoured.
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['city', 'country', 'is_active']
     search_fields = ['name', 'contact_name', 'phone', 'email']
+    ordering_fields = ['name', 'created_at']
     ordering = ['name']
 
     def perform_destroy(self, instance: Supplier) -> None:
@@ -28,6 +31,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     )
     serializer_class = PurchaseOrderSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    # SearchFilter added so search_fields works; DjangoFilterBackend kept for filterset_fields.
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['supplier', 'status']
+    search_fields = ['supplier__name']
+    ordering_fields = ['ordered_at', 'total_amount']
     ordering = ['-ordered_at']

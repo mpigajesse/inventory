@@ -1,11 +1,13 @@
 import { useOutletContext } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
 import Barcode from "react-barcode";
 import { useReactToPrint } from "react-to-print";
 import { Printer, RefreshCw, PrinterCheck } from "lucide-react";
 import { ProductIcon } from "@/components/ui/ProductIcon";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
+import { productService } from "@/services/productService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -16,21 +18,6 @@ interface ProductBarcode {
   category: string;
   barcode: string | null;
 }
-
-// ─── Mock data (aligned with ProductsPage) ───────────────────────────────────
-
-const INITIAL_PRODUCTS: ProductBarcode[] = [
-  { id: 1, name: "Lait Nido 400g", category: "Alimentaire", barcode: "6001068002802" },
-  { id: 2, name: "Huile Dinor 1L", category: "Alimentaire", barcode: "6001068002819" },
-  { id: 3, name: "Riz Uncle Ben's 5kg", category: "Alimentaire", barcode: "6001068002826" },
-  { id: 4, name: "Coca-Cola 1.5L", category: "Boissons", barcode: "5449000000996" },
-  { id: 5, name: "Savon Palmolive", category: "Hygiène", barcode: "8714789763378" },
-  { id: 6, name: "Pâtes Panzani 500g", category: "Alimentaire", barcode: "3038350012005" },
-  { id: 7, name: "Sucre en poudre 1kg", category: "Alimentaire", barcode: "3256220010015" },
-  { id: 8, name: "Eau Tangui 1.5L", category: "Boissons", barcode: "6291041500213" },
-  { id: 9, name: "Biscuits Belvita", category: "Alimentaire", barcode: null },
-  { id: 10, name: "Détergent Omo 1kg", category: "Entretien", barcode: null },
-];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -243,8 +230,26 @@ function ProductBarcodeCard({
 
 export default function BarcodesPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
-  const [products, setProducts] = useState<ProductBarcode[]>(INITIAL_PRODUCTS);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => productService.getAll(),
+  });
+
+  // Local overrides for generated barcodes (for products without one)
+  const [generatedBarcodes, setGeneratedBarcodes] = useState<Record<number, string>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  // Merge API data with any locally generated barcodes
+  const products: ProductBarcode[] = useMemo(() => {
+    const raw = data?.results ?? [];
+    return raw.map((p) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category_name,
+      barcode: generatedBarcodes[p.id] ?? p.barcode,
+    }));
+  }, [data, generatedBarcodes]);
 
   // Ref for multi-product print zone
   const selectionPrintRef = useRef<HTMLDivElement>(null);
@@ -259,9 +264,7 @@ export default function BarcodesPage() {
   });
 
   function handleGenerate(id: number) {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, barcode: generateEAN13() } : p))
-    );
+    setGeneratedBarcodes((prev) => ({ ...prev, [id]: generateEAN13() }));
   }
 
   function handleToggleSelect(id: number) {
@@ -288,7 +291,7 @@ export default function BarcodesPage() {
     (p) => selected.has(p.id) && p.barcode
   );
 
-  const allSelected = selected.size === products.length;
+  const allSelected = products.length > 0 && selected.size === products.length;
 
   return (
     <>
@@ -317,12 +320,19 @@ export default function BarcodesPage() {
           </div>
         </div>
 
+        {isError && (
+          <p className="text-sm text-destructive mb-4">
+            Impossible de charger les produits. Vérifiez votre connexion.
+          </p>
+        )}
+
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
           <button
             type="button"
             onClick={handleSelectAll}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            disabled={isLoading || products.length === 0}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
           >
             <span
               className={[
@@ -342,7 +352,7 @@ export default function BarcodesPage() {
           <span className="text-xs text-muted-foreground hidden sm:inline">
             {selected.size > 0
               ? `${selected.size} produit${selected.size > 1 ? "s" : ""} sélectionné${selected.size > 1 ? "s" : ""}`
-              : `${products.length} produits`}
+              : isLoading ? "Chargement…" : `${products.length} produits`}
           </span>
 
           <Button
@@ -361,17 +371,23 @@ export default function BarcodesPage() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((product) => (
-            <ProductBarcodeCard
-              key={product.id}
-              product={product}
-              selected={selected.has(product.id)}
-              onToggleSelect={handleToggleSelect}
-              onGenerate={handleGenerate}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="text-center py-16 text-muted-foreground text-sm">
+            Chargement des produits…
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {products.map((product) => (
+              <ProductBarcodeCard
+                key={product.id}
+                product={product}
+                selected={selected.has(product.id)}
+                onToggleSelect={handleToggleSelect}
+                onGenerate={handleGenerate}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

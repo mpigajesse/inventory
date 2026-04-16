@@ -4,13 +4,16 @@ URL configuration for NAOSERVICES INVENTORY backend.
 
 from django.contrib import admin
 from django.urls import include, path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.views.generic import RedirectView
+from rest_framework_simplejwt.views import TokenRefreshView
 from config.dashboard import DashboardStatsView
+from users.views import CustomTokenObtainPairView
 
 urlpatterns = [
+    path('', RedirectView.as_view(url='/admin/', permanent=False)),
     path('admin/', admin.site.urls),
     # Auth — JWT
-    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # App routers
     path('api/products/', include('products.urls')),

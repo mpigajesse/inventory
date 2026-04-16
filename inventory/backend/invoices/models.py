@@ -48,9 +48,14 @@ class Invoice(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.invoice_number:
-            last = Invoice.objects.order_by('-pk').first()
-            next_num = (last.pk + 1) if last else 1
-            self.invoice_number = f'FAC-{next_num:05d}'
+            from django.db import transaction
+            with transaction.atomic():
+                last = Invoice.objects.select_for_update().order_by('-pk').first()
+                if last:
+                    suffix = int(last.invoice_number.split('-')[-1]) + 1
+                else:
+                    suffix = 1
+                self.invoice_number = f'FAC-{suffix:05d}'
         super().save(*args, **kwargs)
 
     @property
