@@ -11,14 +11,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Cible : téléphones, tablettes, ordinateurs (responsive)
 - Lecteur code-barres USB branché comme clavier (plug & play, sans pilote)
 
-## App Location
+## Structure du projet
 
-Tout le code source est dans `inventory/app/`. Toutes les commandes ci-dessous se lancent depuis ce dossier.
+```
+inventory/
+├── frontend/   ← React 18 + Vite (interface utilisateur)
+└── backend/    ← Django REST API (Supabase PostgreSQL)
+```
 
-## Commands
+## Commands Frontend
 
 ```bash
-cd inventory/app
+cd inventory/frontend
 
 npm run dev          # Dev server sur le port 8080
 npm run build        # Build production
@@ -43,21 +47,31 @@ npx vitest run src/path/to/file.test.ts
 - **react-hook-form** + **zod** — formulaires
 - **Vitest** + **Testing Library** — tests (environnement jsdom)
 
+## Commands Backend
+
+```bash
+cd inventory/backend
+D:\Inventory\env\Scripts\python manage.py runserver   # API sur le port 8000
+D:\Inventory\env\Scripts\python manage.py migrate     # Appliquer les migrations
+D:\Inventory\env\Scripts\python manage.py makemigrations
+D:\Inventory\env\Scripts\python manage.py check
+```
+
 ## État actuel (V1 en cours)
 
-**L'app est un prototype UI — toutes les données sont des tableaux mock hardcodés dans chaque page. Il n'y a pas de backend ni d'API.**
+**Frontend** : prototype UI avec données mock — connecté à `src/services/` prêt pour le vrai backend.
+**Backend** : Django REST API complet (9 apps, tous les models + serializers + views), migrations prêtes, en attente de `migrate` sur Supabase.
 
-Ce qui est construit (UI uniquement) :
-- Authentification : formulaires login/register sans logique réelle (le bouton "Se connecter" navigue directement vers `/dashboard`)
-- Dashboard : KPIs, ventes récentes, alertes stock bas
-- Produits : liste avec recherche par nom/code-barres
-- Stock : tableau avec indicateurs de niveau (critique/bas/normal)
-- **POS/Caisse** : le module le plus avancé — scanner code-barres fonctionnel, panier, calcul monnaie, modal paiement
-- Factures : liste consultable, boutons Voir/Imprimer (non fonctionnels)
-- Clients : fiches client avec historique d'achats
-- Utilisateurs : gestion rôles admin/vendeur
-- Rapports : graphe barre ventes/semaine, top produits
-- Paramètres : config entreprise (nom, adresse, NIF)
+Ce qui est construit :
+- Authentification JWT (login/logout/me/change-password)
+- Dashboard KPIs (`/api/dashboard/`)
+- Produits + Catégories (CRUD + recherche barcode)
+- Stock (consultation, alertes, ajustements)
+- **POS/Caisse** — vente atomique avec décrémentation stock automatique
+- Factures (auto-générées à chaque vente)
+- Clients, Fournisseurs, Commandes fournisseurs
+- Utilisateurs (rôles admin/vendeur, UserProfile)
+- Notifications, Journal d'activité
 
 ## Priorités de développement V1 (dans l'ordre du cahier des charges)
 
