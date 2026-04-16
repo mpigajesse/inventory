@@ -3,8 +3,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": "vite",
-  "rootDirectory": "inventory/frontend",
-  "rewrites": [
+"rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
