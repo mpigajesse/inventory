@@ -241,7 +241,7 @@ export function Topbar({
 
   const initials = getInitials(currentUser?.name);
   const roleLabel =
-    currentUser?.role === "admin" ? "Administrateur" : "Vendeur";
+    currentUser?.role === "admin" ? "Administrateur" : "Vendeur·se";
 
   return (
     <>
@@ -634,7 +634,7 @@ export function Topbar({
                     ) : (
                       <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-accent/15 text-accent-foreground">
                         <ShoppingBag className="w-2.5 h-2.5" />
-                        Vendeur
+                        Vendeur·se
                       </span>
                     )}
                   </div>

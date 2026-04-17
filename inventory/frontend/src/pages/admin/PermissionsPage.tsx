@@ -68,11 +68,11 @@ const PERMISSIONS: PermissionDef[] = [
 
 const PRESETS: { label: string; permissions: Permission[] }[] = [
   {
-    label: "Vendeur standard",
+    label: "Vendeur·se standard",
     permissions: ["make_sales", "view_invoices", "manage_clients"],
   },
   {
-    label: "Vendeur étendu",
+    label: "Vendeur·se étendu·e",
     permissions: [
       "make_sales",
       "view_invoices",
@@ -191,7 +191,7 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
                       }
                 }
               >
-                {isAdmin ? "Admin" : "Vendeur"}
+                {isAdmin ? "Admin" : "Vendeur·se"}
               </span>
             </div>
           </div>
@@ -564,7 +564,7 @@ export default function PermissionsPage() {
           />
           <p className="text-sm text-foreground leading-relaxed">
             Les <strong>admins</strong> ont tous les droits par défaut. Seuls les{" "}
-            <strong>vendeurs</strong> apparaissent dans cette matrice.
+            <strong>vendeurs·ses</strong> apparaissent dans cette matrice.
             Les modifications sont enregistrées automatiquement après 500 ms.
           </p>
         </div>

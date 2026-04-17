@@ -536,7 +536,7 @@ export default function AdminOverviewPage() {
 
       <Topbar
         title="Administration"
-        subtitle="Surveillance vendeurs"
+        subtitle="Surveillance vendeurs·ses"
         onMenuClick={onMenuClick}
       />
 

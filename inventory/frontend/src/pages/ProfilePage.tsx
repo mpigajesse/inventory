@@ -228,7 +228,7 @@ function IdentityCard() {
               }}
             >
               {isAdmin ? <Shield className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
-              {isAdmin ? "Administrateur" : "Vendeur"}
+              {isAdmin ? "Administrateur" : "Vendeur·se"}
             </span>
           </div>
         </div>
@@ -711,7 +711,7 @@ function VendeurInfoBanner() {
       </span>
       <div className="min-w-0">
         <p className="text-[13px] font-semibold text-foreground leading-snug">
-          Votre rôle : Vendeur
+          Votre rôle : Vendeur·se
         </p>
         <p className="text-[12px] text-muted-foreground mt-0.5">
           Contactez un administrateur pour modifier vos permissions ou accéder aux paramètres avancés.

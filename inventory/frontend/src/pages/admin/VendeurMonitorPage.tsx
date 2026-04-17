@@ -131,7 +131,7 @@ export default function VendeurMonitorPage() {
       `}</style>
 
       <Topbar
-        title="Surveillance vendeurs"
+        title="Surveillance vendeurs·ses"
         subtitle="Temps réel — actualisation 10s"
         onMenuClick={onMenuClick}
       />

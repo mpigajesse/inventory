@@ -15,8 +15,8 @@ interface DemoAccountsProps {
 
 const ACCOUNTS: DemoAccount[] = [
   { name: "Admin Principal", username: "admin", password: "Admin1234!", roleLabel: "Admin", initials: "AP", isAdmin: true },
-  { name: "Marie Koumba", username: "vendeur1", password: "Vendeur1234!", roleLabel: "Vendeur", initials: "MK" },
-  { name: "Paul Moussavou", username: "vendeur2", password: "Vendeur1234!", roleLabel: "Vendeur", initials: "PM" },
+  { name: "Marie Koumba", username: "vendeur1", password: "Vendeur1234!", roleLabel: "Vendeur·se", initials: "MK" },
+  { name: "Paul Moussavou", username: "vendeur2", password: "Vendeur1234!", roleLabel: "Vendeur·se", initials: "PM" },
 ];
 
 const COPPER_GRADIENT = "linear-gradient(135deg, hsl(22 72% 48%), hsl(30 80% 38%))";

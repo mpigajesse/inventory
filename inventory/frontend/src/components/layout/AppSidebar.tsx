@@ -86,7 +86,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Administration",
     items: [
       { label: "Utilisateurs", path: "/users", icon: UserCog, permission: "manage_users" },
-      { label: "Surveillance vendeurs", path: "/admin/vendeurs", icon: Activity, permission: "manage_users" },
+      { label: "Surveillance vendeurs·ses", path: "/admin/vendeurs", icon: Activity, permission: "manage_users" },
       { label: "Permissions", path: "/admin/permissions", icon: ShieldCheck, permission: "manage_users" },
       { label: "Rapports", path: "/reports", icon: BarChart3, permission: "view_reports" },
       { label: "Statistiques", path: "/statistics", icon: BarChart2, permission: "view_reports" },
@@ -145,7 +145,7 @@ export function AppSidebar({
 
   const initials = getInitials(currentUser?.name);
   const displayName = currentUser?.name ?? "Utilisateur";
-  const roleLabel = currentUser?.role === "admin" ? "Administrateur" : "Vendeur";
+  const roleLabel = currentUser?.role === "admin" ? "Administrateur" : "Vendeur·se";
 
   /**
    * Build filtered, runtime-resolved nav groups.

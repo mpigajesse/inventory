@@ -471,7 +471,7 @@ export default function ActivityLogPage() {
             {/* ── Vendeur filter pills ── */}
             {userOptions.length > 0 && (
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Vendeur</label>
+                <label className="text-xs font-medium text-muted-foreground">Vendeur·se</label>
                 <div className="flex flex-wrap gap-1.5 items-center">
                   <button
                     onClick={() => setUserFilter("")}

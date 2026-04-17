@@ -439,7 +439,7 @@ function EditUserForm({
                   <SelectItem value="vendeur">
                     <span className="flex items-center gap-2">
                       <ShoppingBag className="w-3.5 h-3.5" style={{ color: "hsl(210 70% 52%)" }} />
-                      Vendeur
+                      Vendeur·se
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -712,7 +712,7 @@ export default function UserDetailPage() {
                   }
                 >
                   {isAdmin ? <Crown className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
-                  {isAdmin ? "Administrateur" : "Vendeur"}
+                  {isAdmin ? "Administrateur" : "Vendeur·se"}
                 </span>
                 {/* Active status */}
                 <span
@@ -1264,7 +1264,7 @@ export default function UserDetailPage() {
                     className="text-xs font-bold uppercase tracking-wider"
                     style={{ color: isAdmin ? "hsl(22 72% 48%)" : "hsl(210 70% 52%)" }}
                   >
-                    {isAdmin ? "Administrateur" : "Vendeur"}
+                    {isAdmin ? "Administrateur" : "Vendeur·se"}
                   </p>
                 </div>
               </div>

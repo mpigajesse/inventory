@@ -151,7 +151,7 @@ function buildSalesSheet(
 
   // ── Ligne 4 : En-têtes ───────────────────────────────────────────────────────
   const headers = [
-    "N°", "Date / Heure", "Vendeur", "Articles (résumé)",
+    "N°", "Date / Heure", "Vendeur·se", "Articles (résumé)",
     "Total (FCFA)", "Montant donné (FCFA)", "Monnaie rendue (FCFA)", "Mode paiement",
   ];
   const headerRow = ws.addRow(headers);

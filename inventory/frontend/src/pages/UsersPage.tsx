@@ -189,7 +189,7 @@ function RolePill({ role }: { role: UserRole }) {
         ? <Crown style={{ width: "12px", height: "12px" }} aria-hidden="true" />
         : <ShoppingBag className="w-3 h-3" aria-hidden="true" />
       }
-      {isAdmin ? "Admin" : "Vendeur"}
+      {isAdmin ? "Admin" : "Vendeur·se"}
     </span>
   );
 }
@@ -389,7 +389,7 @@ function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProp
                   <SelectItem value="vendeur">
                     <span className="flex items-center gap-2">
                       <ShoppingBag className="w-3.5 h-3.5" style={{ color: "hsl(210 70% 52%)" }} />
-                      Vendeur
+                      Vendeur·se
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -517,7 +517,7 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
                   <SelectItem value="vendeur">
                     <span className="flex items-center gap-2">
                       <ShoppingBag className="w-3.5 h-3.5" style={{ color: "hsl(210 70% 52%)" }} />
-                      Vendeur
+                      Vendeur·se
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -694,13 +694,13 @@ const PERMISSION_PRESETS: {
   colorClass: string;
 }[] = [
   {
-    label: 'Vendeur standard',
+    label: 'Vendeur·se standard',
     permissions: ['make_sales', 'view_invoices', 'manage_clients'],
     colorClass:
       'border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40',
   },
   {
-    label: 'Vendeur étendu',
+    label: 'Vendeur·se étendu·e',
     permissions: [
       'make_sales',
       'view_invoices',
@@ -857,7 +857,7 @@ function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModal
 
 const ROLE_FILTER_OPTIONS = [
   { value: "admin", label: "Admin" },
-  { value: "vendeur", label: "Vendeur" },
+  { value: "vendeur", label: "Vendeur·se" },
 ];
 
 export default function UsersPage() {

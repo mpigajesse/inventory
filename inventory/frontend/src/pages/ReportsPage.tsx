@@ -638,7 +638,7 @@ export default function ReportsPage() {
               <table className="data-table w-full">
                 <thead>
                   <tr>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vendeur</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vendeur·se</th>
                     <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ventes</th>
                     <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Chiffre d'affaires</th>
                   </tr>
