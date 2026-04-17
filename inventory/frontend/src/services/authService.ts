@@ -13,8 +13,10 @@ export interface AuthTokens {
 export interface UserProfile {
   role: 'admin' | 'vendeur';
   phone: string;
+  avatar: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  permissions: string[];
 }
 
 export interface AuthUser {
@@ -24,6 +26,7 @@ export interface AuthUser {
   first_name: string;
   last_name: string;
   full_name: string;
+  is_active: boolean;
   profile: UserProfile;
 }
 

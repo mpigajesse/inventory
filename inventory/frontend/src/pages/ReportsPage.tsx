@@ -28,6 +28,13 @@ function formatFcfa(amount: number): string {
   return `${amount} FCFA`;
 }
 
+/** Converts ISO date "2024-01-17" → "17/01" for compact bar chart labels */
+function formatDayLabel(isoDate: string): string {
+  const parts = isoDate.split("-");
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
+  return isoDate;
+}
+
 // ─── Skeleton bar loader ───────────────────────────────────────────────────────
 
 function SkeletonBar({ width = "100%" }: { width?: string }) {
@@ -191,7 +198,7 @@ export default function ReportsPage() {
                         {/* Shine overlay */}
                         <div className="absolute inset-0 rounded-t-lg bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                       </div>
-                      <span className="text-[11px] text-muted-foreground font-medium">{d.day}</span>
+                      <span className="text-[11px] text-muted-foreground font-medium">{formatDayLabel(d.day)}</span>
                     </div>
                   );
                 })}

@@ -1,4 +1,4 @@
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -591,11 +591,11 @@ const PERMISSION_LABELS: Record<Permission, string> = {
   manage_stock: 'Gérer le stock',
   manage_suppliers: 'Gérer les fournisseurs',
   manage_clients: 'Gérer les clients',
-  view_reports: 'Consulter les rapports',
-  view_barcodes: 'Consulter les codes-barres',
-  view_invoices: 'Consulter les factures',
-  make_sales: 'Effectuer des ventes',
-  manage_settings: 'Gérer les paramètres',
+  view_reports: 'Voir les rapports',
+  view_barcodes: 'Voir les codes-barres',
+  view_invoices: 'Voir les factures',
+  make_sales: 'Faire des ventes (POS)',
+  manage_settings: 'Accès aux paramètres',
 };
 
 const PERMISSION_GROUPS: { label: string; permissions: Permission[] }[] = [
@@ -621,6 +621,48 @@ const PERMISSION_GROUPS: { label: string; permissions: Permission[] }[] = [
   },
 ];
 
+// ─── Permission presets ───────────────────────────────────────────────────────
+
+const PERMISSION_PRESETS: {
+  label: string;
+  permissions: Permission[];
+  colorClass: string;
+}[] = [
+  {
+    label: 'Vendeur standard',
+    permissions: ['make_sales', 'view_invoices', 'manage_clients'],
+    colorClass:
+      'border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40',
+  },
+  {
+    label: 'Vendeur étendu',
+    permissions: [
+      'make_sales',
+      'view_invoices',
+      'manage_clients',
+      'manage_products',
+      'manage_stock',
+      'view_barcodes',
+    ],
+    colorClass:
+      'border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-800 dark:text-violet-400 dark:hover:bg-violet-950/40',
+  },
+  {
+    label: 'Accès complet',
+    permissions: ALL_PERMISSIONS.filter((p) => p !== 'manage_users'),
+    colorClass:
+      'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40',
+  },
+  {
+    label: 'Aucun accès',
+    permissions: [],
+    colorClass:
+      'border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/40',
+  },
+];
+
+// ─── Permissions modal ────────────────────────────────────────────────────────
+
 interface PermissionsModalProps {
   user: UserListItem;
   onSave: (permissions: Permission[]) => void;
@@ -644,10 +686,36 @@ function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModal
     });
   }
 
-  const displayName = user.full_name || user.username;
+  function applyPreset(permissions: Permission[]) {
+    setSelected(new Set(permissions));
+  }
 
   return (
     <div className="space-y-5">
+      {/* ── Présets rapides ── */}
+      <div>
+        <p className={[FIELD_LABEL_CLASSES, "mb-2.5"].join(" ")}>Application rapide</p>
+        <div className="flex flex-wrap gap-1.5">
+          {PERMISSION_PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() => applyPreset(preset.permissions)}
+              className={[
+                "inline-flex items-center rounded-full px-3 py-1 text-[12px] font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                preset.colorClass,
+              ].join(" ")}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Séparateur ── */}
+      <div className="border-t border-border/50" />
+
+      {/* ── Checkboxes par groupe ── */}
       {PERMISSION_GROUPS.map((group) => (
         <div key={group.label}>
           <p className={[FIELD_LABEL_CLASSES, "mb-2"].join(" ")}>{group.label}</p>
@@ -672,6 +740,19 @@ function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModal
           </div>
         </div>
       ))}
+
+      {/* ── Lien vers la vue matrice ── */}
+      <div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
+        <Link
+          to="/admin/permissions"
+          className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+          onClick={onCancel}
+        >
+          <span>🔗</span>
+          <span>Gérer toutes les permissions depuis la vue matrice</span>
+          <span className="text-muted-foreground">→</span>
+        </Link>
+      </div>
 
       <DialogFooter className="gap-2 sm:gap-3 pt-1">
         <Button

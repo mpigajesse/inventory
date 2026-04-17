@@ -5,6 +5,7 @@ export interface Category {
   name: string;
   description: string;
   product_count: number;
+  created_at?: string;
 }
 
 export interface Product {
@@ -19,6 +20,19 @@ export interface Product {
   stock_quantity: number;
   stock_status: 'normal' | 'bas' | 'critique';
   is_active: boolean;
+  created_at?: string;
+}
+
+export interface ProductDetail extends Product {
+  description: string | null;
+  image: string | null;
+  created_by: number | null;
+  updated_at: string | null;
+}
+
+/** Build request config that lets multipart/form-data set its own Content-Type + boundary. */
+function multipartConfig() {
+  return { headers: { 'Content-Type': undefined as unknown as string } };
 }
 
 export const productService = {
@@ -26,13 +40,17 @@ export const productService = {
     api.get<{ results: Product[]; count: number }>('/products/', { params }).then(r => r.data),
 
   getById: (id: number) =>
-    api.get<Product>(`/products/${id}/`).then(r => r.data),
+    api.get<ProductDetail>(`/products/${id}/`).then(r => r.data),
 
   create: (data: FormData | Partial<Product>) =>
-    api.post<Product>('/products/', data).then(r => r.data),
+    api
+      .post<Product>('/products/', data, data instanceof FormData ? multipartConfig() : undefined)
+      .then(r => r.data),
 
   update: (id: number, data: FormData | Partial<Product>) =>
-    api.patch<Product>(`/products/${id}/`, data).then(r => r.data),
+    api
+      .patch<Product>(`/products/${id}/`, data, data instanceof FormData ? multipartConfig() : undefined)
+      .then(r => r.data),
 
   delete: (id: number) =>
     api.delete(`/products/${id}/`).then(r => r.data),

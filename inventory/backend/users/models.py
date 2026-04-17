@@ -13,6 +13,11 @@ class UserProfile(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     avatar = CloudinaryField('avatar', folder='inventory/avatars', blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    permissions = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Liste des permissions accordées à cet utilisateur",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

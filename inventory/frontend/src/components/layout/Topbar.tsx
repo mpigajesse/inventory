@@ -50,6 +50,8 @@ const ROUTE_LABELS: Record<string, string> = {
   "/categories": "Catégories",
   "/admin": "Administration",
   "/admin/overview": "Vue d'ensemble",
+  "/admin/permissions": "Permissions",
+  "/admin/activity": "Journal d'activité",
 };
 
 interface BreadcrumbSegment {

@@ -13,7 +13,7 @@ import { exportStockToExcel } from "@/lib/exportStock";
 import { TablePagination } from "@/components/ui/TablePagination";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { SortableHeader } from "@/components/ui/SortableHeader";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -78,7 +78,7 @@ function toDisplayItem(api: ApiStockItem): StockItem {
     stockId: api.id,
     name: api.product_name,
     category: api.category_name,
-    imageUrl: api.product_image_url,
+    imageUrl: api.product_image_url ?? null,
     stock: api.quantity,
     min: api.min_threshold,
     max: api.max_threshold,
@@ -395,10 +395,10 @@ type ModalState =
 export default function StockPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const { can } = usePermissions();
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState<StockLevelFilter>("");
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
@@ -426,31 +426,27 @@ export default function StockPage() {
       stockService.adjust(stockId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock"] });
-      toast({ title: "Stock mis à jour" });
+      toast.success("Stock mis à jour");
       setModal({ type: "none" });
     },
     onError: () => {
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: "Impossible de mettre à jour le stock.",
-        variant: "destructive",
       });
     },
   });
 
   const thresholdMutation = useMutation({
-    mutationFn: ({ stockId, payload }: { stockId: number; payload: AdjustmentPayload }) =>
-      stockService.adjust(stockId, payload),
+    mutationFn: ({ stockId, min, max }: { stockId: number; min: number; max: number }) =>
+      stockService.updateThresholds(stockId, { min_threshold: min, max_threshold: max }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock"] });
-      toast({ title: "Seuils mis à jour" });
+      toast.success("Seuils mis à jour");
       setModal({ type: "none" });
     },
     onError: () => {
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: "Impossible de mettre à jour les seuils.",
-        variant: "destructive",
       });
     },
   });
@@ -531,18 +527,11 @@ export default function StockPage() {
 
   function handleThreshold(values: ThresholdFormValues) {
     if (modal.type !== "threshold") return;
-    // The threshold update uses the adjustment endpoint with a correction type
-    // to set the stock to the new min/max. Since the API only exposes adjust(),
-    // we send a correction with the current quantity so stock stays the same,
-    // and the note documents the new thresholds.
     const { item } = modal;
     thresholdMutation.mutate({
       stockId: item.stockId,
-      payload: {
-        movement_type: "adjustment",
-        quantity: item.stock,
-        note: `Seuils mis à jour — min: ${values.min}, max: ${values.max}`,
-      },
+      min: values.min,
+      max: values.max,
     });
   }
 
@@ -559,6 +548,7 @@ export default function StockPage() {
 
     const targets = stockItems.filter((item) => ids.has(item.id));
 
+    setIsBulkSubmitting(true);
     Promise.all(
       targets.map((item) =>
         stockService.adjust(item.stockId, {
@@ -570,16 +560,17 @@ export default function StockPage() {
     )
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["stock"] });
-        toast({ title: `${targets.length} produit${targets.length > 1 ? "s" : ""} mis à jour` });
+        toast.success(`${targets.length} produit${targets.length > 1 ? "s" : ""} mis à jour`);
         clearSelection();
         setModal({ type: "none" });
       })
       .catch(() => {
-        toast({
-          title: "Erreur",
+        toast.error("Erreur", {
           description: "Une erreur est survenue lors de l'ajustement groupé.",
-          variant: "destructive",
         });
+      })
+      .finally(() => {
+        setIsBulkSubmitting(false);
       });
   }
 
@@ -594,10 +585,8 @@ export default function StockPage() {
       price: item.price,
     }));
     exportStockToExcel(exportItems).catch(() => {
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: "L'export Excel a échoué.",
-        variant: "destructive",
       });
     });
   }
@@ -1152,9 +1141,10 @@ export default function StockPage() {
               </DialogTitle>
             </DialogHeader>
             <AdjustStockForm
-              item={{ id: -1, stockId: -1, name: "", category: "", stock: 0, min: 0, max: 0, price: 0, stockValue: 0, status: "normal" }}
+              item={{ id: -1, stockId: -1, name: "", category: "", imageUrl: null, stock: 0, min: 0, max: 0, price: 0, stockValue: 0, status: "normal" }}
               onSubmit={handleBulkAdjust}
               onCancel={() => setModal({ type: "none" })}
+              isSubmitting={isBulkSubmitting}
             />
           </DialogContent>
         </Dialog>

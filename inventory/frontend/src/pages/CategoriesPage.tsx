@@ -23,13 +23,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Loader2, Tag } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productService } from "@/services/productService";
 import type { Category } from "@/services/productService";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
@@ -67,25 +68,43 @@ function CategoryFormModal({ open, category, onClose, onSaved }: CategoryFormMod
     },
   });
 
-  // Reset form values when modal opens/changes target category
-  const [prevCategory, setPrevCategory] = useState<Category | null>(null);
-  if (category !== prevCategory) {
-    setPrevCategory(category);
-    reset({
-      name: category?.name ?? "",
-      description: category?.description ?? "",
-    });
-  }
+  // Reset form values whenever the modal opens or the target category changes
+  useEffect(() => {
+    if (open) {
+      reset({
+        name: category?.name ?? "",
+        description: category?.description ?? "",
+      });
+    }
+  }, [open, category, reset]);
 
   const createMutation = useMutation({
     mutationFn: (data: CategoryFormValues) => productService.createCategory(data),
-    onSuccess: () => { onSaved(); onClose(); },
+    onSuccess: () => {
+      toast.success("Catégorie créée avec succès");
+      onSaved();
+      onClose();
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Impossible de créer la catégorie.";
+      toast.error("Erreur lors de la création", { description: message });
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: CategoryFormValues) =>
       productService.updateCategory(category!.id, data),
-    onSuccess: () => { onSaved(); onClose(); },
+    onSuccess: () => {
+      toast.success("Catégorie mise à jour avec succès");
+      onSaved();
+      onClose();
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Impossible de modifier la catégorie.";
+      toast.error("Erreur lors de la modification", { description: message });
+    },
   });
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -180,7 +199,13 @@ export default function CategoriesPage() {
     mutationFn: (id: number) => productService.deleteCategory(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Catégorie supprimée");
       setModal({ type: "none" });
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression", {
+        description: "Impossible de supprimer cette catégorie. Réessayez.",
+      });
     },
   });
 

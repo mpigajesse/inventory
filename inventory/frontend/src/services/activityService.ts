@@ -3,11 +3,13 @@ import { api } from '@/lib/api';
 export interface ActivityLog {
   id: number;
   user: number;
+  user_name: string | null;
   action: string;
   target_model: string;
+  target_id: number | null;
   description: string;
+  ip_address: string | null;
   created_at: string;
-  user_name: string;
 }
 
 export const activityService = {

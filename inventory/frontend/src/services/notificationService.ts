@@ -1,11 +1,21 @@
 import { api } from '@/lib/api';
 
+export type NotificationType =
+  | 'stock_low'
+  | 'stock_critical'
+  | 'new_sale'
+  | 'new_client'
+  | 'system';
+
 export interface Notification {
   id: number;
-  notification_type: string;
+  recipient: number;
+  notification_type: NotificationType;
   title: string;
   message: string;
   is_read: boolean;
+  related_product: number | null;
+  product_name: string | null;
   created_at: string;
 }
 
@@ -17,6 +27,7 @@ export interface UnreadCountResponse {
 export interface NotificationListParams {
   is_read?: boolean;
   since?: string;
+  type?: NotificationType;
 }
 
 export const notificationService = {

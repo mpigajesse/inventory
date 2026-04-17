@@ -29,7 +29,7 @@ import { useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { userService } from "@/services/userService";
@@ -129,7 +129,7 @@ function IdentityCard() {
     const reader = new FileReader();
     reader.onload = () => {
       setAvatarPreview(reader.result as string);
-      toast({ title: "Photo de profil chargée (non envoyée au serveur)." });
+      toast.info("Photo de profil chargée (non envoyée au serveur).");
     };
     reader.readAsDataURL(file);
   }
@@ -243,14 +243,10 @@ function ProfileSection() {
         avatar: updatedUser.profile.avatar_url || undefined,
       });
       queryClient.invalidateQueries({ queryKey: ["me"] });
-      toast({ title: "Profil mis à jour avec succès." });
+      toast.success("Profil mis à jour avec succès.");
     },
     onError: () => {
-      toast({
-        title: "Erreur lors de la mise à jour",
-        description: "Vérifiez les informations saisies.",
-        variant: "destructive",
-      });
+      toast.error("Erreur lors de la mise à jour. Vérifiez les informations saisies.");
     },
   });
 
@@ -377,14 +373,10 @@ function SecuritySection() {
       userService.changePassword(current, next),
     onSuccess: () => {
       reset();
-      toast({ title: "Mot de passe modifié avec succès." });
+      toast.success("Mot de passe modifié avec succès.");
     },
     onError: () => {
-      toast({
-        title: "Échec du changement de mot de passe",
-        description: "Le mot de passe actuel est peut-être incorrect.",
-        variant: "destructive",
-      });
+      toast.error("Échec du changement de mot de passe. Le mot de passe actuel est peut-être incorrect.");
     },
   });
 
@@ -532,8 +524,6 @@ function SecuritySection() {
 // ─── Preferences section ──────────────────────────────────────────────────────
 
 function PreferencesSection() {
-  const [saved, setSaved] = useState(false);
-
   const { handleSubmit, control } = useForm<PreferencesFormValues>({
     resolver: zodResolver(preferencesSchema),
     defaultValues: {
@@ -543,8 +533,7 @@ function PreferencesSection() {
   });
 
   function onSubmit(_values: PreferencesFormValues) {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    toast.success("Préférences sauvegardées.");
   }
 
   return (
@@ -610,7 +599,7 @@ function PreferencesSection() {
               className="min-h-[44px] rounded-lg border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
             >
               <Save className="w-4 h-4 mr-2" />
-              {saved ? "Préférences sauvegardées !" : "Sauvegarder"}
+              Sauvegarder
             </Button>
           </div>
         </form>

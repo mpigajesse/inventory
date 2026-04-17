@@ -11,9 +11,12 @@ export interface Client {
   note: string;
   credit_balance: number;
   is_active: boolean;
+  /** Calculé côté backend via model property + SerializerMethodField. */
   total_purchases: number;
+  /** Calculé côté backend via SerializerMethodField. */
   purchases_count: number;
   created_at: string;
+  updated_at: string;
 }
 
 export interface PaginatedClients {

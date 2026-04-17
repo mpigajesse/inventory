@@ -5,7 +5,7 @@ export interface StockItem {
   product: number;
   product_name: string;
   product_barcode: string | null;
-  product_image_url: string | null;
+  product_image_url?: string | null;
   category_name: string;
   quantity: number;
   min_threshold: number;

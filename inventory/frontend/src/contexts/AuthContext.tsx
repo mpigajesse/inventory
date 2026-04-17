@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { authService, AuthUser } from '@/services/authService';
+import { authService } from '@/services/authService';
+import type { AuthUser } from '@/services/authService';
 import type { Permission } from '@/hooks/usePermissions';
 
 export type UserRole = 'admin' | 'vendeur';
@@ -28,7 +29,7 @@ function mapApiUserToUser(apiUser: AuthUser): User {
     email: apiUser.email,
     role: apiUser.profile.role,
     avatar: apiUser.profile.avatar_url || undefined,
-    permissions: (apiUser as AuthUser & { permissions?: Permission[] }).permissions ?? [],
+    permissions: (apiUser.profile.permissions ?? []) as Permission[],
   };
 }
 

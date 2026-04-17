@@ -1,4 +1,5 @@
 
+import type ExcelJS from "exceljs";
 import type { Client } from "@/services/clientService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

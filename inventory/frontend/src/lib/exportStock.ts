@@ -1,5 +1,5 @@
 
-import { saveAs } from "file-saver";
+import type * as ExcelJS from "exceljs";
 
 export interface StockItem {
   id: number;
@@ -53,6 +53,7 @@ const COLORS = {
 // ─── Style helpers ────────────────────────────────────────────────────────────
 
 type ArgbColor = string;
+type ExcelJSModule = typeof ExcelJS;
 
 function fill(argb: ArgbColor): ExcelJS.Fill {
   return { type: "pattern", pattern: "solid", fgColor: { argb } };
@@ -200,8 +201,8 @@ function buildSheet(
 
 export async function exportStockToExcel(data: StockItem[]): Promise<void> {
   // Lazy-load ExcelJS and file-saver to keep the main bundle small
-  const [{ default: ExcelJS }, { saveAs }] = await Promise.all([
-    import("exceljs"),
+  const [ExcelJS, { saveAs }] = await Promise.all([
+    import("exceljs") as Promise<ExcelJSModule>,
     import("file-saver"),
   ]);
 

@@ -33,6 +33,7 @@ const VendeurPosPage = lazy(() => import("./pages/vendeur/VendeurPosPage"));
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const AdminOverviewPage = lazy(() => import("./pages/admin/AdminOverviewPage"));
 const ActivityLogPage = lazy(() => import("./pages/admin/ActivityLogPage"));
+const PermissionsPage = lazy(() => import("./pages/admin/PermissionsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -193,6 +194,14 @@ const App = () => (
                 element={
                   <RoleGuard allowedRoles={["admin"]}>
                     <ActivityLogPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/admin/permissions"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <PermissionsPage />
                   </RoleGuard>
                 }
               />

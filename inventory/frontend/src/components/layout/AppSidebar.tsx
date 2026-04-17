@@ -83,6 +83,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Administration",
     items: [
       { label: "Utilisateurs", path: "/users", icon: UserCog, permission: "manage_users" },
+      { label: "Permissions", path: "/admin/permissions", icon: ShieldCheck, permission: "manage_users" },
       { label: "Rapports", path: "/reports", icon: BarChart3, permission: "view_reports" },
       { label: "Paramètres", path: "/settings", icon: Settings, permission: "manage_settings" },
       { label: "Administration", path: "/admin/overview", icon: ShieldCheck, permission: "manage_users" },

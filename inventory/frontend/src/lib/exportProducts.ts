@@ -1,4 +1,5 @@
 
+import type * as ExcelJS from "exceljs";
 import type { Product } from "@/services/productService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -41,6 +42,7 @@ const COLORS = {
 } as const;
 
 type ArgbColor = string;
+type ExcelJSModule = typeof ExcelJS;
 
 // ─── Style helpers ────────────────────────────────────────────────────────────
 
@@ -184,8 +186,8 @@ function buildSheet(
 // ─── Export principal ─────────────────────────────────────────────────────────
 
 export async function exportProducts(data: Product[]): Promise<void> {
-  const [{ default: ExcelJS }, { saveAs }] = await Promise.all([
-    import("exceljs"),
+  const [ExcelJS, { saveAs }] = await Promise.all([
+    import("exceljs") as Promise<ExcelJSModule>,
     import("file-saver"),
   ]);
 

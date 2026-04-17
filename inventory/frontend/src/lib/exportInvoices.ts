@@ -31,10 +31,10 @@ function summarizeItems(invoice: Invoice): string {
 }
 
 const STATUS_LABELS: Record<Invoice["status"], string> = {
-  paid: "Payée",
-  partial: "Partielle",
-  unpaid: "Impayée",
-  cancelled: "Annulée",
+  paid: "Payé",
+  partial: "Partiel",
+  unpaid: "Non payé",
+  cancelled: "Annulé",
 };
 
 // ─── Couleurs ─────────────────────────────────────────────────────────────────

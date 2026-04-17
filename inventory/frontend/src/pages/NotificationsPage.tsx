@@ -4,7 +4,6 @@ import {
   Bell,
   AlertTriangle,
   Package,
-  FileText,
   Settings,
   UserCog,
   X,
@@ -26,7 +25,8 @@ import { useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type NotifType = "stock_critique" | "stock_bas" | "vente" | "facture" | "systeme" | "utilisateur";
+// UI-side display categories (mapped from backend NotificationType)
+type NotifDisplay = "stock_critical" | "stock_low" | "new_sale" | "new_client" | "system";
 type TabKey = "toutes" | "non_lues" | "stock" | "ventes" | "systeme";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -39,45 +39,37 @@ const TAB_LABELS: Record<TabKey, string> = {
   systeme: "Système",
 };
 
-const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
-  stock_critique: AlertTriangle,
-  stock_bas: Package,
-  vente: ShoppingCart,
-  facture: FileText,
-  systeme: Settings,
-  utilisateur: UserCog,
+const TYPE_ICON: Record<NotifDisplay, React.ComponentType<{ className?: string }>> = {
+  stock_critical: AlertTriangle,
+  stock_low: Package,
+  new_sale: ShoppingCart,
+  new_client: UserCog,
+  system: Settings,
 };
 
-const TYPE_COLOR: Record<string, string> = {
-  stock_critique: "text-destructive bg-destructive/10",
-  stock_bas: "text-warning bg-warning/10",
-  vente: "text-success bg-success/10",
-  facture: "text-primary bg-primary/10",
-  systeme: "text-muted-foreground bg-muted",
-  utilisateur: "text-purple-500 bg-purple-500/10",
+const TYPE_COLOR: Record<NotifDisplay, string> = {
+  stock_critical: "text-destructive bg-destructive/10",
+  stock_low: "text-warning bg-warning/10",
+  new_sale: "text-success bg-success/10",
+  new_client: "text-purple-500 bg-purple-500/10",
+  system: "text-muted-foreground bg-muted",
 };
 
-const NOTIF_TYPE_MAP: Record<string, NotifType> = {
-  stock_critique: "stock_critique",
-  low_stock: "stock_bas",
-  sale: "vente",
-  invoice: "facture",
-  system: "systeme",
-  user: "utilisateur",
-};
-
-const ACTION_URL_MAP: Record<string, string> = {
-  stock_critique: "/stock",
-  low_stock: "/stock",
-  sale: "/invoices",
-  invoice: "/invoices",
-  user: "/users",
+const ACTION_URL_MAP: Record<NotifDisplay, string> = {
+  stock_critical: "/stock",
+  stock_low: "/stock",
+  new_sale: "/invoices",
+  new_client: "/clients",
+  system: "",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function resolveType(notification_type: string): NotifType {
-  return NOTIF_TYPE_MAP[notification_type] ?? "systeme";
+function resolveType(notification_type: string): NotifDisplay {
+  const valid: NotifDisplay[] = ['stock_critical', 'stock_low', 'new_sale', 'new_client', 'system'];
+  return valid.includes(notification_type as NotifDisplay)
+    ? (notification_type as NotifDisplay)
+    : 'system';
 }
 
 function relativeTime(isoString: string): string {
@@ -102,15 +94,15 @@ function filterByTab(notifications: Notification[], tab: TabKey): Notification[]
       return notifications.filter((n) => !n.is_read);
     case "stock":
       return notifications.filter(
-        (n) => n.notification_type === "stock_critique" || n.notification_type === "low_stock"
+        (n) => n.notification_type === "stock_critical" || n.notification_type === "stock_low"
       );
     case "ventes":
       return notifications.filter(
-        (n) => n.notification_type === "sale" || n.notification_type === "invoice"
+        (n) => n.notification_type === "new_sale" || n.notification_type === "new_client"
       );
     case "systeme":
       return notifications.filter(
-        (n) => n.notification_type === "system" || n.notification_type === "user"
+        (n) => n.notification_type === "system"
       );
     default:
       return notifications;
@@ -162,24 +154,24 @@ export default function NotificationsPage() {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
   const stockAlertCount = notifications.filter(
-    (n) => n.notification_type === "stock_critique" || n.notification_type === "low_stock"
+    (n) => n.notification_type === "stock_critical" || n.notification_type === "stock_low"
   ).length;
   const todayStr = new Date().toISOString().slice(0, 10);
   const salesTodayCount = notifications.filter(
-    (n) => n.notification_type === "sale" && n.created_at.startsWith(todayStr)
+    (n) => n.notification_type === "new_sale" && n.created_at.startsWith(todayStr)
   ).length;
 
   const tabCounts: Record<TabKey, number> = {
     toutes: notifications.length,
     non_lues: unreadCount,
     stock: notifications.filter(
-      (n) => n.notification_type === "stock_critique" || n.notification_type === "low_stock"
+      (n) => n.notification_type === "stock_critical" || n.notification_type === "stock_low"
     ).length,
     ventes: notifications.filter(
-      (n) => n.notification_type === "sale" || n.notification_type === "invoice"
+      (n) => n.notification_type === "new_sale" || n.notification_type === "new_client"
     ).length,
     systeme: notifications.filter(
-      (n) => n.notification_type === "system" || n.notification_type === "user"
+      (n) => n.notification_type === "system"
     ).length,
   };
 
@@ -196,7 +188,8 @@ export default function NotificationsPage() {
     if (!notif.is_read) {
       markReadMutation.mutate(notif.id);
     }
-    const url = ACTION_URL_MAP[notif.notification_type];
+    const display = resolveType(notif.notification_type);
+    const url = ACTION_URL_MAP[display];
     if (url) {
       navigate(url);
     }

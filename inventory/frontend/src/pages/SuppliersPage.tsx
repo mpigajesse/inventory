@@ -23,6 +23,7 @@ import { supplierService } from "@/services/supplierService";
 import type { Supplier } from "@/services/supplierService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { usePermissions } from "@/hooks/usePermissions";
+import { toast } from "sonner";
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
@@ -36,8 +37,9 @@ export default function SuppliersPage() {
   const [deletingSupplier, setDeletingSupplier] = useState<Supplier | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["suppliers"],
-    queryFn: () => supplierService.getAll(),
+    queryKey: ["suppliers", search],
+    queryFn: () =>
+      supplierService.getAll(search ? { search } : undefined),
   });
 
   const suppliers = data?.results ?? [];
@@ -46,16 +48,17 @@ export default function SuppliersPage() {
     mutationFn: (id: number) => supplierService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      toast.success("Fournisseur supprimé", {
+        description: `${deletingSupplier?.name ?? "Le fournisseur"} a été supprimé avec succès.`,
+      });
       setDeletingSupplier(null);
     },
+    onError: () => {
+      toast.error("Erreur lors de la suppression", {
+        description: "Impossible de supprimer ce fournisseur. Réessayez.",
+      });
+    },
   });
-
-  const filtered = suppliers.filter(
-    (s) =>
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      (s.contact_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (s.phone ?? "").includes(search)
-  );
 
   function handleDelete() {
     if (!deletingSupplier) return;
@@ -141,16 +144,16 @@ export default function SuppliersPage() {
         )}
 
         {/* Cards */}
-        {!isLoading && filtered.length === 0 && (
+        {!isLoading && suppliers.length === 0 && (
           <EmptyState
             message="Aucun fournisseur trouvé."
             icon={<Truck className="w-10 h-10" />}
           />
         )}
 
-        {!isLoading && filtered.length > 0 && (
+        {!isLoading && suppliers.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((supplier) => {
+            {suppliers.map((supplier) => {
               const ordersCount = supplier.orders_count ?? 0;
               const isActive = ordersCount > 0;
               const locationLabel = [supplier.city, supplier.country].filter(Boolean).join(", ");
@@ -260,7 +263,7 @@ export default function SuppliersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDelete}

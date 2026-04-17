@@ -14,6 +14,7 @@ export interface Invoice {
   note: string;
   issued_by_name: string;
   issued_at: string;
+  updated_at: string;
   items: SaleItem[];
 }
 

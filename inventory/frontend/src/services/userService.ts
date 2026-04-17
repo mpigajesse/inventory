@@ -10,11 +10,14 @@ export interface UserListItem {
   last_name: string;
   full_name: string;
   is_active: boolean;
-  permissions?: string[];
+  date_joined: string;
   profile: {
     role: 'admin' | 'vendeur';
     phone: string;
+    avatar: string | null;
     avatar_url: string | null;
+    is_active: boolean;
+    permissions: string[];
   };
 }
 
@@ -35,7 +38,8 @@ export interface UserUpdatePayload {
   username?: string;
   role?: 'admin' | 'vendeur';
   phone?: string;
-  is_active_profile?: boolean;
+  /** Maps to `profile_is_active` on the backend UserUpdateSerializer */
+  profile_is_active?: boolean;
 }
 
 export const userService = {

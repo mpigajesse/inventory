@@ -86,18 +86,19 @@ function addMetaRow(
   centerText: string,
   rightText: string
 ): void {
+  // Divide columns into thirds; text must sit in the first cell of each merged range
+  const third = Math.floor(colCount / 3);
+  const twoThirds = third * 2;
+
   const cells: string[] = [];
   for (let i = 0; i < colCount; i++) cells.push("");
-  cells[0] = leftText;
-  const mid = Math.floor(colCount / 2);
-  cells[mid] = centerText;
-  cells[colCount - 1] = rightText;
+  cells[0] = leftText;           // column 1  — first cell of left third
+  cells[third] = centerText;     // column third+1 — first cell of centre third
+  cells[twoThirds] = rightText;  // column twoThirds+1 — first cell of right third
+
   const metaRow = ws.addRow(cells);
   metaRow.height = 20;
 
-  // merge into thirds
-  const third = Math.floor(colCount / 3);
-  const twoThirds = third * 2;
   ws.mergeCells(2, 1, 2, third);
   ws.mergeCells(2, third + 1, 2, twoThirds);
   ws.mergeCells(2, twoThirds + 1, 2, colCount);
