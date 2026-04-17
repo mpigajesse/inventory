@@ -9,7 +9,8 @@ from .models import UserProfile
 from .permissions import IsAdminRole
 from .serializers import (
     UserSerializer, UserCreateSerializer, UserUpdateSerializer,
-    ChangePasswordSerializer, MeSerializer, CustomTokenObtainPairSerializer,
+    UserDetailSerializer, ChangePasswordSerializer, MeSerializer,
+    CustomTokenObtainPairSerializer,
 )
 
 
@@ -18,37 +19,45 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.select_related('profile').filter(is_superuser=False)
     permission_classes = [permissions.IsAuthenticated, IsAdminRole]
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+    def get_queryset(self):
+        qs = User.objects.select_related('profile').filter(is_superuser=False)
+        is_active_param = self.request.query_params.get('is_active')
+        if is_active_param is not None:
+            qs = qs.filter(is_active=is_active_param.lower() == 'true')
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'create':
             return UserCreateSerializer
         if self.action in ('update', 'partial_update'):
             return UserUpdateSerializer
+        if self.action == 'retrieve':
+            return UserDetailSerializer
         return UserSerializer
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
         if user == request.user:
             return Response(
-                {'detail': 'Vous ne pouvez pas supprimer votre propre compte.'},
+                {'detail': 'Vous ne pouvez pas désactiver votre propre compte.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user.is_active = False
+        user.save(update_fields=['is_active'])
         user.profile.is_active = False
-        user.save()
-        user.profile.save()
+        user.profile.save(update_fields=['is_active'])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'], url_path='activate')
     def activate(self, request, pk=None):
         user = self.get_object()
         user.is_active = True
+        user.save(update_fields=['is_active'])
         user.profile.is_active = True
-        user.save()
-        user.profile.save()
+        user.profile.save(update_fields=['is_active'])
         return Response({'status': 'activated'})
 
     @action(detail=True, methods=['patch'], url_path='set-permissions')
@@ -74,6 +83,15 @@ class UserViewSet(viewsets.ModelViewSet):
         user.profile.permissions = permissions
         user.profile.save(update_fields=['permissions'])
         return Response({'permissions': permissions}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='activity')
+    def recent_activity(self, request, pk=None):
+        """Retourne les 20 dernières activités de cet utilisateur."""
+        user = self.get_object()
+        from activity.models import ActivityLog
+        from activity.serializers import ActivityLogSerializer
+        logs = ActivityLog.objects.filter(user=user).order_by('-created_at')[:20]
+        return Response(ActivityLogSerializer(logs, many=True).data)
 
 
 class MeView(generics.RetrieveUpdateAPIView):

@@ -60,6 +60,7 @@ import {
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { usePermissions, type Permission } from "@/hooks/usePermissions";
 import { AccessDenied } from "@/components/ui/AccessDenied";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,11 @@ type EditUserFormValues = z.infer<typeof editUserSchema>;
 
 const FIELD_LABEL_CLASSES =
   "text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em]";
+
+/** A user is considered active only when both the Django User and the profile are active. */
+function isUserActive(u: UserListItem): boolean {
+  return u.is_active && u.profile.is_active;
+}
 
 function getInitialsFromName(name: string, fallback: string): string {
   const parts = name.split(" ").filter(Boolean);
@@ -371,7 +377,7 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
       email: user.email,
       role: user.profile.role,
       phone: user.profile.phone ?? "",
-      is_active_profile: user.is_active,
+      is_active_profile: user.profile.is_active,
     },
   });
 
@@ -789,6 +795,7 @@ export default function UsersPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const queryClient = useQueryClient();
   const { can } = usePermissions();
+  const { currentUser } = useAuth();
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [roleFilter, setRoleFilter] = useState("");
@@ -839,13 +846,12 @@ export default function UsersPage() {
 
   const activateMutation = useMutation({
     mutationFn: (id: number) => userService.activate(id),
-    onSuccess: (_, id) => {
+    onSuccess: (updatedUser) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      const user = users.find((u) => u.id === id);
-      if (user?.is_active) {
-        toast.success("Compte désactivé.");
+      if (updatedUser.is_active) {
+        toast.success("Compte utilisateur réactivé avec succès");
       } else {
-        toast.success("Compte réactivé.");
+        toast.success("Compte utilisateur désactivé");
       }
     },
     onError: () => {
@@ -858,10 +864,10 @@ export default function UsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setModal({ type: "none" });
-      toast.success("Accès révoqué.");
+      toast.success("Compte utilisateur désactivé");
     },
     onError: () => {
-      toast.error("Erreur lors de la révocation.");
+      toast.error("Erreur lors de la désactivation.");
     },
   });
 
@@ -881,15 +887,15 @@ export default function UsersPage() {
   // ── Filtering ─────────────────────────────────────────────────────────────
 
   const totalUsers = users.length;
-  const activeCount = users.filter((u) => u.is_active).length;
+  const activeCount = users.filter(isUserActive).length;
   const inactiveCount = totalUsers - activeCount;
   const adminCount = users.filter((u) => u.profile.role === "admin").length;
   const vendeurCount = totalUsers - adminCount;
 
   const filtered = users.filter((u) => {
     if (roleFilter && u.profile.role !== (roleFilter as UserRole)) return false;
-    if (statusFilter === "active" && !u.is_active) return false;
-    if (statusFilter === "inactive" && u.is_active) return false;
+    if (statusFilter === "active" && !isUserActive(u)) return false;
+    if (statusFilter === "inactive" && isUserActive(u)) return false;
     return true;
   });
 
@@ -928,7 +934,7 @@ export default function UsersPage() {
         email: values.email,
         role: values.role,
         phone: values.phone,
-        is_active_profile: values.is_active_profile,
+        profile_is_active: values.is_active_profile,
       },
     });
   }
@@ -1110,9 +1116,12 @@ export default function UsersPage() {
                               size="md"
                             />
                             <div className="min-w-0">
-                              <span className="font-semibold block text-foreground truncate">
+                              <Link
+                                to={`/users/${user.id}`}
+                                className="font-semibold block text-foreground truncate hover:text-primary hover:underline cursor-pointer transition-colors"
+                              >
                                 {displayName}
-                              </span>
+                              </Link>
                               <span className="font-mono text-xs text-muted-foreground">
                                 @{user.username}
                               </span>
@@ -1125,13 +1134,21 @@ export default function UsersPage() {
                         </td>
                         <td>
                           <StatusBadge
-                            label={user.is_active ? "Actif" : "Inactif"}
-                            variant={user.is_active ? "success" : "default"}
+                            label={isUserActive(user) ? "Actif" : "Inactif"}
+                            variant={isUserActive(user) ? "success" : "default"}
                           />
                         </td>
                         <td>
                           {can('manage_users') && (
                             <div className="flex items-center gap-0.5">
+                              <Link
+                                to={`/users/${user.id}`}
+                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                title="Voir le détail"
+                                aria-label={`Voir le détail de ${displayName}`}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Link>
                               <button
                                 className="inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 title="Modifier"
@@ -1168,14 +1185,16 @@ export default function UsersPage() {
                                   <UserCheck className="w-4 h-4" />
                                 )}
                               </button>
-                              <button
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-                                title="Révoquer l'accès"
-                                aria-label={`Révoquer l'accès de ${displayName}`}
-                                onClick={() => setModal({ type: "delete", user })}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {String(user.id) !== currentUser?.id && (
+                                <button
+                                  className="inline-flex items-center justify-center w-9 h-9 rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                                  title="Désactiver l'utilisateur"
+                                  aria-label={`Désactiver ${displayName}`}
+                                  onClick={() => setModal({ type: "delete", user })}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           )}
                         </td>
@@ -1222,9 +1241,12 @@ export default function UsersPage() {
                   />
                   <UserAvatar name={displayName} username={user.username} size="lg" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground truncate">
+                    <Link
+                      to={`/users/${user.id}`}
+                      className="font-semibold text-sm text-foreground truncate block hover:text-primary hover:underline cursor-pointer transition-colors"
+                    >
                       {displayName}
-                    </p>
+                    </Link>
                     <p className="font-mono text-xs text-muted-foreground mt-0.5 truncate">
                       @{user.username}
                     </p>
@@ -1234,13 +1256,21 @@ export default function UsersPage() {
                     <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                       <RolePill role={user.profile.role as UserRole} />
                       <StatusBadge
-                        label={user.is_active ? "Actif" : "Inactif"}
-                        variant={user.is_active ? "success" : "default"}
+                        label={isUserActive(user) ? "Actif" : "Inactif"}
+                        variant={isUserActive(user) ? "success" : "default"}
                       />
                     </div>
                   </div>
                   {can('manage_users') && (
                     <div className="flex flex-col gap-1 shrink-0">
+                      <Link
+                        to={`/users/${user.id}`}
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        title="Voir le détail"
+                        aria-label={`Voir le détail de ${displayName}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Link>
                       <button
                         className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         title="Modifier"
@@ -1277,14 +1307,16 @@ export default function UsersPage() {
                           <UserCheck className="w-4 h-4" />
                         )}
                       </button>
-                      <button
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-                        title="Révoquer l'accès"
-                        aria-label={`Révoquer l'accès de ${displayName}`}
-                        onClick={() => setModal({ type: "delete", user })}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {String(user.id) !== currentUser?.id && (
+                        <button
+                          className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                          title="Désactiver l'utilisateur"
+                          aria-label={`Désactiver ${displayName}`}
+                          onClick={() => setModal({ type: "delete", user })}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1414,15 +1446,14 @@ export default function UsersPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Révoquer l'accès ?</AlertDialogTitle>
+            <AlertDialogTitle>Désactiver cet utilisateur ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Révoquer l'accès de{" "}
               <strong>
                 {modal.type === "delete"
                   ? modal.user.full_name || modal.user.username
                   : ""}
               </strong>{" "}
-              supprimera définitivement son compte. Cette action est irréversible.
+              sera désactivé (soft delete). Il ne pourra plus se connecter mais ses données sont conservées. Vous pourrez le réactiver à tout moment.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1437,7 +1468,7 @@ export default function UsersPage() {
               {deleteMutation.isPending && (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               )}
-              Révoquer l'accès
+              Désactiver
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

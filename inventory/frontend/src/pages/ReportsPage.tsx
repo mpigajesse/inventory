@@ -1,3 +1,4 @@
+import React from "react";
 import { useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
@@ -14,11 +15,19 @@ import {
   Download,
   Calendar,
   ArrowUpRight,
+  Loader2,
 } from "lucide-react";
 import { dashboardService } from "@/services/dashboardService";
 import { stockService } from "@/services/stockService";
+import { clientService } from "@/services/clientService";
+import { productService } from "@/services/productService";
+import { salesService } from "@/services/salesService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { exportReportToExcel } from "@/lib/exportReport";
+import { exportClients } from "@/lib/exportClients";
+import { exportProductsStockReport } from "@/lib/exportProductsStock";
+import { exportWeeklySales } from "@/lib/exportSales";
+import { toast } from "sonner";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,6 +60,9 @@ function SkeletonBar({ width = "100%" }: { width?: string }) {
 export default function ReportsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const { can } = usePermissions();
+  const [isExportingClients, setIsExportingClients] = React.useState(false);
+  const [isExportingProducts, setIsExportingProducts] = React.useState(false);
+  const [isExportingSales, setIsExportingSales] = React.useState(false);
 
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ["dashboard"],
@@ -323,40 +335,105 @@ export default function ReportsPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              {
-                label: "Ventes de la semaine",
-                desc: "Toutes les transactions",
-                icon: ShoppingCart,
-                color: "text-primary bg-primary/10",
-              },
-              {
-                label: "Rapport produits",
-                desc: "Stock et performances",
-                icon: BarChart2,
-                color: "text-success bg-success/10",
-              },
-              {
-                label: "Rapport clients",
-                desc: "Historique d'achats",
-                icon: Users,
-                color: "text-warning bg-warning/10",
-              },
-            ].map((item) => (
-              <button
-                key={item.label}
-                className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-200 text-left group"
-              >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${item.color}`}>
-                  <item.icon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold font-heading truncate">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
+            {/* Ventes de la semaine */}
+            <button
+              disabled={isExportingSales || !can('view_reports')}
+              onClick={async () => {
+                setIsExportingSales(true);
+                try {
+                  const today = new Date();
+                  const monday = new Date(today);
+                  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+                  const since = monday.toISOString().split('T')[0];
+                  const data = await salesService.getAll({ created_after: since, page_size: '500' });
+                  await exportWeeklySales(data.results);
+                  toast.success('Export ventes semaine téléchargé');
+                } catch {
+                  toast.error("Erreur lors de l'export");
+                } finally {
+                  setIsExportingSales(false);
+                }
+              }}
+              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-primary bg-primary/10">
+                <ShoppingCart className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold font-heading truncate">Ventes de la semaine</p>
+                <p className="text-xs text-muted-foreground">Toutes les transactions</p>
+              </div>
+              {isExportingSales ? (
+                <Loader2 className="w-4 h-4 text-muted-foreground ml-auto shrink-0 animate-spin" />
+              ) : (
                 <Download className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 shrink-0 transition-opacity" />
-              </button>
-            ))}
+              )}
+            </button>
+
+            {/* Rapport produits */}
+            <button
+              disabled={isExportingProducts || !can('view_reports')}
+              onClick={async () => {
+                setIsExportingProducts(true);
+                try {
+                  const [productsData, stockData] = await Promise.all([
+                    productService.getAll({ page_size: '1000' }),
+                    stockService.getAll({ page_size: '1000' }),
+                  ]);
+                  await exportProductsStockReport(productsData.results, stockData.results);
+                  toast.success('Rapport produits téléchargé');
+                } catch {
+                  toast.error("Erreur lors de l'export");
+                } finally {
+                  setIsExportingProducts(false);
+                }
+              }}
+              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-success bg-success/10">
+                <BarChart2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold font-heading truncate">Rapport produits</p>
+                <p className="text-xs text-muted-foreground">Stock et performances</p>
+              </div>
+              {isExportingProducts ? (
+                <Loader2 className="w-4 h-4 text-muted-foreground ml-auto shrink-0 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 shrink-0 transition-opacity" />
+              )}
+            </button>
+
+            {/* Rapport clients */}
+            <button
+              disabled={isExportingClients || !can('view_reports')}
+              onClick={async () => {
+                setIsExportingClients(true);
+                try {
+                  const data = await clientService.getAll({ page_size: '1000' });
+                  await exportClients(data.results);
+                  toast.success('Rapport clients téléchargé');
+                } catch {
+                  toast.error("Erreur lors de l'export");
+                } finally {
+                  setIsExportingClients(false);
+                }
+              }}
+              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-warning bg-warning/10">
+                <Users className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold font-heading truncate">Rapport clients</p>
+                <p className="text-xs text-muted-foreground">Historique d'achats</p>
+              </div>
+              {isExportingClients ? (
+                <Loader2 className="w-4 h-4 text-muted-foreground ml-auto shrink-0 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 shrink-0 transition-opacity" />
+              )}
+            </button>
           </div>
         </div>
 

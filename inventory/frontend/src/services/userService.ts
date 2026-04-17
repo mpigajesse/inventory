@@ -1,6 +1,7 @@
 import { api } from '@/lib/api';
 import type { AuthUser } from './authService';
 import type { Permission } from '@/hooks/usePermissions';
+import type { ActivityLog } from './activityService';
 
 export interface UserListItem {
   id: number;
@@ -19,6 +20,12 @@ export interface UserListItem {
     is_active: boolean;
     permissions: string[];
   };
+}
+
+export interface UserDetailItem extends UserListItem {
+  total_sales: number;
+  total_revenue: number;
+  last_login: string | null;
 }
 
 export interface CreateUserPayload {
@@ -43,8 +50,8 @@ export interface UserUpdatePayload {
 }
 
 export const userService = {
-  getAll: () =>
-    api.get<{ results: UserListItem[]; count: number }>('/users/').then((r) => r.data),
+  getAll: (params?: Record<string, string>) =>
+    api.get<{ results: UserListItem[]; count: number }>('/users/', { params }).then((r) => r.data),
 
   create: (data: CreateUserPayload) =>
     api.post<UserListItem>('/users/', data).then((r) => r.data),
@@ -72,4 +79,10 @@ export const userService = {
 
   setPermissions: (id: number, permissions: Permission[]): Promise<void> =>
     api.patch(`/users/${id}/set-permissions/`, { permissions }).then(() => undefined),
+
+  getById: (id: number) =>
+    api.get<UserDetailItem>(`/users/${id}/`).then((r) => r.data),
+
+  getActivity: (id: number) =>
+    api.get<ActivityLog[]>(`/users/${id}/activity/`).then((r) => r.data),
 };

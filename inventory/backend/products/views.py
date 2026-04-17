@@ -15,6 +15,14 @@ class CategoryViewSet(viewsets.ModelViewSet):
     search_fields = ['name']
     pagination_class = None  # categories are few — return plain list, not paginated
 
+    def perform_destroy(self, instance):
+        if instance.products.filter(is_active=True).exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                "Impossible de supprimer une catégorie contenant des produits actifs."
+            )
+        instance.delete()
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.select_related('category', 'stock').filter(is_active=True)

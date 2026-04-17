@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Phone, Mail, Package, Edit, Trash2, Truck, MapPin, FileSpreadsheet } from "lucide-react";
+import { Plus, Phone, Mail, Package, Edit, Trash2, Truck, MapPin, FileSpreadsheet, Loader2 } from "lucide-react";
 import { exportSuppliers } from "@/lib/exportSuppliers";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useState } from "react";
@@ -47,16 +47,16 @@ export default function SuppliersPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => supplierService.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-      toast.success("Fournisseur supprimé", {
-        description: `${deletingSupplier?.name ?? "Le fournisseur"} a été supprimé avec succès.`,
+      toast.success("Fournisseur archivé", {
+        description: `${deletingSupplier?.name ?? "Le fournisseur"} a été archivé avec succès.`,
       });
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
       setDeletingSupplier(null);
     },
-    onError: () => {
-      toast.error("Erreur lors de la suppression", {
-        description: "Impossible de supprimer ce fournisseur. Réessayez.",
-      });
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Impossible d'archiver ce fournisseur. Réessayez.";
+      toast.error("Erreur lors de l'archivage", { description: message });
     },
   });
 
@@ -256,10 +256,14 @@ export default function SuppliersPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce fournisseur ?</AlertDialogTitle>
+            <AlertDialogTitle>Archiver ce fournisseur ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous êtes sur le point de supprimer{" "}
-              <strong>{deletingSupplier?.name}</strong>. Cette action est irréversible.
+              <strong>{deletingSupplier?.name}</strong> sera archivé et n'apparaîtra plus dans
+              les listes.{" "}
+              <span className="block mt-1 text-muted-foreground">
+                Le fournisseur sera archivé (soft delete) — ses données et historique de
+                commandes sont conservés.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -269,7 +273,14 @@ export default function SuppliersPage() {
               onClick={handleDelete}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Suppression…" : "Supprimer"}
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Archivage…
+                </>
+              ) : (
+                "Archiver"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

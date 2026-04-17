@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Plus, Phone, Mail, Edit, Trash2, History, Users, UserPlus, FileSpreadsheet } from "lucide-react";
+import { Plus, Phone, Mail, Edit, Trash2, History, Users, UserPlus, FileSpreadsheet, Loader2 } from "lucide-react";
 import { exportClients } from "@/lib/exportClients";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -168,16 +168,16 @@ export default function ClientsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => clientService.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Client supprimé", {
-        description: `${deletingClient?.name ?? "Le client"} a été supprimé avec succès.`,
+      toast.success("Client archivé", {
+        description: `${deletingClient?.name ?? "Le client"} a été archivé avec succès.`,
       });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
       setDeletingClient(null);
     },
-    onError: () => {
-      toast.error("Erreur lors de la suppression", {
-        description: "Impossible de supprimer ce client. Réessayez.",
-      });
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Impossible d'archiver ce client. Réessayez.";
+      toast.error("Erreur lors de l'archivage", { description: message });
     },
   });
 
@@ -361,11 +361,14 @@ export default function ClientsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce client ?</AlertDialogTitle>
+            <AlertDialogTitle>Archiver ce client ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous êtes sur le point de supprimer{" "}
-              <strong>{deletingClient?.name}</strong>.
-              Cette action est irréversible.
+              <strong>{deletingClient?.name}</strong> sera archivé et n'apparaîtra plus dans
+              les listes.{" "}
+              <span className="block mt-1 text-muted-foreground">
+                Le client sera archivé (soft delete) — ses données et historique d'achats
+                sont conservés.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -377,7 +380,14 @@ export default function ClientsPage() {
               onClick={handleDelete}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Suppression…" : "Supprimer"}
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Archivage…
+                </>
+              ) : (
+                "Archiver"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -204,6 +204,37 @@ function buildSalesSheet(
   });
 }
 
+// ─── Export ventes de la semaine ─────────────────────────────────────────────
+
+export async function exportWeeklySales(data: Sale[]): Promise<void> {
+  const [{ default: ExcelJS }, { saveAs }] = await Promise.all([
+    import("exceljs"),
+    import("file-saver"),
+  ]);
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "NAOSERVICES INVENTORY";
+  wb.created = new Date();
+
+  const weekLabel = new Date().toLocaleDateString("fr-FR", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+  });
+
+  buildSalesSheet(
+    wb, data,
+    "Ventes de la semaine",
+    `VENTES DE LA SEMAINE — ${weekLabel}`,
+    COLORS.titleBg
+  );
+
+  const today = filenameDate();
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  saveAs(blob, `ventes-semaine-${today}.xlsx`);
+}
+
 // ─── Export principal ─────────────────────────────────────────────────────────
 
 export async function exportSalesToExcel(data: Sale[]): Promise<void> {

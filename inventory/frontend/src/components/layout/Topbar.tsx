@@ -41,6 +41,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/invoices": "Factures",
   "/clients": "Clients",
   "/users": "Utilisateurs",
+  "/users/:id": "Détail utilisateur",
   "/reports": "Rapports",
   "/settings": "Paramètres",
   "/notifications": "Notifications",
@@ -59,6 +60,15 @@ interface BreadcrumbSegment {
   path: string;
 }
 
+function resolveRouteLabel(cumPath: string, part: string): string {
+  // Direct match
+  if (ROUTE_LABELS[cumPath]) return ROUTE_LABELS[cumPath];
+  // Try replacing last segment with :id for dynamic routes (e.g. /users/123 → /users/:id)
+  const withParam = cumPath.replace(/\/[^/]+$/, "/:id");
+  if (ROUTE_LABELS[withParam]) return ROUTE_LABELS[withParam];
+  return part.charAt(0).toUpperCase() + part.slice(1);
+}
+
 function buildBreadcrumbs(pathname: string): BreadcrumbSegment[] {
   const parts = pathname.split("/").filter(Boolean);
   const segments: BreadcrumbSegment[] = [];
@@ -66,9 +76,9 @@ function buildBreadcrumbs(pathname: string): BreadcrumbSegment[] {
   let cumPath = "";
   for (const part of parts) {
     cumPath += `/${part}`;
-    const label = ROUTE_LABELS[cumPath];
+    const label = resolveRouteLabel(cumPath, part);
     segments.push({
-      label: label ?? part.charAt(0).toUpperCase() + part.slice(1),
+      label,
       path: cumPath,
     });
   }

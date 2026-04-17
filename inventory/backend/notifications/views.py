@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -12,7 +13,8 @@ from .serializers import NotificationSerializer
 class NotificationViewSet(ModelViewSet):
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get', 'post', 'head', 'options']
+    # DELETE autorisé : l'utilisateur peut supprimer ses propres notifications lues.
+    http_method_names = ['get', 'post', 'delete', 'head', 'options']
 
     def get_queryset(self):
         user = self.request.user
@@ -80,6 +82,24 @@ class NotificationViewSet(ModelViewSet):
             .update(is_read=True)
         )
         return Response({'updated': updated}, status=status.HTTP_200_OK)
+
+    # ------------------------------------------------------------------ #
+    #  Delete — utilisateur supprime ses propres notifications lues        #
+    # ------------------------------------------------------------------ #
+
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
+        notification = self.get_object()
+        # Un utilisateur ne peut supprimer que ses propres notifications.
+        if notification.recipient_id != request.user.pk:
+            raise PermissionDenied("Vous ne pouvez supprimer que vos propres notifications.")
+        # Seules les notifications déjà lues peuvent être supprimées.
+        if not notification.is_read:
+            return Response(
+                {'detail': 'Marquez la notification comme lue avant de la supprimer.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notification.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     # ------------------------------------------------------------------ #
     #  Unread count + latest 5 (for Topbar dropdown)                      #

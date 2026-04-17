@@ -381,8 +381,9 @@ export default function PermissionsPage() {
 
   const pendingCount = modifiedIds.size;
 
-  // Filter users
+  // Filter users — only active users (both Django User and profile must be active)
   const filteredUsers = users.filter((u) => {
+    if (!u.is_active || !u.profile.is_active) return false;
     if (roleFilter === "vendeur" && u.profile.role !== "vendeur") return false;
     if (search.trim()) {
       const q = search.toLowerCase();

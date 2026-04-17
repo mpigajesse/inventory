@@ -127,6 +127,34 @@ class MeSerializer(serializers.ModelSerializer):
         return instance
 
 
+class UserDetailSerializer(serializers.ModelSerializer):
+    profile = MeProfileSerializer(read_only=True)
+    full_name = serializers.SerializerMethodField()
+    total_sales = serializers.SerializerMethodField()
+    total_revenue = serializers.SerializerMethodField()
+    last_login = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%SZ', read_only=True)
+    date_joined = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%SZ', read_only=True)
+
+    def get_full_name(self, obj):
+        return obj.get_full_name() or obj.username
+
+    def get_total_sales(self, obj):
+        return obj.sales.count()
+
+    def get_total_revenue(self, obj):
+        from django.db.models import Sum
+        result = obj.sales.aggregate(total=Sum('total_amount'))
+        return result['total'] or 0
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
+            'is_active', 'last_login', 'date_joined', 'profile',
+            'total_sales', 'total_revenue',
+        ]
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)

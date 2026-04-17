@@ -202,9 +202,11 @@ export default function CategoriesPage() {
       toast.success("Catégorie supprimée");
       setModal({ type: "none" });
     },
-    onError: () => {
+    onError: (error: unknown) => {
+      const detail =
+        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       toast.error("Erreur lors de la suppression", {
-        description: "Impossible de supprimer cette catégorie. Réessayez.",
+        description: detail ?? "Impossible de supprimer cette catégorie. Réessayez.",
       });
     },
   });
@@ -453,12 +455,19 @@ export default function CategoriesPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer la catégorie ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vous êtes sur le point de supprimer{" "}
-              <strong>
-                {modal.type === "delete" ? modal.category.name : ""}
-              </strong>
-              . Cette action est irréversible.
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Vous êtes sur le point de supprimer{" "}
+                  <strong>
+                    {modal.type === "delete" ? modal.category.name : ""}
+                  </strong>
+                  . Cette action est irréversible.
+                </p>
+                <p className="text-amber-600 dark:text-amber-400 text-xs font-medium">
+                  Attention : si cette catégorie contient des produits, la suppression sera refusée.
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

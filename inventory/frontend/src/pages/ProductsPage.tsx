@@ -116,9 +116,11 @@ export default function ProductsPage() {
       toast.success("Produit supprimé");
       setModal({ type: "none" });
     },
-    onError: () => {
+    onError: (error: unknown) => {
+      const detail =
+        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       toast.error("Erreur lors de la suppression", {
-        description: "Impossible de supprimer ce produit. Réessayez.",
+        description: detail ?? "Impossible de supprimer ce produit. Réessayez.",
       });
     },
   });
@@ -760,7 +762,7 @@ export default function ProductsPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogCancel disabled={deleteMutation.isPending}>Annuler</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={handleDelete}
