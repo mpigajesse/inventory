@@ -141,7 +141,9 @@ function IdentityCard() {
         className="h-20 sm:h-24"
         style={{
           background:
-            "linear-gradient(135deg, hsl(var(--primary) / 0.18) 0%, hsl(var(--accent) / 0.14) 55%, hsl(var(--primary) / 0.08) 100%)",
+            "linear-gradient(135deg, hsl(var(--primary) / 0.22) 0%, hsl(var(--accent) / 0.16) 55%, hsl(var(--primary) / 0.10) 100%)",
+          backgroundSize: "200% 200%",
+          animation: "gradientPulse 4s ease-in-out infinite",
         }}
         aria-hidden="true"
       />
@@ -288,7 +290,7 @@ function ProfileSection() {
               <Input
                 id="profile-first-name"
                 placeholder="Ex : Jean"
-                className="h-11 rounded-lg focus-visible:ring-primary/60"
+                className="h-11 rounded-lg transition-all duration-200 focus-visible:ring-primary/60"
                 {...register("first_name")}
               />
               {errors.first_name && (
@@ -303,7 +305,7 @@ function ProfileSection() {
               <Input
                 id="profile-last-name"
                 placeholder="Ex : Mouloungui"
-                className="h-11 rounded-lg focus-visible:ring-primary/60"
+                className="h-11 rounded-lg transition-all duration-200 focus-visible:ring-primary/60"
                 {...register("last_name")}
               />
               {errors.last_name && (
@@ -319,7 +321,7 @@ function ProfileSection() {
                 id="profile-email"
                 type="email"
                 placeholder="exemple@naoservices.ga"
-                className="h-11 rounded-lg focus-visible:ring-primary/60"
+                className="h-11 rounded-lg transition-all duration-200 focus-visible:ring-primary/60"
                 {...register("email")}
               />
               {errors.email && (
@@ -415,7 +417,7 @@ function SecuritySection() {
                 id="pwd-current"
                 type={showCurrentPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className="h-11 rounded-lg pr-11 focus-visible:ring-primary/60"
+                className="h-11 rounded-lg pr-11 transition-all duration-200 focus-visible:ring-primary/60"
                 {...register("current")}
               />
               <button
@@ -446,7 +448,7 @@ function SecuritySection() {
                   id="pwd-next"
                   type={showNewPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="h-11 rounded-lg pr-11 focus-visible:ring-primary/60"
+                  className="h-11 rounded-lg pr-11 transition-all duration-200 focus-visible:ring-primary/60"
                   {...register("next")}
                 />
                 <button
@@ -476,7 +478,7 @@ function SecuritySection() {
                   id="pwd-confirm"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="h-11 rounded-lg pr-11 focus-visible:ring-primary/60"
+                  className="h-11 rounded-lg pr-11 transition-all duration-200 focus-visible:ring-primary/60"
                   {...register("confirm")}
                 />
                 <button

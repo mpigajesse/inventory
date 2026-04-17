@@ -445,10 +445,16 @@ export default function UsersPage() {
                   {totalUsers} {totalUsers > 1 ? "membres" : "membre"}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {adminCount} admin{adminCount > 1 ? "s" : ""} ·{" "}
-                {vendeurCount} vendeur{vendeurCount > 1 ? "s" : ""}
-              </p>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold bg-primary/10 text-primary ring-1 ring-primary/25">
+                  <Shield className="w-3 h-3" />
+                  {adminCount} admin{adminCount > 1 ? "s" : ""}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent ring-1 ring-accent/25">
+                  <UsersIcon className="w-3 h-3" />
+                  {vendeurCount} vendeur{vendeurCount > 1 ? "s" : ""}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -608,17 +614,19 @@ export default function UsersPage() {
                 <p className="text-sm">Aucun utilisateur trouvé.</p>
               </div>
             )}
-            {typedPaginated.map((user) => {
+            {typedPaginated.map((user, idx) => {
               const displayName = user.full_name || user.username;
               return (
                 <div
                   key={user.id}
                   className={[
                     "bg-card border rounded-xl p-4 flex items-start gap-3 transition-all duration-150 shadow-[0_1px_2px_rgba(120,60,20,0.04)]",
+                    "animate-[fadeScale_0.2s_ease-out_both]",
                     isSelected(user.id)
                       ? "border-primary/60 bg-primary/[0.04] shadow-[0_6px_20px_-12px_hsl(var(--primary)/0.45)]"
                       : "border-border/70",
                   ].join(" ")}
+                  style={{ animationDelay: `${idx * 40}ms` }}
                 >
                   <input
                     type="checkbox"
@@ -668,15 +676,27 @@ export default function UsersPage() {
           if (!createMutation.isPending) setShowCreate(open);
         }}
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nouvel utilisateur</DialogTitle>
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both]">
+          <DialogHeader className="pb-2 border-b border-border/60">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 text-primary shrink-0">
+                <UsersIcon className="w-4 h-4" />
+              </span>
+              <div>
+                <DialogTitle className="text-base font-semibold">Nouvel utilisateur</DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Créer un compte avec rôle et accès
+                </p>
+              </div>
+            </div>
           </DialogHeader>
-          <CreateUserForm
-            onSubmit={handleCreate}
-            onCancel={() => setShowCreate(false)}
-            isSubmitting={createMutation.isPending}
-          />
+          <div className="pt-1">
+            <CreateUserForm
+              onSubmit={handleCreate}
+              onCancel={() => setShowCreate(false)}
+              isSubmitting={createMutation.isPending}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -693,7 +713,7 @@ export default function UsersPage() {
             <AlertDialogDescription>
               Révoquer l'accès de{" "}
               <strong>{revokingUser?.full_name || revokingUser?.username}</strong>{" "}
-              supprimera définitivement son compte. Cette action est irréversible.
+              supprimera definitivement son compte. Cette action est irreversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

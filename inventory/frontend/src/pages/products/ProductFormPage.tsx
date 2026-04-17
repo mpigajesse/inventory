@@ -1,4 +1,4 @@
-import { useOutletContext, useNavigate, useParams } from "react-router-dom";
+import { useOutletContext, useNavigate, useParams, Link } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProductIcon } from "@/components/ui/ProductIcon";
-import { ArrowLeft, Save } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Save, Package, Camera, X, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -88,6 +88,9 @@ export default function ProductFormPage() {
     : null;
 
   const [imagePreview, setImagePreview] = useState<string>(product?.image ?? "");
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -120,9 +123,7 @@ export default function ProductFormPage() {
   const watchedName = watch("name");
   const watchedCategory = watch("category");
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function readImageFile(file: File) {
     const reader = new FileReader();
     reader.onload = (ev) => {
       if (ev.target?.result) setImagePreview(ev.target.result as string);
@@ -130,16 +131,48 @@ export default function ProductFormPage() {
     reader.readAsDataURL(file);
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) readImageFile(file);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) readImageFile(file);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragOver(true);
+  }
+
+  function handleDragLeave() {
+    setIsDragOver(false);
+  }
+
+  function clearImage() {
+    setImagePreview("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   function onSubmit(values: ProductFormValues) {
-    // In V1 (mock data), we just navigate back after simulating save
-    console.log("Produit enregistré :", values, { image: imagePreview });
-    navigate("/products");
+    setIsSubmitting(true);
+    // In V1 (mock data), simulate async save then navigate
+    setTimeout(() => {
+      void values;
+      void imagePreview;
+      navigate("/products");
+    }, 600);
   }
 
   const pageTitle = isEdit ? "Modifier le produit" : "Nouveau produit";
   const pageSubtitle = isEdit
     ? `Modification de ${product?.name ?? "produit inconnu"}`
     : "Ajouter un produit au catalogue";
+
+  const hasImagePreview = imagePreview.startsWith("data:");
 
   return (
     <>
@@ -149,23 +182,54 @@ export default function ProductFormPage() {
         onMenuClick={onMenuClick}
       />
       <div className="page-container animate-slide-in">
+
+        {/* ── Page header ───────────────────────────────────────────────── */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link
+            to="/products"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour aux produits
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 shrink-0">
+            <Package className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-foreground leading-tight">
+              {pageTitle}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isEdit
+                ? "Modifiez les informations du produit ci-dessous."
+                : "Renseignez les informations du nouveau produit."}
+            </p>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* ── Colonne gauche : Informations de base ─────────────────── */}
-            <div className="bg-card rounded-lg border p-6 space-y-5">
-              <h2 className="text-sm font-semibold text-foreground border-b pb-3">
+            <div className="bg-card rounded-xl border p-6">
+
+              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
                 Informations de base
-              </h2>
+              </p>
 
               {/* Nom */}
-              <div className="space-y-1.5">
-                <Label htmlFor="name">
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="name" className="text-sm font-medium mb-1.5">
                   Nom du produit <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="name"
                   placeholder="Ex : Lait Nido 400g"
+                  className="h-11 rounded-lg focus-visible:ring-primary/50"
+                  aria-invalid={errors.name ? "true" : undefined}
                   {...register("name")}
                 />
                 {errors.name && (
@@ -174,8 +238,8 @@ export default function ProductFormPage() {
               </div>
 
               {/* Catégorie */}
-              <div className="space-y-1.5">
-                <Label>
+              <div className="space-y-1.5 mt-6">
+                <Label className="text-sm font-medium mb-1.5">
                   Catégorie <span className="text-destructive">*</span>
                 </Label>
                 <Controller
@@ -183,7 +247,7 @@ export default function ProductFormPage() {
                   control={control}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full h-11 rounded-lg focus:ring-primary/50">
                         <SelectValue placeholder="Sélectionner une catégorie" />
                       </SelectTrigger>
                       <SelectContent>
@@ -202,8 +266,8 @@ export default function ProductFormPage() {
               </div>
 
               {/* Prix */}
-              <div className="space-y-1.5">
-                <Label htmlFor="price">
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="price" className="text-sm font-medium mb-1.5">
                   Prix de vente (FCFA) <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -211,6 +275,8 @@ export default function ProductFormPage() {
                   type="number"
                   min={0}
                   placeholder="0"
+                  className="h-11 rounded-lg focus-visible:ring-primary/50"
+                  aria-invalid={errors.price ? "true" : undefined}
                   {...register("price", { valueAsNumber: true })}
                 />
                 {errors.price && (
@@ -219,12 +285,14 @@ export default function ProductFormPage() {
               </div>
 
               {/* Code-barres */}
-              <div className="space-y-1.5">
-                <Label htmlFor="barcode">Code-barres</Label>
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="barcode" className="text-sm font-medium mb-1.5">
+                  Code-barres
+                </Label>
                 <Input
                   id="barcode"
                   placeholder="Ex : 6001068002802"
-                  className="font-mono"
+                  className="h-11 rounded-lg focus-visible:ring-primary/50 font-mono"
                   {...register("barcode")}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -233,12 +301,14 @@ export default function ProductFormPage() {
               </div>
 
               {/* Notes */}
-              <div className="space-y-1.5">
-                <Label htmlFor="notes">Notes</Label>
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="notes" className="text-sm font-medium mb-1.5">
+                  Notes
+                </Label>
                 <Textarea
                   id="notes"
                   placeholder="Informations supplémentaires sur le produit..."
-                  className="resize-none"
+                  className="resize-none rounded-lg focus-visible:ring-primary/50 min-h-[88px]"
                   rows={3}
                   {...register("notes")}
                 />
@@ -249,14 +319,14 @@ export default function ProductFormPage() {
             <div className="space-y-6">
 
               {/* Inventaire */}
-              <div className="bg-card rounded-lg border p-6 space-y-5">
-                <h2 className="text-sm font-semibold text-foreground border-b pb-3">
+              <div className="bg-card rounded-xl border p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
                   Inventaire
-                </h2>
+                </p>
 
                 {/* Stock */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="stock">
+                <div className="space-y-1.5 mt-6">
+                  <Label htmlFor="stock" className="text-sm font-medium mb-1.5">
                     Quantité en stock <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -264,6 +334,8 @@ export default function ProductFormPage() {
                     type="number"
                     min={0}
                     placeholder="0"
+                    className="h-11 rounded-lg focus-visible:ring-primary/50"
+                    aria-invalid={errors.stock ? "true" : undefined}
                     {...register("stock", { valueAsNumber: true })}
                   />
                   {errors.stock && (
@@ -272,13 +344,17 @@ export default function ProductFormPage() {
                 </div>
 
                 {/* Seuil d'alerte */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="alertThreshold">Seuil d'alerte stock bas</Label>
+                <div className="space-y-1.5 mt-6">
+                  <Label htmlFor="alertThreshold" className="text-sm font-medium mb-1.5">
+                    Seuil d'alerte stock bas
+                  </Label>
                   <Input
                     id="alertThreshold"
                     type="number"
                     min={0}
                     placeholder="5"
+                    className="h-11 rounded-lg focus-visible:ring-primary/50"
+                    aria-invalid={errors.alertThreshold ? "true" : undefined}
                     {...register("alertThreshold", { valueAsNumber: true })}
                   />
                   {errors.alertThreshold && (
@@ -291,57 +367,118 @@ export default function ProductFormPage() {
               </div>
 
               {/* Image */}
-              <div className="bg-card rounded-lg border p-6 space-y-4">
-                <h2 className="text-sm font-semibold text-foreground border-b pb-3">
+              <div className="bg-card rounded-xl border p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
                   Image du produit
-                </h2>
+                </p>
 
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-xl border bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                    {imagePreview.startsWith("data:") ? (
+                {/* Drop zone */}
+                <div className="mt-6">
+                  {hasImagePreview ? (
+                    /* Preview state */
+                    <div className="relative rounded-xl overflow-hidden border border-border bg-muted/40">
                       <img
                         src={imagePreview}
-                        alt="Aperçu"
-                        className="w-full h-full object-cover"
+                        alt="Aperçu du produit"
+                        className="w-full h-48 object-contain p-4"
                       />
-                    ) : (
-                      <ProductIcon
-                        name={watchedName ?? ""}
-                        category={watchedCategory ?? "Autre"}
-                        size="lg"
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    <Label htmlFor="imageFile">Choisir une image</Label>
-                    <Input
-                      id="imageFile"
-                      type="file"
-                      accept="image/*"
-                      className="cursor-pointer"
-                      onChange={handleImageChange}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Formats acceptés : JPG, PNG, WebP. Taille max recommandée : 2 Mo.
-                    </p>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={clearImage}
+                        className="absolute top-2 right-2 flex items-center justify-center w-8 h-8 rounded-full bg-background/80 border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-colors backdrop-blur-sm"
+                        aria-label="Supprimer l'image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="px-4 pb-3 pt-1 border-t border-border bg-muted/20">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-xs text-primary hover:underline font-medium"
+                        >
+                          Changer l'image
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Empty drop zone */
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Zone de dépôt d'image — cliquer ou glisser-déposer"
+                      onClick={() => fileInputRef.current?.click()}
+                      onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      className={[
+                        "flex flex-col items-center justify-center gap-3 w-full h-48 rounded-xl cursor-pointer",
+                        "border-2 border-dashed transition-colors",
+                        isDragOver
+                          ? "border-primary/60 bg-primary/5"
+                          : "border-border hover:border-primary/50 hover:bg-primary/[0.03]",
+                      ].join(" ")}
+                    >
+                      {/* Icon with product preview fallback */}
+                      <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-muted shrink-0">
+                        {watchedName || watchedCategory ? (
+                          <ProductIcon
+                            name={watchedName ?? ""}
+                            category={watchedCategory ?? "Autre"}
+                            size="lg"
+                          />
+                        ) : (
+                          <Camera className="w-7 h-7 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="text-center px-4">
+                        <p className="text-sm font-medium text-foreground">
+                          {isDragOver ? "Relâcher pour déposer" : "Cliquer ou glisser une image"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          JPG, PNG, WebP — max 2 Mo recommandé
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    onChange={handleImageChange}
+                  />
                 </div>
               </div>
             </div>
           </div>
 
           {/* ── Actions ─────────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between mt-6 pt-6 border-t">
+          <div className="flex items-center gap-3 justify-end pt-6 border-t border-border mt-6">
             <Button
               type="button"
               variant="outline"
+              className="h-10 rounded-lg"
               onClick={() => navigate("/products")}
+              disabled={isSubmitting}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Annuler
             </Button>
-            <Button type="submit">
-              <Save className="w-4 h-4 mr-2" />
+            <Button
+              type="submit"
+              className="h-10 rounded-lg bg-gradient-primary shadow-md shadow-primary/20 border-0 hover:-translate-y-px transition-transform"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
               {isEdit ? "Enregistrer les modifications" : "Ajouter le produit"}
             </Button>
           </div>

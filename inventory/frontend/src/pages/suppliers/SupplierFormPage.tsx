@@ -1,4 +1,4 @@
-import { useOutletContext, useNavigate, useParams } from "react-router-dom";
+import { useOutletContext, useNavigate, useParams, Link } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, X } from "lucide-react";
+import { ArrowLeft, Save, Truck, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -134,11 +134,11 @@ function TagInput({ value, onChange }: TagInputProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-background min-h-[40px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-0">
+    <div className="flex flex-wrap gap-1.5 p-2 border rounded-lg bg-background min-h-[44px] focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-0 transition-shadow">
       {value.map((tag, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-secondary text-secondary-foreground"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
         >
           {tag}
           <button
@@ -179,6 +179,7 @@ export default function SupplierFormPage() {
   const [productTags, setProductTags] = useState<string[]>(
     supplier?.products ?? []
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -209,9 +210,13 @@ export default function SupplierFormPage() {
   });
 
   function onSubmit(values: SupplierFormValues) {
-    // In V1 (mock data), we just navigate back after simulating save
-    console.log("Fournisseur enregistré :", values, { products: productTags });
-    navigate("/suppliers");
+    setIsSubmitting(true);
+    // In V1 (mock data), simulate async save then navigate
+    setTimeout(() => {
+      void values;
+      void productTags;
+      navigate("/suppliers");
+    }, 600);
   }
 
   const pageTitle = isEdit ? "Modifier le fournisseur" : "Nouveau fournisseur";
@@ -227,23 +232,54 @@ export default function SupplierFormPage() {
         onMenuClick={onMenuClick}
       />
       <div className="page-container animate-slide-in">
+
+        {/* ── Page header ───────────────────────────────────────────────── */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link
+            to="/suppliers"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour aux fournisseurs
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 shrink-0">
+            <Truck className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-foreground leading-tight">
+              {pageTitle}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isEdit
+                ? "Modifiez les informations du fournisseur ci-dessous."
+                : "Renseignez les coordonnées et produits du nouveau fournisseur."}
+            </p>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* ── Colonne gauche : Informations entreprise ───────────────── */}
-            <div className="bg-card rounded-lg border p-6 space-y-5">
-              <h2 className="text-sm font-semibold text-foreground border-b pb-3">
+            <div className="bg-card rounded-xl border p-6">
+
+              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
                 Informations entreprise
-              </h2>
+              </p>
 
               {/* Nom entreprise */}
-              <div className="space-y-1.5">
-                <Label htmlFor="name">
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="name" className="text-sm font-medium mb-1.5">
                   Nom du fournisseur <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="name"
                   placeholder="Ex : Distribugo Gabon"
+                  className="h-11 rounded-lg focus-visible:ring-primary/50"
+                  aria-invalid={errors.name ? "true" : undefined}
                   {...register("name")}
                 />
                 {errors.name && (
@@ -252,13 +288,15 @@ export default function SupplierFormPage() {
               </div>
 
               {/* Contact */}
-              <div className="space-y-1.5">
-                <Label htmlFor="contact">
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="contact" className="text-sm font-medium mb-1.5">
                   Nom du contact <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="contact"
                   placeholder="Ex : Jean Mouloungui"
+                  className="h-11 rounded-lg focus-visible:ring-primary/50"
+                  aria-invalid={errors.contact ? "true" : undefined}
                   {...register("contact")}
                 />
                 {errors.contact && (
@@ -267,13 +305,15 @@ export default function SupplierFormPage() {
               </div>
 
               {/* Téléphone */}
-              <div className="space-y-1.5">
-                <Label htmlFor="phone">
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="phone" className="text-sm font-medium mb-1.5">
                   Téléphone <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="phone"
                   placeholder="+241 07 XX XX XX"
+                  className="h-11 rounded-lg focus-visible:ring-primary/50"
+                  aria-invalid={errors.phone ? "true" : undefined}
                   {...register("phone")}
                 />
                 {errors.phone && (
@@ -282,12 +322,16 @@ export default function SupplierFormPage() {
               </div>
 
               {/* Email */}
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="email" className="text-sm font-medium mb-1.5">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="contact@fournisseur.ga"
+                  className="h-11 rounded-lg focus-visible:ring-primary/50"
+                  aria-invalid={errors.email ? "true" : undefined}
                   {...register("email")}
                 />
                 {errors.email && (
@@ -296,11 +340,14 @@ export default function SupplierFormPage() {
               </div>
 
               {/* Adresse */}
-              <div className="space-y-1.5">
-                <Label htmlFor="address">Adresse</Label>
+              <div className="space-y-1.5 mt-6">
+                <Label htmlFor="address" className="text-sm font-medium mb-1.5">
+                  Adresse
+                </Label>
                 <Input
                   id="address"
                   placeholder="Ex : Zone Industrielle d'Oloumi, Libreville"
+                  className="h-11 rounded-lg focus-visible:ring-primary/50"
                   {...register("address")}
                 />
               </div>
@@ -310,13 +357,13 @@ export default function SupplierFormPage() {
             <div className="space-y-6">
 
               {/* Produits fournis */}
-              <div className="bg-card rounded-lg border p-6 space-y-4">
-                <h2 className="text-sm font-semibold text-foreground border-b pb-3">
+              <div className="bg-card rounded-xl border p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
                   Produits fournis
-                </h2>
+                </p>
 
-                <div className="space-y-1.5">
-                  <Label>Produits</Label>
+                <div className="space-y-1.5 mt-6">
+                  <Label className="text-sm font-medium mb-1.5">Produits</Label>
                   <TagInput value={productTags} onChange={setProductTags} />
                   <p className="text-xs text-muted-foreground">
                     Saisir le nom d'un produit puis appuyer sur Entrée ou virgule pour l'ajouter.
@@ -325,17 +372,20 @@ export default function SupplierFormPage() {
               </div>
 
               {/* Commande + Statut */}
-              <div className="bg-card rounded-lg border p-6 space-y-5">
-                <h2 className="text-sm font-semibold text-foreground border-b pb-3">
+              <div className="bg-card rounded-xl border p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
                   Statut et commandes
-                </h2>
+                </p>
 
                 {/* Dernière commande */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastOrder">Dernière commande</Label>
+                <div className="space-y-1.5 mt-6">
+                  <Label htmlFor="lastOrder" className="text-sm font-medium mb-1.5">
+                    Dernière commande
+                  </Label>
                   <Input
                     id="lastOrder"
                     placeholder="JJ/MM/AAAA"
+                    className="h-11 rounded-lg focus-visible:ring-primary/50"
                     {...register("lastOrder")}
                   />
                   {errors.lastOrder && (
@@ -344,14 +394,16 @@ export default function SupplierFormPage() {
                 </div>
 
                 {/* Statut */}
-                <div className="space-y-1.5">
-                  <Label>Statut</Label>
+                <div className="space-y-1.5 mt-6">
+                  <Label className="text-sm font-medium mb-1.5">
+                    Statut <span className="text-destructive">*</span>
+                  </Label>
                   <Controller
                     name="status"
                     control={control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full h-11 rounded-lg focus:ring-primary/50">
                           <SelectValue placeholder="Sélectionner un statut" />
                         </SelectTrigger>
                         <SelectContent>
@@ -370,17 +422,27 @@ export default function SupplierFormPage() {
           </div>
 
           {/* ── Actions ─────────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between mt-6 pt-6 border-t">
+          <div className="flex items-center gap-3 justify-end pt-6 border-t border-border mt-6">
             <Button
               type="button"
               variant="outline"
+              className="h-10 rounded-lg"
               onClick={() => navigate("/suppliers")}
+              disabled={isSubmitting}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Annuler
             </Button>
-            <Button type="submit">
-              <Save className="w-4 h-4 mr-2" />
+            <Button
+              type="submit"
+              className="h-10 rounded-lg bg-gradient-primary shadow-md shadow-primary/20 border-0 hover:-translate-y-px transition-transform"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
               {isEdit ? "Enregistrer les modifications" : "Ajouter le fournisseur"}
             </Button>
           </div>

@@ -12,6 +12,8 @@ import {
   ShoppingCart,
   Package,
   TrendingUp,
+  TrendingDown,
+  Minus,
   AlertTriangle,
   ShoppingBag,
   ArrowRight,
@@ -19,7 +21,6 @@ import {
   Users,
   Calendar,
   ShieldCheck,
-  ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
@@ -166,7 +167,7 @@ function PremiumKpi({
         t.ring,
       )}
       style={{
-        animation: "fadeInUp 0.45s ease-out both",
+        animation: "fadeScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
         animationDelay: `${delay}ms`,
         boxShadow: "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
       }}
@@ -210,8 +211,9 @@ function PremiumKpi({
                 trend.direction === "neutral" && "bg-muted text-muted-foreground",
               )}
             >
-              {trend.direction === "up" && <ArrowUpRight className="w-3 h-3" />}
-              {trend.direction === "down" && <ArrowUpRight className="w-3 h-3 rotate-90" />}
+              {trend.direction === "up" && <TrendingUp className="w-3 h-3" />}
+              {trend.direction === "down" && <TrendingDown className="w-3 h-3" />}
+              {trend.direction === "neutral" && <Minus className="w-3 h-3" />}
               {trend.label}
             </span>
           )}
@@ -252,7 +254,7 @@ function TableSkeleton({ rows = 5 }: { rows?: number }) {
 function SectionHeader({ title, kicker, right }: { title: string; kicker?: string; right?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 mb-4">
-      <div className="border-l-4 border-primary pl-3">
+      <div className="border-l-2 border-primary/30 pl-3">
         {kicker && (
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-0.5">
             {kicker}
@@ -377,7 +379,7 @@ export default function DashboardPage() {
                 tint="primary"
                 spark={daySparkFilled}
                 delay={0}
-                trend={todayCount > 0 ? { direction: "up", label: "Actif" } : undefined}
+                trend={todayCount > 0 ? { direction: "up", label: "Actif" } : { direction: "neutral", label: "Inactif" }}
               />
               <PremiumKpi
                 label="CA ce mois"
@@ -388,7 +390,7 @@ export default function DashboardPage() {
                 icon={TrendingUp}
                 tint="accent"
                 spark={daySparkFilled}
-                delay={80}
+                delay={50}
               />
               <PremiumKpi
                 label="Panier moyen"
@@ -399,7 +401,7 @@ export default function DashboardPage() {
                 icon={ShoppingCart}
                 tint="info"
                 spark={daySparkFilled}
-                delay={160}
+                delay={100}
               />
               <PremiumKpi
                 label="Clients"
@@ -409,7 +411,7 @@ export default function DashboardPage() {
                 hint={lowCount > 0 ? `${lowCount} produit${lowCount !== 1 ? "s" : ""} en stock bas` : "Stock OK"}
                 icon={Users}
                 tint={lowCount > 0 ? "warning" : "accent"}
-                delay={240}
+                delay={150}
                 trend={lowCount > 0 ? { direction: "down", label: `${lowCount} alerte${lowCount !== 1 ? "s" : ""}` } : { direction: "up", label: "OK" }}
               />
             </>
@@ -438,7 +440,7 @@ export default function DashboardPage() {
                 <TableSkeleton rows={5} />
               ) : recentSales.length === 0 ? (
                 <div className="p-10 text-center">
-                  <div className="inline-flex w-12 h-12 rounded-2xl bg-muted items-center justify-center mb-3">
+                  <div className="inline-flex w-12 h-12 rounded-full bg-muted items-center justify-center mb-3">
                     <ShoppingCart className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <p className="text-sm font-semibold">Aucune vente pour le moment</p>
@@ -453,7 +455,8 @@ export default function DashboardPage() {
                     {recentSales.map((sale) => (
                       <div
                         key={sale.id}
-                        className="p-4 flex items-start justify-between gap-3 hover:bg-secondary/40 transition-colors"
+                        className="p-4 flex items-start justify-between gap-3 hover:bg-primary/5 transition-colors cursor-pointer"
+                        onClick={() => navigate("/invoices")}
                       >
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -489,7 +492,11 @@ export default function DashboardPage() {
                       </thead>
                       <tbody>
                         {recentSales.map((sale) => (
-                          <tr key={sale.id}>
+                          <tr
+                            key={sale.id}
+                            className="hover:bg-primary/5 transition-colors cursor-pointer"
+                            onClick={() => navigate("/invoices")}
+                          >
                             <td>
                               <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-success" />
@@ -547,7 +554,7 @@ export default function DashboardPage() {
                   </div>
                 ) : lowCount === 0 ? (
                   <div className="p-6 text-center">
-                    <div className="inline-flex w-11 h-11 rounded-2xl bg-success/12 items-center justify-center mb-2">
+                    <div className="inline-flex w-12 h-12 rounded-full bg-muted items-center justify-center mb-2">
                       <Package className="w-5 h-5 text-success" />
                     </div>
                     <p className="text-sm font-semibold">Tout est en ordre</p>
@@ -599,7 +606,7 @@ export default function DashboardPage() {
                   </div>
                 ) : topProducts.length === 0 ? (
                   <div className="p-6 text-center">
-                    <div className="inline-flex w-11 h-11 rounded-2xl bg-muted items-center justify-center mb-2">
+                    <div className="inline-flex w-12 h-12 rounded-full bg-muted items-center justify-center mb-2">
                       <Trophy className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <p className="text-sm font-semibold">Pas encore de classement</p>
@@ -615,7 +622,7 @@ export default function DashboardPage() {
                       return (
                         <div
                           key={p.product__name}
-                          className="group relative p-3 rounded-xl hover:bg-secondary/60 transition-colors"
+                          className="group relative p-3 rounded-xl hover:bg-primary/5 transition-colors cursor-pointer"
                         >
                           <div className="flex items-center gap-3">
                             <span

@@ -36,7 +36,10 @@ import {
   SlidersHorizontal,
   FileSpreadsheet,
   Wallet,
+  LayoutList,
+  LayoutGrid,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -393,6 +396,14 @@ export default function StockPage() {
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [categoryFilter, setCategoryFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState<StockLevelFilter>("");
+  const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
+    (localStorage.getItem("stock-view") as "list" | "grid") ?? "list"
+  );
+
+  function setView(mode: "list" | "grid") {
+    setViewMode(mode);
+    localStorage.setItem("stock-view", mode);
+  }
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
@@ -613,9 +624,9 @@ export default function StockPage() {
       />
       <div className="page-container animate-slide-in">
         {/* Header de page premium avec badge d'alerte */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div className="border-l-4 border-primary pl-3">
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2 flex-wrap">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight flex items-center gap-2 flex-wrap">
               Gestion du stock
               {!isLoading && criticalCount > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 px-2.5 py-0.5 text-xs font-semibold animate-pulse">
@@ -641,7 +652,7 @@ export default function StockPage() {
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
           <StatCard
             label="Total produits"
             value={isLoading ? "…" : `${stockItems.length}`}
@@ -672,7 +683,7 @@ export default function StockPage() {
 
         {/* Valeur totale du stock */}
         {!isLoading && totalStockValue > 0 && (
-          <div className="mb-6 flex items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm w-fit">
+          <div className="mb-4 flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm w-fit">
             <Wallet className="w-4 h-4 text-muted-foreground shrink-0" />
             <span className="text-muted-foreground">Valeur totale du stock :</span>
             <span className="font-semibold">
@@ -682,12 +693,41 @@ export default function StockPage() {
         )}
 
         {/* Barre de filtres — card horizontale */}
-        <div className="bg-card border rounded-xl shadow-sm p-3 sm:p-4 mb-4">
-          <SearchInput
-            placeholder="Rechercher un produit ou catégorie..."
-            value={search}
-            onChange={setSearch}
-          />
+        <div className="bg-card border rounded-xl shadow-sm p-2.5 sm:p-3 mb-3 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <SearchInput
+              placeholder="Rechercher un produit ou catégorie..."
+              value={search}
+              onChange={setSearch}
+            />
+          </div>
+          {/* Toggle Liste / Grille */}
+          <div className="flex gap-1 border rounded-lg p-1 bg-muted/30 shrink-0">
+            <button
+              aria-label="Vue liste"
+              onClick={() => setView("list")}
+              className={cn(
+                "p-1.5 rounded transition-colors",
+                viewMode === "list"
+                  ? "bg-card shadow-sm text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LayoutList className="w-4 h-4" />
+            </button>
+            <button
+              aria-label="Vue grille"
+              onClick={() => setView("grid")}
+              className={cn(
+                "p-1.5 rounded transition-colors",
+                viewMode === "grid"
+                  ? "bg-card shadow-sm text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Barre d'outils tableau */}
@@ -744,10 +784,93 @@ export default function StockPage() {
           </div>
         )}
 
+        {/* ── Vue grille stock ────────────────────────────────────────────────── */}
+        {viewMode === "grid" && !isLoading && (
+          <div>
+            {typedPaginated.length === 0 && (
+              <div className="rounded-xl border bg-card py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                <Package className="w-8 h-8 opacity-40" />
+                <p className="text-sm">Aucun produit trouvé.</p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {typedPaginated.map((item) => {
+                const pct =
+                  item.max > 0
+                    ? Math.min(100, Math.round((item.stock / item.max) * 100))
+                    : 0;
+                return (
+                  <div
+                    key={item.id}
+                    className="group rounded-xl border bg-card hover:border-primary/50 hover:shadow-sm transition-all p-3 flex flex-col gap-2"
+                  >
+                    {/* Nom + catégorie */}
+                    <div>
+                      <p className="font-semibold text-sm line-clamp-2 leading-snug">
+                        {item.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {item.category || "—"}
+                      </p>
+                    </div>
+
+                    {/* Quantité en grand */}
+                    <p
+                      className={cn(
+                        "text-2xl font-black tabular-nums",
+                        item.status === "critique"
+                          ? "text-destructive"
+                          : item.status === "bas"
+                            ? "text-warning"
+                            : "text-success"
+                      )}
+                    >
+                      {item.stock}
+                    </p>
+
+                    {/* Barre de progression */}
+                    <div className="h-1.5 bg-muted rounded-full">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${pct}%`,
+                          background: progressColor(item.status),
+                        }}
+                      />
+                    </div>
+
+                    {/* Seuils + badge */}
+                    <div className="flex items-center justify-between gap-1 flex-wrap">
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        {item.min} – {item.max}
+                      </span>
+                      {renderStatusBadge(item.status)}
+                    </div>
+
+                    {/* Bouton Ajuster */}
+                    <div className="mt-auto pt-1 border-t opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full h-7 text-xs border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={() => setModal({ type: "adjust", item })}
+                      >
+                        <ArrowUpDown className="w-3 h-3 mr-1" />
+                        Ajuster
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {viewMode === "grid" && isLoading && <TableSkeleton />}
+
         {/* Desktop : tableau normal */}
-        {isLoading ? (
+        {viewMode === "list" && isLoading ? (
           <TableSkeleton />
-        ) : (
+        ) : viewMode === "list" ? (
           <div className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
             <div className="overflow-x-auto max-h-[70vh]">
               <table className="data-table">
@@ -860,7 +983,7 @@ export default function StockPage() {
               </table>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Mobile : card list — md:hidden */}
         {!isLoading && (

@@ -590,7 +590,7 @@ export default function PosPage() {
                   onChange={e => setSearch(e.target.value)}
                   autoFocus
                 />
-                <div className="hidden sm:flex items-center gap-1.5 mr-2 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-[11px] font-semibold">
+                <div className="hidden sm:flex items-center gap-1.5 mr-2 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-[11px] font-semibold animate-pulse-soft">
                   <ScanLine className="w-3.5 h-3.5" />
                   <span className="tracking-wide">Scanner actif</span>
                 </div>
@@ -656,7 +656,9 @@ export default function PosPage() {
 
                       {/* Icon / image placeholder */}
                       <div className="aspect-square rounded-lg bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-2.5 overflow-hidden group-hover:from-primary/10 group-hover:to-accent/5 transition-colors">
-                        <ProductIcon name={product.name} category={product.category_name} size="md" />
+                        <div className="group-hover:scale-110 transition-transform duration-200">
+                          <ProductIcon name={product.name} category={product.category_name} size="md" />
+                        </div>
                       </div>
 
                       {/* Name */}
@@ -740,16 +742,26 @@ export default function PosPage() {
           <div className="flex-1 overflow-y-auto">
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16 px-6 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 ring-1 ring-primary/10 flex items-center justify-center mb-4">
-                  <ShoppingCart className="w-9 h-9 text-primary/40" strokeWidth={1.5} />
+                <div className="relative mb-5">
+                  {/* Outer decorative rings */}
+                  <div className="absolute inset-0 rounded-full bg-primary/5 scale-[1.5] opacity-60" />
+                  <div className="absolute inset-0 rounded-full bg-primary/8 scale-[1.25] opacity-40" />
+                  {/* Main circle */}
+                  <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary/12 to-accent/8 ring-2 ring-primary/15 flex items-center justify-center shadow-warm-sm">
+                    <ShoppingCart className="w-10 h-10 text-primary/50" strokeWidth={1.5} />
+                    {/* Small sparkle accent */}
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-card border border-primary/20 flex items-center justify-center">
+                      <Sparkles className="w-2.5 h-2.5 text-primary/60" />
+                    </span>
+                  </div>
                 </div>
-                <p className="text-sm font-semibold text-foreground mb-1">Panier vide</p>
-                <p className="text-xs opacity-75 max-w-[240px] leading-relaxed">
-                  Scannez un code-barres ou sélectionnez un produit pour démarrer la vente
+                <p className="text-sm font-bold text-foreground mb-1.5 tracking-tight">Panier vide</p>
+                <p className="text-xs leading-relaxed max-w-[210px]">
+                  Scannez ou cherchez un produit pour démarrer la vente
                 </p>
               </div>
             ) : (
-              <div className="p-2 md:p-3 space-y-2">
+              <div className="p-1.5 md:p-2 space-y-1">
                 {cart.map(item => {
                   const lineTotal = item.price * item.qty;
                   const hasWarning = item.qty > item.stock;
@@ -757,70 +769,74 @@ export default function PosPage() {
                     <div
                       key={item.id}
                       className={cn(
-                        "group rounded-xl border bg-card px-3 py-3 transition-all duration-200",
+                        "group rounded-lg border bg-card px-2.5 py-1.5 transition-all duration-200",
                         flashItem === item.id
-                          ? "border-primary/60 bg-primary/5 shadow-md shadow-primary/10 scale-[1.01]"
+                          ? "border-primary/60 bg-primary/5 shadow-sm shadow-primary/10 scale-[1.005]"
                           : "border-[hsl(var(--border))] hover:border-[hsl(var(--border))]/80",
                         hasWarning && "border-warning/40 bg-warning/5"
                       )}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="w-11 h-11 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
+                      {/* Single compact row */}
+                      <div className="flex items-center gap-2">
+                        {/* Icon 32px */}
+                        <div className="w-8 h-8 rounded-md bg-muted shrink-0 flex items-center justify-center overflow-hidden">
                           <ProductIcon name={item.name} category={item.category} size="sm" />
                         </div>
 
+                        {/* Name + unit price */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold leading-tight line-clamp-2 mb-0.5">
+                          <p className="text-[12px] font-semibold leading-tight truncate">
                             {item.name}
                           </p>
-                          <p className="text-[11px] text-muted-foreground tabular-nums">
-                            {item.price.toLocaleString()} F · unité
-                          </p>
-                          {hasWarning && (
-                            <p className="text-[10px] text-warning flex items-center gap-1 mt-1 font-medium">
-                              <AlertTriangle className="w-3 h-3" strokeWidth={2.4} />
-                              Stock max : {item.stock}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-muted-foreground tabular-nums">
+                              {item.price.toLocaleString()} F
+                            </span>
+                            {hasWarning && (
+                              <span className="text-[10px] text-warning flex items-center gap-0.5 font-medium">
+                                <AlertTriangle className="w-2.5 h-2.5 shrink-0" strokeWidth={2.4} />
+                                max {item.stock}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="w-8 h-8 -mt-1 -mr-1 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                          aria-label={`Retirer ${item.name}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {/* Quantity & line total row */}
-                      <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-dashed border-[hsl(var(--border))]">
-                        <div className="inline-flex items-center rounded-lg border border-[hsl(var(--border))] bg-background overflow-hidden">
+                        {/* Stepper — 28px buttons on desktop */}
+                        <div className="inline-flex items-center rounded-md border border-[hsl(var(--border))] bg-background overflow-hidden shrink-0">
                           <button
                             onClick={() => updateQty(item.id, -1)}
-                            className="w-11 h-11 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-r border-[hsl(var(--border))] touch-manipulation"
+                            className="w-7 h-7 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-r border-[hsl(var(--border))] touch-manipulation"
                             aria-label="Diminuer la quantité"
                           >
-                            <Minus className="w-4 h-4" strokeWidth={2.4} />
+                            <Minus className="w-3 h-3" strokeWidth={2.4} />
                           </button>
-                          <span className="min-w-[44px] h-11 flex items-center justify-center text-sm font-bold tabular-nums">
+                          <span className="min-w-[28px] h-7 flex items-center justify-center text-[12px] font-bold tabular-nums">
                             {item.qty}
                           </span>
                           <button
                             onClick={() => updateQty(item.id, 1)}
-                            className="w-11 h-11 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-l border-[hsl(var(--border))] touch-manipulation"
+                            className="w-7 h-7 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-l border-[hsl(var(--border))] touch-manipulation"
                             aria-label="Augmenter la quantité"
                           >
-                            <Plus className="w-4 h-4" strokeWidth={2.4} />
+                            <Plus className="w-3 h-3" strokeWidth={2.4} />
                           </button>
                         </div>
 
-                        <div className="text-right">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Sous-total</p>
-                          <p className="text-[15px] font-black tabular-nums text-foreground leading-tight">
-                            {lineTotal.toLocaleString()} <span className="text-[10px] font-bold text-muted-foreground">F</span>
+                        {/* Line total */}
+                        <div className="text-right shrink-0 min-w-[56px]">
+                          <p className="text-[13px] font-black tabular-nums text-foreground leading-tight">
+                            {lineTotal.toLocaleString()} <span className="text-[9px] font-bold text-muted-foreground">F</span>
                           </p>
                         </div>
+
+                        {/* Trash */}
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                          aria-label={`Retirer ${item.name}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -863,11 +879,11 @@ export default function PosPage() {
                   </Button>
                 </>
               ) : (
-                <div className="animate-slide-in space-y-3.5">
+                <div className="animate-slide-in-right space-y-3.5">
                   {/* Total */}
                   <div className="rounded-xl bg-gradient-to-br from-primary/10 to-accent/5 p-4 border border-primary/20">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80 mb-1">À payer</p>
-                    <p className="text-[32px] font-black text-primary tabular-nums leading-none">
+                    <p key={total} className="text-[32px] font-black text-primary tabular-nums leading-none animate-count-up">
                       {total.toLocaleString()} <span className="text-lg">FCFA</span>
                     </p>
                   </div>
@@ -914,11 +930,11 @@ export default function PosPage() {
 
                   {/* Change */}
                   {Number(amountGiven) >= total && (
-                    <div className="rounded-xl bg-gradient-to-br from-success/15 to-success/5 border border-success/30 p-3.5 text-center animate-slide-in">
+                    <div className="rounded-xl bg-gradient-to-br from-success/15 to-success/5 border border-success/30 p-3.5 text-center animate-fade-scale">
                       <p className="text-[10px] font-bold text-success/80 uppercase tracking-[0.2em] mb-0.5">
                         Monnaie à rendre
                       </p>
-                      <p className="text-2xl font-black text-success tabular-nums leading-tight">
+                      <p key={change} className="text-2xl font-black text-success tabular-nums leading-tight animate-count-up">
                         {change.toLocaleString()} <span className="text-base">FCFA</span>
                       </p>
                     </div>

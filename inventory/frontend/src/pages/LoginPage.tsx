@@ -333,7 +333,7 @@ export default function LoginPage() {
           RIGHT FORM PANEL
       ═══════════════════════════════════════════════════════ */}
       <main className="flex flex-1 items-center justify-center bg-background p-6 pt-24 md:pt-6 md:border-l border-border">
-        <div className="w-full max-w-sm space-y-6">
+        <div className="w-full max-w-sm space-y-6 backdrop-blur-sm">
 
           {/* Heading */}
           <div className="animate-fade-in-up">
@@ -382,7 +382,7 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Votre mot de passe"
-                    className="h-11 rounded-lg pr-10 border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
+                    className="h-11 rounded-lg pr-10 border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -414,7 +414,11 @@ export default function LoginPage() {
                 className="h-11 w-full font-semibold text-white border-0 shadow-md hover:brightness-110 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
                 style={
                   isSubmitting
-                    ? { background: "hsl(var(--primary) / 0.5)" }
+                    ? {
+                        background: "linear-gradient(135deg, hsl(var(--primary) / 0.7), hsl(var(--accent) / 0.7))",
+                        boxShadow: "none",
+                        cursor: "wait",
+                      }
                     : {
                         background: "linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(22 80% 58%), hsl(var(--primary)))",
                         backgroundSize: "300% 300%",
@@ -454,7 +458,7 @@ export default function LoginPage() {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => loginAs(account.username, account.password)}
-                  className="group w-full flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group w-full flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-md transition-all duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     ["--hover-border" as string]: "hsl(var(--primary) / 0.3)",
                   }}

@@ -214,9 +214,9 @@ export default function CategoriesPage() {
       <div className="page-container animate-slide-in">
 
         {/* Header de page premium */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div className="border-l-4 border-primary pl-3">
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight">
               Catégories
             </h2>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -234,8 +234,8 @@ export default function CategoriesPage() {
             </p>
           </div>
           <Button
-            size="lg"
-            className="shrink-0 rounded-lg shadow-md shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
+            size="sm"
+            className="shrink-0 rounded-lg shadow-sm shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
             onClick={() => setModal({ type: "form", category: null })}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -244,7 +244,7 @@ export default function CategoriesPage() {
         </div>
 
         {/* Toolbar — search seul */}
-        <div className="bg-card border rounded-xl shadow-sm p-3 sm:p-4 mb-5">
+        <div className="bg-card border rounded-xl shadow-sm p-2.5 sm:p-3 mb-4">
           <SearchInput
             placeholder="Rechercher une catégorie…"
             value={search}

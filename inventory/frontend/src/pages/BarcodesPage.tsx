@@ -2,9 +2,10 @@ import { useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Barcode from "react-barcode";
 import { useReactToPrint } from "react-to-print";
-import { Printer, RefreshCw, PrinterCheck } from "lucide-react";
+import { Printer, RefreshCw, PrinterCheck, Search, QrCode } from "lucide-react";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { useState, useRef, useMemo } from "react";
 import { productService } from "@/services/productService";
@@ -113,7 +114,7 @@ function PrintableCard({ product }: PrintableCardProps) {
       <Button
         size="sm"
         variant="outline"
-        className="flex-1 text-xs"
+        className="flex-1 text-xs h-9 rounded-lg border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all"
         onClick={() => handlePrint()}
       >
         <Printer className="w-3.5 h-3.5 mr-1.5" />
@@ -138,16 +139,24 @@ function ProductBarcodeCard({
   onToggleSelect,
   onGenerate,
 }: ProductBarcodeCardProps) {
+  const hasBarcode = Boolean(product.barcode);
+
   return (
     <div
       className={[
-        "bg-card rounded-lg border p-4 flex flex-col gap-3 transition-all",
-        selected ? "ring-2 ring-primary border-primary" : "hover:shadow-sm",
+        "bg-card rounded-xl p-4 flex flex-col gap-3 transition-all duration-200",
+        // Border-left success accent for products that have a barcode
+        hasBarcode
+          ? "border border-l-4 border-l-[hsl(var(--success))] border-border/70"
+          : "border border-border/70",
+        selected
+          ? "ring-2 ring-primary border-primary shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.3)]"
+          : "hover:shadow-[0_4px_16px_-6px_hsl(var(--shadow-color-warm)/0.15)] hover:-translate-y-0.5",
       ].join(" ")}
     >
       {/* Header */}
       <div className="flex items-start gap-3">
-        {/* Checkbox */}
+        {/* Checkbox custom */}
         <button
           type="button"
           onClick={() => onToggleSelect(product.id)}
@@ -169,15 +178,21 @@ function ProductBarcodeCard({
 
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <ProductIcon name={product.name} category={product.category} size="sm" />
-          <div className="min-w-0">
-            <p className="font-medium text-sm truncate">{product.name}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-sm truncate text-foreground">{product.name}</p>
             <p className="text-xs text-muted-foreground">{product.category}</p>
           </div>
+          {hasBarcode && (
+            <span className="shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))] ring-1 ring-[hsl(var(--success)/0.25)]">
+              <QrCode className="w-2.5 h-2.5" />
+              EAN-13
+            </span>
+          )}
         </div>
       </div>
 
       {/* Barcode display or placeholder */}
-      <div className="flex items-center justify-center min-h-[72px] bg-white rounded-md border overflow-hidden px-2 py-2">
+      <div className="flex items-center justify-center min-h-[76px] bg-white rounded-lg border border-border/50 overflow-hidden px-2 py-2 shadow-[var(--shadow-inner)]">
         {product.barcode ? (
           <Barcode
             value={product.barcode}
@@ -187,7 +202,7 @@ function ProductBarcodeCard({
             margin={0}
           />
         ) : (
-          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+          <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
             <div className="flex gap-0.5">
               {Array.from({ length: 14 }).map((_, i) => (
                 <div
@@ -196,12 +211,12 @@ function ProductBarcodeCard({
                   style={{
                     width: i % 3 === 0 ? 3 : 2,
                     height: 40,
-                    opacity: 0.4,
+                    opacity: 0.35,
                   }}
                 />
               ))}
             </div>
-            <span className="text-[10px]">Aucun code-barres</span>
+            <span className="text-[10px] font-medium">Aucun code-barres</span>
           </div>
         )}
       </div>
@@ -212,7 +227,7 @@ function ProductBarcodeCard({
           <Button
             size="sm"
             variant="outline"
-            className="flex-1 text-xs"
+            className="flex-1 text-xs h-9 rounded-lg border-dashed border-primary/40 text-primary hover:bg-primary/5 hover:border-primary/60 transition-all"
             onClick={() => onGenerate(product.id)}
           >
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
@@ -239,6 +254,7 @@ export default function BarcodesPage() {
   // Local overrides for generated barcodes (for products without one)
   const [generatedBarcodes, setGeneratedBarcodes] = useState<Record<number, string>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [search, setSearch] = useState("");
 
   // Merge API data with any locally generated barcodes
   const products: ProductBarcode[] = useMemo(() => {
@@ -250,6 +266,17 @@ export default function BarcodesPage() {
       barcode: generatedBarcodes[p.id] ?? p.barcode,
     }));
   }, [data, generatedBarcodes]);
+
+  // Filtered by search query
+  const filteredProducts = useMemo(() => {
+    if (!search.trim()) return products;
+    const q = search.toLowerCase();
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+    );
+  }, [products, search]);
 
   // Ref for multi-product print zone
   const selectionPrintRef = useRef<HTMLDivElement>(null);
@@ -280,10 +307,10 @@ export default function BarcodesPage() {
   }
 
   function handleSelectAll() {
-    if (selected.size === products.length) {
+    if (selected.size === filteredProducts.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(products.map((p) => p.id)));
+      setSelected(new Set(filteredProducts.map((p) => p.id)));
     }
   }
 
@@ -291,7 +318,10 @@ export default function BarcodesPage() {
     (p) => selected.has(p.id) && p.barcode
   );
 
-  const allSelected = products.length > 0 && selected.size === products.length;
+  const allSelected = filteredProducts.length > 0 && selected.size === filteredProducts.length;
+
+  const withBarcodeCount = products.filter((p) => Boolean(p.barcode)).length;
+  const totalCount = products.length;
 
   return (
     <>
@@ -320,23 +350,70 @@ export default function BarcodesPage() {
           </div>
         </div>
 
+        {/* ── Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary shrink-0">
+              <QrCode className="w-5 h-5" />
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-semibold text-foreground leading-tight">
+                  Codes-barres
+                </h2>
+                {!isLoading && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-[hsl(var(--success)/0.3)] bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]"
+                    aria-label={`${withBarcodeCount} produits avec code-barres sur ${totalCount}`}
+                  >
+                    <QrCode className="w-3 h-3" />
+                    {withBarcodeCount} / {totalCount}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isLoading
+                  ? "Chargement…"
+                  : `${totalCount - withBarcodeCount} produit${(totalCount - withBarcodeCount) !== 1 ? "s" : ""} sans code-barres`}
+              </p>
+            </div>
+          </div>
+
+          {/* Bouton imprimer la sélection — gradient + shadow */}
+          <button
+            type="button"
+            disabled={selectedWithBarcode.length === 0}
+            onClick={() => handlePrintSelection()}
+            className="btn-primary shrink-0 h-10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            <PrinterCheck className="w-4 h-4" />
+            Imprimer la sélection
+            {selectedWithBarcode.length > 0 && (
+              <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[hsl(0_0%_100%/0.22)] text-[10px] font-bold px-1.5">
+                {selectedWithBarcode.length}
+              </span>
+            )}
+          </button>
+        </div>
+
         {isError && (
-          <p className="text-sm text-destructive mb-4">
+          <p className="text-sm text-destructive mb-4 bg-destructive/10 rounded-lg px-4 py-3">
             Impossible de charger les produits. Vérifiez votre connexion.
           </p>
         )}
 
-        {/* Toolbar */}
+        {/* ── Toolbar : sélection + recherche ── */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+          {/* Select-all */}
           <button
             type="button"
             onClick={handleSelectAll}
-            disabled={isLoading || products.length === 0}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+            disabled={isLoading || filteredProducts.length === 0}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 shrink-0"
           >
             <span
               className={[
-                "w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                "w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
                 allSelected ? "bg-primary border-primary" : "border-border",
               ].join(" ")}
             >
@@ -349,35 +426,66 @@ export default function BarcodesPage() {
             {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
           </button>
 
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            {selected.size > 0
-              ? `${selected.size} produit${selected.size > 1 ? "s" : ""} sélectionné${selected.size > 1 ? "s" : ""}`
-              : isLoading ? "Chargement…" : `${products.length} produits`}
-          </span>
+          {selected.size > 0 && (
+            <span className="text-xs text-muted-foreground hidden sm:inline shrink-0">
+              {selected.size} produit{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}
+            </span>
+          )}
 
-          <Button
-            className="shrink-0 sm:ml-auto"
-            disabled={selectedWithBarcode.length === 0}
-            onClick={() => handlePrintSelection()}
-          >
-            <PrinterCheck className="w-4 h-4 mr-2" />
-            Imprimer la sélection
-            {selectedWithBarcode.length > 0 && (
-              <span className="ml-1.5 bg-primary-foreground/20 text-primary-foreground text-xs rounded px-1.5 py-0.5">
-                {selectedWithBarcode.length}
-              </span>
-            )}
-          </Button>
+          {/* Champ de recherche par nom de produit */}
+          <div className="relative flex-1 sm:max-w-xs sm:ml-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="search"
+              placeholder="Rechercher un produit…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 pl-9 rounded-lg border-border/60 text-sm"
+            />
+          </div>
         </div>
 
         {/* Grid */}
         {isLoading ? (
-          <div className="text-center py-16 text-muted-foreground text-sm">
-            Chargement des produits…
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-card rounded-xl border border-border/70 p-4 h-[200px] animate-pulse"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-4 h-4 rounded bg-muted mt-0.5" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3.5 bg-muted rounded w-3/4" />
+                    <div className="h-3 bg-muted rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="h-[76px] bg-muted rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+            <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+              <Search className="w-5 h-5" />
+            </span>
+            <p className="text-sm">
+              {search ? `Aucun produit pour « ${search} »` : "Aucun produit disponible."}
+            </p>
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="text-xs text-primary hover:underline"
+              >
+                Effacer la recherche
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductBarcodeCard
                 key={product.id}
                 product={product}

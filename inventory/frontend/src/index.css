@@ -1060,6 +1060,14 @@ html.theme-couchant {
     animation-delay: 400ms;
   }
 
+  .animate-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  .animate-delay-600 {
+    animation-delay: 600ms;
+  }
+
   .login-brand-gradient {
     background: linear-gradient(
       135deg,
@@ -1282,6 +1290,19 @@ html.theme-couchant {
 @keyframes shimmerBar {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes gradientPulse {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: 0% 50%;
+    opacity: 1;
+  }
+  50% {
+    background-size: 220% 220%;
+    background-position: 100% 50%;
+    opacity: 0.88;
+  }
 }
 
 @layer utilities {

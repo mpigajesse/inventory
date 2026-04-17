@@ -11,6 +11,7 @@ import {
   CheckCheck,
   ShoppingCart,
   Loader2,
+  BellOff,
 } from "lucide-react";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/ui/StatCard";
@@ -56,7 +57,6 @@ const TYPE_COLOR: Record<string, string> = {
   utilisateur: "text-purple-500 bg-purple-500/10",
 };
 
-// Map API notification_type to our internal notif type for icon/color resolution
 const NOTIF_TYPE_MAP: Record<string, NotifType> = {
   stock_critique: "stock_critique",
   low_stock: "stock_bas",
@@ -66,7 +66,6 @@ const NOTIF_TYPE_MAP: Record<string, NotifType> = {
   user: "utilisateur",
 };
 
-// Map API notification_type to action URL
 const ACTION_URL_MAP: Record<string, string> = {
   stock_critique: "/stock",
   low_stock: "/stock",
@@ -133,7 +132,7 @@ export default function NotificationsPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["notifications"],
     queryFn: () => notificationService.getAll(),
-    refetchInterval: 60_000, // refresh every minute
+    refetchInterval: 60_000,
   });
 
   const notifications: Notification[] = data?.results ?? [];
@@ -206,11 +205,8 @@ export default function NotificationsPage() {
   function handleDelete(id: number, e: React.MouseEvent) {
     e.stopPropagation();
     setRemovingId(id);
-    // Optimistically hide then invalidate — no dedicated delete endpoint assumed.
-    // If the API provides one, call it here.
     setTimeout(() => {
       setRemovingId(null);
-      // mark read as a proxy for "dismiss"
       markReadMutation.mutate(id);
     }, 300);
   }
@@ -225,8 +221,39 @@ export default function NotificationsPage() {
         onMenuClick={onMenuClick}
       />
       <div className="page-container animate-slide-in">
-        {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+        {/* ── Page header premium ── */}
+        <div className="page-header-premium flex-row items-center justify-between gap-4 flex flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Bell className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="page-header-eyebrow">Centre de notifications</p>
+              <h1 className="page-header-title">Notifications</h1>
+              <p className="page-header-subtitle">
+                Alertes stock, ventes et activité système en temps réel
+              </p>
+            </div>
+          </div>
+          {unreadCount > 0 && (
+            <button
+              onClick={handleMarkAllRead}
+              disabled={markAllReadMutation.isPending}
+              className="btn-secondary flex items-center gap-2 text-sm"
+            >
+              {markAllReadMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCheck className="w-4 h-4 text-primary" />
+              )}
+              Tout marquer comme lu
+            </button>
+          )}
+        </div>
+
+        {/* ── KPIs ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             label="Total"
             value={String(notifications.length)}
@@ -267,90 +294,78 @@ export default function NotificationsPage() {
           />
         </div>
 
-        {/* Card */}
-        <div className="bg-card rounded-lg border">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold">Centre de notifications</h2>
-              {unreadCount > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                  {unreadCount}
-                </span>
-              )}
+        {/* ── Panneau principal ── */}
+        <div className="card-premium">
+
+          {/* Tabs + badge non-lues */}
+          <div className="flex items-center justify-between px-1 pt-1 border-b overflow-x-auto gap-2">
+            <div className="flex gap-0.5">
+              {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={cn(
+                    "relative flex items-center gap-1.5 px-4 py-3 text-xs font-semibold rounded-t-lg whitespace-nowrap transition-all duration-200",
+                    activeTab === tab
+                      ? "text-primary bg-primary/5 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-t"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                  )}
+                >
+                  {TAB_LABELS[tab]}
+                  {tabCounts[tab] > 0 && (
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
+                        activeTab === tab
+                          ? "bg-primary text-primary-foreground"
+                          : tab === "non_lues" && tabCounts[tab] > 0
+                          ? "bg-destructive text-destructive-foreground"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {tabCounts[tab]}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
             {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllRead}
-                disabled={markAllReadMutation.isPending}
-                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors disabled:opacity-50"
-              >
-                {markAllReadMutation.isPending ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <CheckCheck className="w-3.5 h-3.5" />
-                )}
-                Tout marquer comme lu
-              </button>
+              <span className="shrink-0 mr-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse-soft inline-block" />
+                {unreadCount} non {unreadCount > 1 ? "lues" : "lue"}
+              </span>
             )}
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 px-4 pt-3 pb-0 border-b overflow-x-auto">
-            {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-md whitespace-nowrap transition-colors border-b-2",
-                  activeTab === tab
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {TAB_LABELS[tab]}
-                {tabCounts[tab] > 0 && (
-                  <span
-                    className={cn(
-                      "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold",
-                      activeTab === tab
-                        ? "bg-primary text-primary-foreground"
-                        : tab === "non_lues" && tabCounts[tab] > 0
-                        ? "bg-destructive text-destructive-foreground"
-                        : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {tabCounts[tab]}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Loading / error */}
+          {/* Loading */}
           {isLoading && (
-            <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">Chargement des notifications…</span>
+            <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <span className="text-sm font-body">Chargement des notifications…</span>
             </div>
           )}
 
+          {/* Error */}
           {isError && !isLoading && (
-            <div className="flex items-center justify-center py-16 text-destructive text-sm">
-              Impossible de charger les notifications.
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-destructive">
+              <AlertTriangle className="w-8 h-8 opacity-60" />
+              <p className="text-sm">Impossible de charger les notifications.</p>
             </div>
           )}
 
-          {/* List */}
+          {/* Liste */}
           {!isLoading && !isError && (
             <div className="divide-y divide-border">
               {displayed.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <Bell className="w-10 h-10 mb-3 opacity-30" />
-                  <p className="text-sm">Aucune notification dans cette catégorie</p>
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                  <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+                    <BellOff className="w-6 h-6 opacity-40" />
+                  </div>
+                  <p className="text-sm font-medium">Aucune notification dans cette catégorie</p>
+                  <p className="text-xs opacity-60">Les nouvelles alertes apparaîtront ici</p>
                 </div>
               ) : (
-                displayed.map((notif) => {
+                displayed.map((notif, index) => {
                   const resolvedType = resolveType(notif.notification_type);
                   const Icon = TYPE_ICON[resolvedType] ?? Settings;
                   const colorClass = TYPE_COLOR[resolvedType] ?? TYPE_COLOR["systeme"];
@@ -359,26 +374,25 @@ export default function NotificationsPage() {
                     <div
                       key={notif.id}
                       onClick={() => handleNotifClick(notif)}
+                      style={{ animationDelay: `${index * 30}ms` }}
                       className={cn(
-                        "group relative flex items-start gap-4 px-5 py-4 cursor-pointer transition-all duration-300 overflow-hidden",
+                        "group relative flex items-start gap-4 px-5 py-4 cursor-pointer",
+                        "transition-all duration-200 overflow-hidden animate-fade-scale",
                         notif.is_read
-                          ? "hover:bg-muted/40"
-                          : "bg-primary/[0.03] hover:bg-primary/[0.06]",
+                          ? "opacity-70 hover:opacity-100 hover:bg-muted/30"
+                          : "border-l-4 border-primary bg-primary/[0.04] hover:bg-primary/[0.07]",
                         removingId === notif.id && "opacity-0 scale-95 max-h-0 py-0"
                       )}
                     >
-                      {/* Unread dot */}
-                      <span
-                        className={cn(
-                          "absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary transition-all duration-300",
-                          notif.is_read ? "opacity-0 scale-0" : "opacity-100 scale-100"
-                        )}
-                      />
+                      {/* Unread pulse dot */}
+                      {!notif.is_read && (
+                        <span className="absolute right-4 top-4 w-2 h-2 rounded-full bg-primary animate-pulse-soft" />
+                      )}
 
-                      {/* Icon */}
+                      {/* Icon pill */}
                       <div
                         className={cn(
-                          "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
                           colorClass
                         )}
                       >
@@ -386,35 +400,33 @@ export default function NotificationsPage() {
                       </div>
 
                       {/* Content */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pr-6">
                         <p
                           className={cn(
-                            "text-sm leading-snug",
+                            "text-sm leading-snug font-heading",
                             notif.is_read
-                              ? "font-normal text-foreground"
+                              ? "font-normal text-foreground/80"
                               : "font-semibold text-foreground"
                           )}
                         >
                           {notif.title}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 font-body leading-relaxed">
                           {notif.message}
                         </p>
-                      </div>
-
-                      {/* Timestamp + dismiss */}
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                        <span className="mt-1.5 inline-block font-mono text-[10px] text-muted-foreground/70 tracking-tight">
                           {relativeTime(notif.created_at)}
                         </span>
-                        <button
-                          onClick={(e) => handleDelete(notif.id, e)}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted transition-all"
-                          aria-label="Supprimer"
-                        >
-                          <X className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
                       </div>
+
+                      {/* Dismiss button */}
+                      <button
+                        onClick={(e) => handleDelete(notif.id, e)}
+                        className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-muted transition-all duration-150"
+                        aria-label="Supprimer"
+                      >
+                        <X className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
                     </div>
                   );
                 })

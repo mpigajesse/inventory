@@ -17,6 +17,7 @@ import {
   User,
   ScanLine,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductIcon } from "@/components/ui/ProductIcon";
@@ -529,7 +530,7 @@ export default function VendeurPosPage() {
                   onChange={e => setSearch(e.target.value)}
                   autoFocus
                 />
-                <div className="hidden sm:flex items-center gap-1.5 mr-2 px-2.5 py-1.5 rounded-md bg-primary/10 text-primary text-[11px] font-bold">
+                <div className="hidden sm:flex items-center gap-1.5 mr-2 px-2.5 py-1.5 rounded-md bg-primary/10 text-primary text-[11px] font-bold animate-pulse-soft">
                   <ScanLine className="w-3.5 h-3.5" />
                   <span className="tracking-wide">Scanner prêt</span>
                 </div>
@@ -566,7 +567,9 @@ export default function VendeurPosPage() {
                     title={product.name}
                   >
                     <div className="aspect-square rounded-lg bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-2.5 overflow-hidden group-hover:from-primary/10 group-hover:to-accent/5 transition-colors">
-                      <ProductIcon name={product.name} category={product.category} size="md" />
+                      <div className="group-hover:scale-110 transition-transform duration-200">
+                        <ProductIcon name={product.name} category={product.category} size="md" />
+                      </div>
                     </div>
 
                     <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground mb-1.5 min-h-[32px]">
@@ -631,79 +634,88 @@ export default function VendeurPosPage() {
           <div className="flex-1 overflow-y-auto">
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16 px-6 text-center">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 ring-1 ring-primary/10 flex items-center justify-center mb-4">
-                  <ShoppingCart className="w-11 h-11 text-primary/40" strokeWidth={1.5} />
+                <div className="relative mb-5">
+                  <div className="absolute inset-0 rounded-full bg-primary/5 scale-[1.5] opacity-60" />
+                  <div className="absolute inset-0 rounded-full bg-primary/8 scale-[1.25] opacity-40" />
+                  <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-primary/12 to-accent/8 ring-2 ring-primary/15 flex items-center justify-center shadow-warm-sm">
+                    <ShoppingCart className="w-12 h-12 text-primary/50" strokeWidth={1.5} />
+                    <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-card border border-primary/20 flex items-center justify-center">
+                      <Sparkles className="w-3 h-3 text-primary/60" />
+                    </span>
+                  </div>
                 </div>
-                <p className="text-base font-semibold text-foreground mb-1">Panier vide</p>
-                <p className="text-[13px] opacity-75 max-w-[260px] leading-relaxed">
-                  Scannez un code-barres ou touchez un produit pour démarrer une vente
+                <p className="text-base font-bold text-foreground mb-1.5 tracking-tight">Panier vide</p>
+                <p className="text-[13px] leading-relaxed max-w-[240px]">
+                  Scannez ou cherchez un produit pour démarrer la vente
                 </p>
               </div>
             ) : (
-              <div className="p-2 md:p-3 space-y-2">
+              <div className="p-2 md:p-2.5 space-y-1.5">
                 {cart.map(item => {
                   const lineTotal = item.price * item.qty;
                   return (
                     <div
                       key={item.id}
                       className={cn(
-                        "group rounded-xl border bg-card px-3 py-3 transition-all duration-200",
+                        "group rounded-lg border bg-card px-3 py-2 transition-all duration-200",
                         flashItem === item.id
-                          ? "border-primary/60 bg-primary/5 shadow-md shadow-primary/10 scale-[1.01]"
+                          ? "border-primary/60 bg-primary/5 shadow-sm shadow-primary/10 scale-[1.005]"
                           : "border-[hsl(var(--border))] hover:border-[hsl(var(--border))]/80"
                       )}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
+                      {/* Single compact row — touch-friendly 36px stepper for tablet */}
+                      <div className="flex items-center gap-2.5">
+                        {/* Icon 36px */}
+                        <div className="w-9 h-9 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
                           <ProductIcon name={item.name} category={item.category} size="sm" />
                         </div>
 
+                        {/* Name + unit price */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-[14px] font-semibold leading-tight line-clamp-2 mb-0.5">
+                          <p className="text-[13px] font-semibold leading-tight truncate">
                             {item.name}
                           </p>
-                          <p className="text-[11px] text-muted-foreground tabular-nums">
-                            {item.price.toLocaleString()} F · unité
-                          </p>
+                          <span className="text-[11px] text-muted-foreground tabular-nums">
+                            {item.price.toLocaleString()} F
+                          </span>
                         </div>
 
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="w-11 h-11 -mt-1 -mr-1 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-all"
-                          aria-label={`Retirer ${item.name}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Quantity & line total row — extra large for vendeur */}
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-dashed border-[hsl(var(--border))]">
-                        <div className="inline-flex items-center rounded-xl border-2 border-[hsl(var(--border))] bg-background overflow-hidden">
+                        {/* Stepper — 36px buttons for tablet touch targets */}
+                        <div className="inline-flex items-center rounded-lg border border-[hsl(var(--border))] bg-background overflow-hidden shrink-0">
                           <button
                             onClick={() => updateQty(item.id, -1)}
-                            className="w-12 h-12 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-r border-[hsl(var(--border))] touch-manipulation"
+                            className="w-9 h-9 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-r border-[hsl(var(--border))] touch-manipulation"
                             aria-label="Diminuer la quantité"
                           >
-                            <Minus className="w-5 h-5" strokeWidth={2.4} />
+                            <Minus className="w-3.5 h-3.5" strokeWidth={2.4} />
                           </button>
-                          <span className="min-w-[48px] h-12 flex items-center justify-center text-base font-black tabular-nums">
+                          <span className="min-w-[36px] h-9 flex items-center justify-center text-[13px] font-black tabular-nums">
                             {item.qty}
                           </span>
                           <button
                             onClick={() => updateQty(item.id, 1)}
-                            className="w-12 h-12 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-l border-[hsl(var(--border))] touch-manipulation"
+                            className="w-9 h-9 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-l border-[hsl(var(--border))] touch-manipulation"
                             aria-label="Augmenter la quantité"
                           >
-                            <Plus className="w-5 h-5" strokeWidth={2.4} />
+                            <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
                           </button>
                         </div>
 
-                        <div className="text-right">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Sous-total</p>
-                          <p className="text-base font-black tabular-nums text-foreground leading-tight">
-                            {lineTotal.toLocaleString()} <span className="text-[11px] font-bold text-muted-foreground">F</span>
+                        {/* Line total */}
+                        <div className="text-right shrink-0 min-w-[60px]">
+                          <p className="text-[14px] font-black tabular-nums text-foreground leading-tight">
+                            {lineTotal.toLocaleString()} <span className="text-[10px] font-bold text-muted-foreground">F</span>
                           </p>
                         </div>
+
+                        {/* Trash */}
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="w-9 h-9 rounded-md flex items-center justify-center text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all shrink-0"
+                          aria-label={`Retirer ${item.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -745,11 +757,11 @@ export default function VendeurPosPage() {
                   </Button>
                 </>
               ) : (
-                <div className="animate-slide-in space-y-3.5">
+                <div className="animate-slide-in-right space-y-3.5">
                   {/* Total */}
                   <div className="rounded-xl bg-gradient-to-br from-primary/10 to-accent/5 p-4 border border-primary/20">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80 mb-1">À payer</p>
-                    <p className="text-[34px] font-black text-primary tabular-nums leading-none">
+                    <p key={total} className="text-[34px] font-black text-primary tabular-nums leading-none animate-count-up">
                       {total.toLocaleString()} <span className="text-lg">FCFA</span>
                     </p>
                   </div>
@@ -796,11 +808,11 @@ export default function VendeurPosPage() {
 
                   {/* Change — large for vendeur */}
                   {Number(amountGiven) >= total && (
-                    <div className="rounded-xl bg-gradient-to-br from-success/15 to-success/5 border-2 border-success/30 p-4 text-center animate-slide-in">
+                    <div className="rounded-xl bg-gradient-to-br from-success/15 to-success/5 border-2 border-success/30 p-4 text-center animate-fade-scale">
                       <p className="text-[11px] font-bold text-success/80 uppercase tracking-[0.2em] mb-1">
                         Monnaie à rendre
                       </p>
-                      <p className="text-[30px] font-black text-success tabular-nums leading-tight">
+                      <p key={change} className="text-[30px] font-black text-success tabular-nums leading-tight animate-count-up">
                         {change.toLocaleString()} <span className="text-lg">FCFA</span>
                       </p>
                     </div>

@@ -5,12 +5,13 @@ import {
   ShoppingCart,
   ArrowRight,
   TrendingUp,
+  TrendingDown,
+  Minus,
   Receipt,
   UserCheck,
   Sparkles,
   Calendar,
   ShoppingBag,
-  ArrowUpRight,
 } from "lucide-react";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -80,7 +81,7 @@ const vendeurKpis: Array<{
   suffix: string;
   duration: number;
   change: string;
-  trendDir: "up" | "neutral";
+  trendDir: "up" | "down" | "neutral";
   icon: React.ComponentType<{ className?: string }>;
   tint: VendeurKpiTint;
 }> = [
@@ -217,8 +218,8 @@ export default function VendeurDashboardPage() {
                   "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
                 )}
                 style={{
-                  animation: "fadeInUp 0.45s ease-out both",
-                  animationDelay: `${index * 80}ms`,
+                  animation: "fadeScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
+                  animationDelay: `${index * 50}ms`,
                   boxShadow: "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
                 }}
               >
@@ -246,10 +247,13 @@ export default function VendeurDashboardPage() {
                       className={cn(
                         "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full",
                         kpi.trendDir === "up" && "bg-success/12 text-success",
+                        kpi.trendDir === "down" && "bg-destructive/12 text-destructive",
                         kpi.trendDir === "neutral" && "bg-muted text-muted-foreground",
                       )}
                     >
-                      {kpi.trendDir === "up" && <ArrowUpRight className="w-3 h-3" />}
+                      {kpi.trendDir === "up" && <TrendingUp className="w-3 h-3" />}
+                      {kpi.trendDir === "down" && <TrendingDown className="w-3 h-3" />}
+                      {kpi.trendDir === "neutral" && <Minus className="w-3 h-3" />}
                       {kpi.change}
                     </span>
                   </div>
@@ -262,7 +266,7 @@ export default function VendeurDashboardPage() {
         {/* ── Mes dernières ventes ── */}
         <div>
           <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="border-l-4 border-primary pl-3">
+            <div className="border-l-2 border-primary/30 pl-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-0.5">
                 Activité
               </p>
@@ -274,61 +278,80 @@ export default function VendeurDashboardPage() {
           </div>
 
           <div className="bg-card rounded-2xl border overflow-hidden" style={{ boxShadow: "0 2px 12px hsl(22 72% 48% / 0.05)" }}>
-            {/* Mobile cards — md:hidden */}
-            <div className="md:hidden divide-y">
-              {mesDerniereVentes.map((vente) => (
-                <div
-                  key={vente.id}
-                  className="p-4 flex items-start justify-between gap-3 hover:bg-secondary/40 transition-colors"
-                >
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <ShoppingBag className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{vente.id}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                        {vente.heure} · {vente.articles} article{vente.articles !== 1 ? "s" : ""}
-                      </p>
-                      <p className="text-sm font-bold mt-1 tabular-nums">{vente.total}</p>
-                    </div>
-                  </div>
-                  <StatusBadge label="Terminée" variant="success" />
+            {mesDerniereVentes.length === 0 ? (
+              <div className="p-10 text-center">
+                <div className="inline-flex w-12 h-12 rounded-full bg-muted items-center justify-center mb-3">
+                  <ShoppingBag className="w-5 h-5 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
-            {/* Desktop table — hidden md:block */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Réf.</th>
-                    <th>Heure</th>
-                    <th>Articles</th>
-                    <th className="text-right">Total</th>
-                    <th>Statut</th>
-                  </tr>
-                </thead>
-                <tbody>
+                <p className="text-sm font-semibold">Aucune vente pour le moment</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Vos ventes de la journée apparaîtront ici.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile cards — md:hidden */}
+                <div className="md:hidden divide-y">
                   {mesDerniereVentes.map((vente) => (
-                    <tr key={vente.id}>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                          <span className="font-semibold">{vente.id}</span>
+                    <div
+                      key={vente.id}
+                      className="p-4 flex items-start justify-between gap-3 hover:bg-primary/5 transition-colors cursor-pointer"
+                      onClick={() => navigate("/invoices")}
+                    >
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <ShoppingBag className="w-4 h-4 text-primary" />
                         </div>
-                      </td>
-                      <td className="text-muted-foreground tabular-nums">{vente.heure}</td>
-                      <td className="tabular-nums">{vente.articles}</td>
-                      <td className="font-semibold tabular-nums text-right">{vente.total}</td>
-                      <td>
-                        <StatusBadge label="Terminée" variant="success" />
-                      </td>
-                    </tr>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{vente.id}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                            {vente.heure} · {vente.articles} article{vente.articles !== 1 ? "s" : ""}
+                          </p>
+                          <p className="text-sm font-bold mt-1 tabular-nums">{vente.total}</p>
+                        </div>
+                      </div>
+                      <StatusBadge label="Terminée" variant="success" />
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+                {/* Desktop table — hidden md:block */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Réf.</th>
+                        <th>Heure</th>
+                        <th>Articles</th>
+                        <th className="text-right">Total</th>
+                        <th>Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mesDerniereVentes.map((vente) => (
+                        <tr
+                          key={vente.id}
+                          className="hover:bg-primary/5 transition-colors cursor-pointer"
+                          onClick={() => navigate("/invoices")}
+                        >
+                          <td>
+                            <div className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                              <span className="font-semibold">{vente.id}</span>
+                            </div>
+                          </td>
+                          <td className="text-muted-foreground tabular-nums">{vente.heure}</td>
+                          <td className="tabular-nums">{vente.articles}</td>
+                          <td className="font-semibold tabular-nums text-right">{vente.total}</td>
+                          <td>
+                            <StatusBadge label="Terminée" variant="success" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
             <div className="px-5 py-3 border-t bg-secondary/30">
               <button
                 onClick={() => navigate("/invoices")}

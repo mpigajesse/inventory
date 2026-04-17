@@ -21,7 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Plus, Phone, Mail, Edit, Trash2, History, Users, UserPlus } from "lucide-react";
+import { Plus, Phone, Mail, Edit, Trash2, History, Users, UserPlus, FileSpreadsheet } from "lucide-react";
+import { exportClients } from "@/lib/exportClients";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -180,14 +181,14 @@ export default function ClientsPage() {
       <div className="page-container animate-slide-in">
 
         {/* ── Premium Header ─────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
-              <Users className="w-5 h-5 text-primary" />
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
+              <Users className="w-4 h-4 text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
+                <h1 className="text-xl font-semibold tracking-tight">Clients</h1>
                 <span className="inline-flex items-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold">
                   {clients.length}
                 </span>
@@ -198,14 +199,24 @@ export default function ClientsPage() {
             </div>
           </div>
 
-          <Button
-            size="sm"
-            className="shrink-0 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
-            onClick={() => navigate("/clients/new")}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Nouveau client
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportClients(clients)}
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Exporter Excel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
+              onClick={() => navigate("/clients/new")}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Nouveau client
+            </Button>
+          </div>
         </div>
 
         {/* ── Search bar ─────────────────────────────────────────── */}
@@ -232,12 +243,12 @@ export default function ClientsPage() {
             {clients.map((client) => (
               <div
                 key={client.id}
-                className="group bg-card rounded-xl border p-5 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200"
+                className="group bg-card rounded-xl border p-4 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200"
               >
                 {/* Header row */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-3">
                   <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all"
                     style={{
                       background: "hsl(var(--primary) / 0.12)",
                       color: "hsl(var(--primary))",
@@ -294,7 +305,7 @@ export default function ClientsPage() {
                 </div>
 
                 {/* Footer stats */}
-                <div className="flex items-end justify-between mt-4 pt-4 border-t gap-3">
+                <div className="flex items-end justify-between mt-3 pt-3 border-t gap-3">
                   <div className="min-w-0">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
                       Total achats

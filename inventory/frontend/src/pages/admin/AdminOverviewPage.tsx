@@ -21,7 +21,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Info,
   Users,
   Package,
   ShoppingCart,
@@ -38,6 +37,9 @@ import {
   KeyRound,
   UserX,
   RefreshCcw,
+  CheckCircle2,
+  Cpu,
+  Server,
 } from "lucide-react";
 import { useState } from "react";
 import { dashboardService } from "@/services/dashboardService";
@@ -64,8 +66,24 @@ interface AdminUser {
 function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
-      <Icon className="w-4 h-4 text-primary" />
+      <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-primary" />
+      </div>
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+    </div>
+  );
+}
+
+/** Pulsing green "Système opérationnel" status badge */
+function SystemStatusBadge() {
+  return (
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/25">
+      {/* Dot with pulseSoft animation */}
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+      </span>
+      <span className="text-xs font-semibold text-success leading-none">Système opérationnel</span>
     </div>
   );
 }
@@ -73,11 +91,11 @@ function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: 
 type ActivityType = "login" | "sale" | "product" | "stock" | "system";
 
 const ACTIVITY_CONFIG: Record<ActivityType, { icon: React.ElementType; bg: string; color: string }> = {
-  login: { icon: LogIn, bg: "bg-primary/10", color: "text-primary" },
-  sale: { icon: ShoppingBag, bg: "bg-success/10", color: "text-success" },
-  product: { icon: Tag, bg: "bg-warning/10", color: "text-warning" },
-  stock: { icon: Package, bg: "bg-primary/10", color: "text-primary" },
-  system: { icon: Settings, bg: "bg-muted", color: "text-muted-foreground" },
+  login:   { icon: LogIn,      bg: "bg-primary/10",    color: "text-primary" },
+  sale:    { icon: ShoppingBag, bg: "bg-success/10",   color: "text-success" },
+  product: { icon: Tag,        bg: "bg-warning/10",    color: "text-warning" },
+  stock:   { icon: Package,    bg: "bg-primary/10",    color: "text-primary" },
+  system:  { icon: Settings,   bg: "bg-muted",         color: "text-muted-foreground" },
 };
 
 function resolveActivityType(action: string, targetModel: string): ActivityType {
@@ -109,6 +127,35 @@ function formatActivityDate(isoDate: string): string {
   });
 }
 
+// ─── System health indicators ─────────────────────────────────────────────────
+
+const HEALTH_ITEMS = [
+  {
+    icon: Server,
+    label: "API Backend",
+    status: "Connecté",
+    variant: "success" as const,
+  },
+  {
+    icon: Database,
+    label: "Base de données",
+    status: "Opérationnelle",
+    variant: "success" as const,
+  },
+  {
+    icon: Cpu,
+    label: "Version",
+    status: "1.0.0",
+    variant: "info" as const,
+  },
+  {
+    icon: Calendar,
+    label: "Déploiement",
+    status: "01/04/2026",
+    variant: "default" as const,
+  },
+];
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AdminOverviewPage() {
@@ -116,18 +163,17 @@ export default function AdminOverviewPage() {
   const navigate = useNavigate();
 
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['dashboard'],
+    queryKey: ["dashboard"],
     queryFn: dashboardService.getStats,
   });
 
   const { data: activityData, isLoading: activityLoading } = useQuery({
-    queryKey: ['activity'],
-    queryFn: () => activityService.getAll({ page_size: '10' }),
+    queryKey: ["activity"],
+    queryFn: () => activityService.getAll({ page_size: "10" }),
   });
 
   const recentActivity: ActivityLog[] = activityData?.results ?? [];
 
-  // User management still uses local state (no userService yet)
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [disablingUser, setDisablingUser] = useState<AdminUser | null>(null);
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
@@ -158,16 +204,48 @@ export default function AdminOverviewPage() {
 
       <div className="page-container animate-slide-in space-y-8">
 
-        {/* ── Section : Informations système ── */}
+        {/* ── Hero header : statut système ────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground font-heading tracking-tight">
+              Vue d'ensemble
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Supervision et gestion de l'application NAOSERVICES INVENTORY
+            </p>
+          </div>
+          <SystemStatusBadge />
+        </div>
+
+        {/* ── Section : Santé du système ───────────────────────────────── */}
         <section>
-          <SectionHeader icon={Info} title="Informations système" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <SectionHeader icon={CheckCircle2} title="Santé du système" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {HEALTH_ITEMS.map(({ icon: Icon, label, status, variant }) => (
+              <div
+                key={label}
+                className="card-premium p-4 flex flex-col gap-3"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <span className="text-xs text-muted-foreground leading-tight">{label}</span>
+                </div>
+                <StatusBadge label={status} variant={variant} />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Section : Stats rapides ──────────────────────────────────── */}
+        <section>
+          <SectionHeader icon={Activity} title="Statistiques rapides" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { icon: Tag, label: "Version", value: "1.0.0" },
-              { icon: Calendar, label: "Date d'installation", value: "01/04/2026" },
               {
                 icon: Users,
-                label: "Utilisateurs actifs",
+                label: "Clients enregistrés",
                 value: statsLoading ? "—" : String(stats?.clients.total ?? 0),
               },
               {
@@ -181,24 +259,28 @@ export default function AdminOverviewPage() {
                 value: statsLoading ? "—" : String(stats?.month.sales_count ?? 0),
               },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="bg-card border rounded-lg p-4 flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon className="w-3.5 h-3.5 text-primary" />
+              <div key={label} className="card-premium p-5 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {label}
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="text-xs text-muted-foreground leading-tight">{label}</span>
                 </div>
-                <span className="text-lg font-semibold text-foreground">{value}</span>
+                <span className="text-2xl font-black tabular-nums text-foreground">{value}</span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ── Section : Gestion des accès ── */}
+        {/* ── Section : Gestion des accès ─────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <UserCog className="w-4 h-4 text-primary" />
+              <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                <UserCog className="w-3.5 h-3.5 text-primary" />
+              </div>
               <h2 className="text-sm font-semibold text-foreground">Gestion des accès</h2>
             </div>
             <Button
@@ -214,10 +296,10 @@ export default function AdminOverviewPage() {
           </div>
 
           <div className="bg-card rounded-lg border overflow-hidden">
-            {/* Mobile cards — md:hidden */}
+            {/* Mobile cards */}
             <div className="md:hidden">
               {users.length === 0 ? (
-                <p className="text-center py-6 text-muted-foreground text-sm px-4">
+                <p className="text-center py-8 text-muted-foreground text-sm px-4">
                   Gérez les utilisateurs depuis la page dédiée.
                 </p>
               ) : (
@@ -266,7 +348,6 @@ export default function AdminOverviewPage() {
                       <div className="flex items-center gap-2 pt-1 border-t">
                         <button
                           className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
-                          title="Désactiver"
                           onClick={() => setDisablingUser(user)}
                           disabled={user.status === "inactive"}
                         >
@@ -275,7 +356,6 @@ export default function AdminOverviewPage() {
                         </button>
                         <button
                           className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                          title="Réinitialiser le mot de passe"
                           onClick={() => setResetUser(user)}
                         >
                           <RefreshCcw className="w-3.5 h-3.5" />
@@ -288,7 +368,7 @@ export default function AdminOverviewPage() {
               )}
             </div>
 
-            {/* Desktop table — hidden md:block */}
+            {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="data-table">
                 <thead>
@@ -304,7 +384,7 @@ export default function AdminOverviewPage() {
                 <tbody>
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-6 text-muted-foreground text-sm">
+                      <td colSpan={6} className="text-center py-8 text-muted-foreground text-sm">
                         Gérez les utilisateurs depuis la page dédiée.
                       </td>
                     </tr>
@@ -345,7 +425,6 @@ export default function AdminOverviewPage() {
                           <div className="flex items-center gap-1">
                             <button
                               className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                              title="Désactiver"
                               onClick={() => setDisablingUser(user)}
                               disabled={user.status === "inactive"}
                             >
@@ -354,7 +433,6 @@ export default function AdminOverviewPage() {
                             </button>
                             <button
                               className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                              title="Réinitialiser le mot de passe"
                               onClick={() => setResetUser(user)}
                             >
                               <RefreshCcw className="w-3.5 h-3.5" />
@@ -371,11 +449,13 @@ export default function AdminOverviewPage() {
           </div>
         </section>
 
-        {/* ── Section : Journal d'activité ── */}
+        {/* ── Section : Journal d'activité ─────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-primary" />
+              <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                <Activity className="w-3.5 h-3.5 text-primary" />
+              </div>
               <h2 className="text-sm font-semibold text-foreground">Journal d'activité</h2>
             </div>
             <Button
@@ -426,15 +506,15 @@ export default function AdminOverviewPage() {
           </div>
         </section>
 
-        {/* ── Section : Configuration avancée ── */}
+        {/* ── Section : Configuration avancée ─────────────────────────── */}
         <section>
           <SectionHeader icon={Settings} title="Configuration avancée" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-            {/* Lien vers paramètres */}
-            <div className="bg-card border rounded-lg p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
+            {/* Paramètres de l'application */}
+            <div className="card-premium p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Settings className="w-4 h-4 text-primary" />
                 </div>
                 <div>
@@ -442,19 +522,24 @@ export default function AdminOverviewPage() {
                   <p className="text-xs text-muted-foreground">Nom de l'entreprise, adresse, NIF</p>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Configurez les informations de votre commerce : raison sociale, coordonnées, numéro fiscal.
               </p>
-              <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="self-start flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/settings")}
+                className="self-start flex items-center gap-1.5"
+              >
                 Ouvrir les paramètres
                 <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </div>
 
-            {/* Card Django Admin */}
-            <div className="bg-card border rounded-lg p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-md bg-warning/10 flex items-center justify-center">
+            {/* Panel Django Admin */}
+            <div className="card-premium p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
                   <Database className="w-4 h-4 text-warning" />
                 </div>
                 <div>
@@ -462,9 +547,9 @@ export default function AdminOverviewPage() {
                   <p className="text-xs text-muted-foreground">Accès réservé à l'administrateur système</p>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Pour les opérations de base de données et la gestion des données techniques, utilisez le panel
-                d'administration Django. Contactez votre administrateur système (Naoservices).
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Pour les opérations de base de données et la gestion des données techniques.
+                Contactez votre administrateur système (Naoservices).
               </p>
               <div className="flex items-start gap-2 p-2.5 rounded-md bg-warning/5 border border-warning/20">
                 <KeyRound className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />

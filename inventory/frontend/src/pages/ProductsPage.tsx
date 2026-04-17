@@ -31,8 +31,13 @@ import {
   Eye,
   Loader2,
   Package,
+  LayoutList,
+  LayoutGrid,
+  FileSpreadsheet,
 } from "lucide-react";
+import { exportProducts } from "@/lib/exportProducts";
 import { ProductIcon } from "@/components/ui/ProductIcon";
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -71,6 +76,14 @@ export default function ProductsPage() {
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
+    (localStorage.getItem("products-view") as "list" | "grid") ?? "list"
+  );
+
+  function setView(mode: "list" | "grid") {
+    setViewMode(mode);
+    localStorage.setItem("products-view", mode);
+  }
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
@@ -176,9 +189,9 @@ export default function ProductsPage() {
       />
       <div className="page-container animate-slide-in">
         {/* Header de page premium */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div className="border-l-4 border-primary pl-3">
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-tight">
               Catalogue produits
             </h2>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -195,24 +208,61 @@ export default function ProductsPage() {
               )}
             </p>
           </div>
-          <Button
-            size="lg"
-            className="shrink-0 rounded-lg shadow-md shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
-            onClick={() => navigate("/products/new")}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Ajouter un produit
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => exportProducts(products)}
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Exporter Excel
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-lg shadow-sm shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
+              onClick={() => navigate("/products/new")}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter un produit
+            </Button>
+          </div>
         </div>
 
         {/* Barre de filtres — card horizontale */}
-        <div className="bg-card border rounded-xl shadow-sm p-3 sm:p-4 mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="bg-card border rounded-xl shadow-sm p-2.5 sm:p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-1 min-w-0">
             <SearchInput
               placeholder="Rechercher un produit ou code-barres..."
               value={search}
               onChange={setSearch}
             />
+          </div>
+          {/* Toggle Liste / Grille */}
+          <div className="flex gap-1 border rounded-lg p-1 bg-muted/30 shrink-0">
+            <button
+              aria-label="Vue liste"
+              onClick={() => setView("list")}
+              className={cn(
+                "p-1.5 rounded transition-colors",
+                viewMode === "list"
+                  ? "bg-card shadow-sm text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LayoutList className="w-4 h-4" />
+            </button>
+            <button
+              aria-label="Vue grille"
+              onClick={() => setView("grid")}
+              className={cn(
+                "p-1.5 rounded transition-colors",
+                viewMode === "grid"
+                  ? "bg-card shadow-sm text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
@@ -244,8 +294,100 @@ export default function ProductsPage() {
           onExport={handleExport}
         />
 
+        {/* ── Vue grille ─────────────────────────────────────────────────────── */}
+        {viewMode === "grid" && (
+          <div>
+            {isLoading && (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!isLoading && typedPaginated.length === 0 && (
+              <div className="rounded-xl border bg-card py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                <Package className="w-8 h-8 opacity-40" />
+                <p className="text-sm">Aucun produit trouvé.</p>
+              </div>
+            )}
+            {!isLoading && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {typedPaginated.map((product) => (
+                  <div
+                    key={product.id}
+                    className="group relative rounded-xl border bg-card hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer p-3 flex flex-col"
+                  >
+                    {/* Icône produit */}
+                    <div className="aspect-square bg-muted/50 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ProductIcon
+                          name={product.name}
+                          category={product.category_name}
+                          size="lg"
+                        />
+                      )}
+                    </div>
+
+                    {/* Infos */}
+                    <p className="font-semibold text-sm line-clamp-2 leading-snug mb-0.5">
+                      {product.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-2 truncate">
+                      {product.category_name}
+                    </p>
+
+                    {/* Prix */}
+                    <p
+                      className="font-black tabular-nums text-sm mb-2"
+                      style={{ color: "hsl(var(--primary))" }}
+                    >
+                      {product.selling_price.toLocaleString("fr-FR")} FCFA
+                    </p>
+
+                    {/* Badge stock */}
+                    <div className="mt-auto">
+                      <StatusBadge
+                        label={stockStatusLabel(product.stock_status)}
+                        variant={stockStatusVariant(product.stock_status)}
+                      />
+                    </div>
+
+                    {/* Actions au hover */}
+                    <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        className="p-1.5 rounded-md bg-card shadow-sm border hover:bg-secondary"
+                        title="Modifier"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/products/${product.id}/edit`);
+                        }}
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button
+                        className="p-1.5 rounded-md bg-card shadow-sm border hover:bg-destructive/10"
+                        title="Supprimer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModal({ type: "delete", product });
+                        }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Mobile cards — md:hidden */}
-        <div className="md:hidden space-y-2">
+        <div className={cn("space-y-2", viewMode === "grid" ? "hidden" : "md:hidden")}>
           {isLoading && (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -345,7 +487,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Desktop table — hidden md:block */}
-        <div className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
+        <div className={cn("bg-card rounded-xl border shadow-sm overflow-hidden", viewMode === "grid" ? "hidden" : "hidden md:block")}>
           <div className="overflow-x-auto max-h-[70vh]">
             <table className="data-table">
               <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">

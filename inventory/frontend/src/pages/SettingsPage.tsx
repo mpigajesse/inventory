@@ -120,12 +120,14 @@ interface SettingsSectionProps {
   title: string;
   description?: string;
   children: React.ReactNode;
+  animationDelay?: string;
 }
 
-function SettingsSection({ icon, title, description, children }: SettingsSectionProps) {
+function SettingsSection({ icon, title, description, children, animationDelay }: SettingsSectionProps) {
   return (
     <section
-      className="relative bg-card rounded-xl border border-border/70 shadow-[0_1px_2px_rgba(120,60,20,0.04),0_8px_24px_-12px_rgba(120,60,20,0.10)] overflow-hidden mb-6"
+      className="relative bg-card rounded-xl border border-border/70 shadow-[0_1px_2px_rgba(120,60,20,0.04),0_8px_24px_-12px_rgba(120,60,20,0.10)] overflow-hidden mb-6 animate-fade-scale opacity-0"
+      style={{ animationFillMode: "forwards", animationDelay: animationDelay ?? "0ms" }}
       aria-labelledby={`section-${title}`}
     >
       <div className="border-l-4 border-primary pl-5 pr-5 sm:pl-6 sm:pr-6 py-5 sm:py-6">
@@ -170,6 +172,7 @@ export default function SettingsPage() {
           icon={<Palette className="w-5 h-5" />}
           title="Apparence"
           description="Personnalisez les couleurs et le mode d'affichage de l'interface."
+          animationDelay="80ms"
         >
           {/* Theme palette grid */}
           <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em] mb-3">
@@ -194,7 +197,7 @@ export default function SettingsPage() {
                     "group relative flex flex-col items-center gap-3 p-4 min-h-[112px] rounded-xl border-2 bg-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     isActive
                       ? "border-primary shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.45)] bg-primary/[0.04]"
-                      : "border-border hover:border-primary/50 hover:shadow-[0_4px_14px_-10px_rgba(0,0,0,0.25)] hover:-translate-y-0.5",
+                      : "border-border hover:border-primary/50 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5",
                   ].join(" ")}
                 >
                   {/* Big circular color preview */}
@@ -268,6 +271,7 @@ export default function SettingsPage() {
           icon={<Printer className="w-5 h-5" />}
           title="Configuration caisse"
           description="Paramètres de facturation, impression de ticket et numérotation."
+          animationDelay="220ms"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="space-y-1.5">
@@ -331,7 +335,7 @@ export default function SettingsPage() {
 
         {/* Sticky save bar */}
         <div
-          className="sticky bottom-0 -mx-4 sm:mx-0 sm:static sm:rounded-xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 border-t sm:border sm:border-border/70 shadow-[0_-8px_24px_-12px_rgba(120,60,20,0.12)] sm:shadow-none px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3"
+          className="sticky bottom-0 -mx-4 sm:mx-0 sm:static sm:rounded-xl backdrop-blur-md bg-card/80 supports-[backdrop-filter]:bg-card/75 border-t sm:border sm:border-border/70 shadow-[0_-8px_24px_-12px_rgba(120,60,20,0.15)] sm:shadow-none px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3"
         >
           <Button
             type="button"

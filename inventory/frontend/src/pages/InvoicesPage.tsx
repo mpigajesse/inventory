@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { SortableHeader } from "@/components/ui/SortableHeader";
@@ -14,12 +14,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Printer, Download, Package, FileText, Plus, Receipt } from "lucide-react";
+import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Receipt } from "lucide-react";
 import { useState } from "react";
 import { useTableManager } from "@/hooks/useTableManager";
 import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+import { exportInvoicesToExcel } from "@/lib/exportInvoices";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -235,14 +236,14 @@ export default function InvoicesPage() {
       <div className="page-container animate-slide-in">
 
         {/* ── Premium Header ─────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
-              <Receipt className="w-5 h-5 text-primary" />
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
+              <Receipt className="w-4 h-4 text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">Factures</h1>
+                <h1 className="text-xl font-semibold tracking-tight">Factures</h1>
                 <span className="inline-flex items-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold">
                   {allInvoices.length}
                 </span>
@@ -254,9 +255,13 @@ export default function InvoicesPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Exporter
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportInvoicesToExcel(invoices)}
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Exporter Excel
             </Button>
             <Button
               size="sm"
@@ -270,12 +275,12 @@ export default function InvoicesPage() {
         </div>
 
         {/* ── Filtres : search + statut — ligne horizontale ─────────── */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
           <div className="flex-1 min-w-0">
-            <PageHeader
-              search={search}
-              onSearchChange={setSearch}
-              searchPlaceholder="Rechercher par numéro ou client..."
+            <SearchInput
+              placeholder="Rechercher par numéro ou client..."
+              value={search}
+              onChange={setSearch}
             />
           </div>
 
