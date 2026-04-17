@@ -164,9 +164,20 @@ const ACTION_CONFIG: Record<
 
 function ActionTypeIcon({ type }: { type: ActionType }) {
   const { icon: Icon, bg, color } = ACTION_CONFIG[type];
+  // Use gradient for vente and produit/stock, keep muted for connexion/système
+  const isColored = type === 'vente' || type === 'stock' || type === 'produit';
   return (
-    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 border-card ${bg}`}>
-      <Icon className={`w-3.5 h-3.5 ${color}`} />
+    <div
+      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 border-card ${isColored ? '' : bg}`}
+      style={isColored ? {
+        background: type === 'vente'
+          ? 'linear-gradient(135deg, hsl(152 38% 38%), hsl(152 38% 48%))'
+          : type === 'produit'
+          ? 'linear-gradient(135deg, hsl(36 88% 52%), hsl(22 72% 48%))'
+          : 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+      } : undefined}
+    >
+      <Icon className={`w-3.5 h-3.5 ${isColored ? 'text-white' : color}`} />
     </div>
   );
 }
@@ -255,12 +266,18 @@ export default function ActivityLogPage() {
         {/* ── Page header premium ── */}
         <div className="page-header-premium flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Activity className="w-5 h-5 text-primary" />
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+            >
+              <Activity className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="page-header-eyebrow">Audit &amp; traçabilité</p>
-              <h1 className="page-header-title">Journal d'activité</h1>
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 rounded-full" style={{ background: 'linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))' }} />
+                <h1 className="page-header-title">Journal d'activité</h1>
+              </div>
               <p className="page-header-subtitle">
                 {isLoading
                   ? "Chargement du journal…"
@@ -423,7 +440,7 @@ export default function ActivityLogPage() {
           </div>
         </div>
 
-        {/* ── Mobile : timeline verticale ── */}
+        {/* ── Mobile : timeline groupée par date ── */}
         <div className="md:hidden mt-2">
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-sm">
@@ -435,49 +452,68 @@ export default function ActivityLogPage() {
               Aucune entrée ne correspond aux filtres sélectionnés.
             </div>
           ) : (
-            <div className="relative pl-6">
-              {/* Ligne verticale connectrice */}
-              <div className="absolute left-[19px] top-0 bottom-0 w-px bg-border" />
-
-              <div className="space-y-0">
-                {typedPaginated.map((entry, index) => (
-                  <div
-                    key={entry.id}
-                    className="relative flex items-start gap-3 pb-4 animate-fade-scale"
-                    style={{ animationDelay: `${index * 25}ms` }}
-                  >
-                    {/* Icône accrochée sur la ligne */}
-                    <div className="absolute -left-[5px] top-1 z-10">
-                      <ActionTypeIcon type={entry.actionType} />
+            <div className="space-y-0">
+              {/* Grouper par date */}
+              {(() => {
+                const groups: Record<string, LogEntry[]> = {};
+                typedPaginated.forEach((entry) => {
+                  const dateKey = entry.date.split(" ")[0]; // DD/MM/YYYY
+                  if (!groups[dateKey]) groups[dateKey] = [];
+                  groups[dateKey].push(entry);
+                });
+                return Object.entries(groups).map(([dateKey, entries]) => (
+                  <div key={dateKey}>
+                    {/* Séparateur de date */}
+                    <div className="flex items-center gap-3 py-3">
+                      <div className="flex-1 h-px bg-border/60" />
+                      <span className="text-xs font-bold text-muted-foreground px-2 py-0.5 rounded-full bg-muted">
+                        {dateKey}
+                      </span>
+                      <div className="flex-1 h-px bg-border/60" />
                     </div>
 
-                    {/* Card de l'événement */}
-                    <div className="ml-8 flex-1 rounded-xl border bg-card hover:bg-primary/[0.02] hover:border-primary/20 transition-colors p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-sm font-heading truncate" title={entry.detail}>
-                            {entry.detail || entry.action}
-                          </p>
-                          <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-1">
-                            <span className="text-xs text-foreground/80 font-medium">{entry.user}</span>
-                            <span className="text-muted-foreground/40 text-xs">·</span>
-                            <span
-                              className="font-mono text-[10px] text-muted-foreground"
-                              title={entry.date}
-                            >
-                              {formatRelative(entry.dateIso)}
-                            </span>
+                    {/* Entrées du groupe */}
+                    <div
+                      className="rounded-2xl overflow-hidden mb-2"
+                      style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                    >
+                      {entries.map((entry, idx) => (
+                        <div
+                          key={entry.id}
+                          className="flex items-start gap-4 px-4 py-3.5 transition-colors animate-fade-scale"
+                          style={{
+                            borderBottom: idx < entries.length - 1 ? '1px solid hsl(var(--border) / 0.5)' : 'none',
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'hsl(22 72% 48% / 0.02)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+                        >
+                          {/* Avatar utilisateur */}
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                            style={{ background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+                          >
+                            {(entry.user?.[0] || 'S').toUpperCase()}
                           </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-foreground">
+                              <span className="font-semibold">{entry.user}</span>
+                              {' — '}{entry.detail || entry.action}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{formatRelative(entry.dateIso)}</p>
+                          </div>
+
+                          {/* Badge type */}
+                          <StatusBadge
+                            label={ACTION_CONFIG[entry.actionType].badge.label}
+                            variant={ACTION_CONFIG[entry.actionType].badge.variant}
+                          />
                         </div>
-                        <StatusBadge
-                          label={ACTION_CONFIG[entry.actionType].badge.label}
-                          variant={ACTION_CONFIG[entry.actionType].badge.variant}
-                        />
-                      </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
+                ));
+              })()}
             </div>
           )}
         </div>

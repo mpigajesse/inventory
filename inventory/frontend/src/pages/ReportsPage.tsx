@@ -16,6 +16,8 @@ import {
   Calendar,
   ArrowUpRight,
   Loader2,
+  FileSpreadsheet,
+  Clock,
 } from "lucide-react";
 import { dashboardService } from "@/services/dashboardService";
 import { stockService } from "@/services/stockService";
@@ -55,6 +57,20 @@ function SkeletonBar({ width = "100%" }: { width?: string }) {
   );
 }
 
+// ─── Report card types ────────────────────────────────────────────────────────
+
+interface ReportCard {
+  id: string;
+  title: string;
+  description: string;
+  period: string;
+  color: string;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  isLoading: boolean;
+  disabled: boolean;
+  onDownload: () => void;
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
@@ -63,6 +79,7 @@ export default function ReportsPage() {
   const [isExportingClients, setIsExportingClients] = React.useState(false);
   const [isExportingProducts, setIsExportingProducts] = React.useState(false);
   const [isExportingSales, setIsExportingSales] = React.useState(false);
+  const [isExportingFull, setIsExportingFull] = React.useState(false);
 
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ["dashboard"],
@@ -93,34 +110,136 @@ export default function ReportsPage() {
   const avgBasket = weekTransactions > 0 ? Math.round(weekRevenue / weekTransactions) : 0;
   const totalClients = stats?.clients.total ?? 0;
 
+  // ── Download handlers ──────────────────────────────────────────────────────
+
+  async function handleDownloadSales() {
+    setIsExportingSales(true);
+    try {
+      const today = new Date();
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+      const since = monday.toISOString().split('T')[0];
+      const data = await salesService.getAll({ created_after: since, page_size: '500' });
+      await exportWeeklySales(data.results);
+      toast.success('Export ventes semaine téléchargé');
+    } catch {
+      toast.error("Erreur lors de l'export");
+    } finally {
+      setIsExportingSales(false);
+    }
+  }
+
+  async function handleDownloadProducts() {
+    setIsExportingProducts(true);
+    try {
+      const [productsData, stockData] = await Promise.all([
+        productService.getAll({ page_size: '1000' }),
+        stockService.getAll({ page_size: '1000' }),
+      ]);
+      await exportProductsStockReport(productsData.results, stockData.results);
+      toast.success('Rapport produits téléchargé');
+    } catch {
+      toast.error("Erreur lors de l'export");
+    } finally {
+      setIsExportingProducts(false);
+    }
+  }
+
+  async function handleDownloadClients() {
+    setIsExportingClients(true);
+    try {
+      const data = await clientService.getAll({ page_size: '1000' });
+      await exportClients(data.results);
+      toast.success('Rapport clients téléchargé');
+    } catch {
+      toast.error("Erreur lors de l'export");
+    } finally {
+      setIsExportingClients(false);
+    }
+  }
+
+  async function handleDownloadFull() {
+    if (!stats) return;
+    setIsExportingFull(true);
+    try {
+      exportReportToExcel({ stats, stockAlerts });
+      toast.success('Rapport complet téléchargé');
+    } catch {
+      toast.error("Erreur lors de l'export");
+    } finally {
+      setIsExportingFull(false);
+    }
+  }
+
+  const REPORTS: ReportCard[] = [
+    {
+      id: "sales",
+      title: "Ventes de la semaine",
+      description: "Toutes les transactions de la semaine en cours avec détails par produit.",
+      period: "Cette semaine",
+      color: "hsl(22 72% 48%)",
+      icon: ShoppingCart,
+      isLoading: isExportingSales,
+      disabled: isExportingSales || !can('view_reports'),
+      onDownload: handleDownloadSales,
+    },
+    {
+      id: "products",
+      title: "Rapport produits",
+      description: "Inventaire complet avec niveaux de stock, valeur et performances de vente.",
+      period: "État actuel",
+      color: "hsl(152 38% 38%)",
+      icon: BarChart2,
+      isLoading: isExportingProducts,
+      disabled: isExportingProducts || !can('view_reports'),
+      onDownload: handleDownloadProducts,
+    },
+    {
+      id: "clients",
+      title: "Rapport clients",
+      description: "Liste des clients avec historique d'achats et statistiques de fidélité.",
+      period: "Tous les temps",
+      color: "hsl(36 88% 52%)",
+      icon: Users,
+      isLoading: isExportingClients,
+      disabled: isExportingClients || !can('view_reports'),
+      onDownload: handleDownloadClients,
+    },
+    {
+      id: "full",
+      title: "Rapport complet",
+      description: "Synthèse globale : ventes, stock critique, top produits et KPIs essentiels.",
+      period: "Vue synthétique",
+      color: "hsl(210 70% 52%)",
+      icon: Trophy,
+      isLoading: isExportingFull,
+      disabled: isExportingFull || !stats || isLoading || !can('view_reports'),
+      onDownload: handleDownloadFull,
+    },
+  ];
+
   return (
     <>
       <Topbar title="Rapports" subtitle="Statistiques de ventes et performances" onMenuClick={onMenuClick} />
       <div className="page-container animate-slide-in">
 
-        {/* ── Page header premium ── */}
-        <div className="page-header-premium">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <BarChart2 className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="page-header-eyebrow">Analyse &amp; performances</p>
-                <h1 className="page-header-title">Rapports</h1>
-                <p className="page-header-subtitle">
-                  Ventes hebdomadaires, produits phares et tendances de votre activité
-                </p>
-              </div>
-            </div>
-            <Link
-              to="/statistics"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline shrink-0"
+        {/* ── Page header ── */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <div
+              className="w-1 h-6 rounded-full flex-shrink-0"
+              style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+            />
+            <h1
+              className="text-2xl font-extrabold font-heading"
+              style={{ letterSpacing: "-0.025em" }}
             >
-              <BarChart2 className="w-4 h-4" />
-              Voir les statistiques avancées →
-            </Link>
+              Rapports & Exports
+            </h1>
           </div>
+          <p className="text-sm text-muted-foreground ml-3">
+            Ventes hebdomadaires, produits phares et exports Excel
+          </p>
         </div>
 
         {/* ── KPIs ── */}
@@ -155,8 +274,8 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* ── Grille principale ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* ── Grille graphiques ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
 
           {/* Graphique barres — ventes par jour */}
           <div className="card-premium p-6">
@@ -216,7 +335,6 @@ export default function ReportsPage() {
                           opacity: d.total === 0 ? 0.2 : 0.85,
                         }}
                       >
-                        {/* Shine overlay */}
                         <div className="absolute inset-0 rounded-t-lg bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                       </div>
                       <span className="text-[11px] text-muted-foreground font-medium">{formatDayLabel(d.day)}</span>
@@ -271,7 +389,6 @@ export default function ReportsPage() {
                       className="group flex items-center gap-3 p-2 rounded-lg hover:bg-muted/40 transition-colors animate-fade-scale"
                       style={{ animationDelay: `${i * 50}ms` }}
                     >
-                      {/* Rang */}
                       <span
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                           i === 0
@@ -286,7 +403,6 @@ export default function ReportsPage() {
                         {i + 1}
                       </span>
 
-                      {/* Nom + barre de progression */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate font-heading">{p.product__name}</p>
                         <div className="flex items-center gap-2 mt-1">
@@ -305,7 +421,6 @@ export default function ReportsPage() {
                         </div>
                       </div>
 
-                      {/* Revenu */}
                       <span className="text-sm font-semibold shrink-0 text-right font-editorial amount-editorial">
                         {formatFcfa(p.revenue)}
                       </span>
@@ -317,132 +432,129 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* ── Section exports ── */}
-        <div className="mt-5 card-premium p-6">
-          <div className="flex items-center justify-between gap-3 mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                <Download className="w-4 h-4 text-accent" />
+        {/* ── Download Center ── */}
+        <div className="mb-2">
+          {/* Section header */}
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-5">
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <Download className="w-4 h-4" style={{ color: "hsl(22 72% 48%)" }} />
+                <h2 className="text-base font-bold font-heading">Centre de téléchargement</h2>
               </div>
-              <div>
-                <h2 className="text-sm font-semibold font-heading">Exports &amp; rapports</h2>
-                <p className="text-xs text-muted-foreground">Téléchargez vos données au format Excel</p>
-              </div>
+              <p className="text-xs text-muted-foreground ml-6">Exportez vos données en fichiers Excel</p>
             </div>
-            <button
-              disabled={!stats || isLoading || !can('view_reports')}
-              onClick={() => {
-                if (stats) {
-                  exportReportToExcel({ stats, stockAlerts });
-                }
+
+            {/* Lien vers statistiques avancées */}
+            <div
+              className="flex items-center gap-3 px-4 py-3 rounded-xl"
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48% / 0.06), hsl(36 88% 52% / 0.04))",
+                border: "1px solid hsl(22 72% 48% / 0.15)",
               }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
-              <Download className="w-4 h-4" />
-              Télécharger rapport complet
-            </button>
+              <BarChart2 className="w-4 h-4 flex-shrink-0" style={{ color: "hsl(22 72% 48%)" }} />
+              <p className="text-xs text-foreground">
+                Analyses avancées avec graphiques dans les{" "}
+                <strong>Statistiques</strong>
+              </p>
+              <Link
+                to="/statistics"
+                className="text-xs font-bold px-2.5 py-1 rounded-lg transition-all text-white whitespace-nowrap"
+                style={{ background: "hsl(22 72% 48%)" }}
+              >
+                Voir →
+              </Link>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Ventes de la semaine */}
-            <button
-              disabled={isExportingSales || !can('view_reports')}
-              onClick={async () => {
-                setIsExportingSales(true);
-                try {
-                  const today = new Date();
-                  const monday = new Date(today);
-                  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-                  const since = monday.toISOString().split('T')[0];
-                  const data = await salesService.getAll({ created_after: since, page_size: '500' });
-                  await exportWeeklySales(data.results);
-                  toast.success('Export ventes semaine téléchargé');
-                } catch {
-                  toast.error("Erreur lors de l'export");
-                } finally {
-                  setIsExportingSales(false);
-                }
-              }}
-              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-primary bg-primary/10">
-                <ShoppingCart className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold font-heading truncate">Ventes de la semaine</p>
-                <p className="text-xs text-muted-foreground">Toutes les transactions</p>
-              </div>
-              {isExportingSales ? (
-                <Loader2 className="w-4 h-4 text-muted-foreground ml-auto shrink-0 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 shrink-0 transition-opacity" />
-              )}
-            </button>
+          {/* Cards de rapport */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {REPORTS.map((report) => (
+              <div
+                key={report.id}
+                className="rounded-2xl overflow-hidden transition-all duration-200"
+                style={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = "0 10px 28px hsl(22 30% 15% / 0.1)";
+                  e.currentTarget.style.borderColor = `color-mix(in srgb, ${report.color} 30%, transparent)`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 2px 8px hsl(22 30% 15% / 0.06)";
+                  e.currentTarget.style.borderColor = "hsl(var(--border))";
+                }}
+              >
+                {/* Color band top */}
+                <div className="h-1.5" style={{ background: report.color }} />
 
-            {/* Rapport produits */}
-            <button
-              disabled={isExportingProducts || !can('view_reports')}
-              onClick={async () => {
-                setIsExportingProducts(true);
-                try {
-                  const [productsData, stockData] = await Promise.all([
-                    productService.getAll({ page_size: '1000' }),
-                    stockService.getAll({ page_size: '1000' }),
-                  ]);
-                  await exportProductsStockReport(productsData.results, stockData.results);
-                  toast.success('Rapport produits téléchargé');
-                } catch {
-                  toast.error("Erreur lors de l'export");
-                } finally {
-                  setIsExportingProducts(false);
-                }
-              }}
-              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-success bg-success/10">
-                <BarChart2 className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold font-heading truncate">Rapport produits</p>
-                <p className="text-xs text-muted-foreground">Stock et performances</p>
-              </div>
-              {isExportingProducts ? (
-                <Loader2 className="w-4 h-4 text-muted-foreground ml-auto shrink-0 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 shrink-0 transition-opacity" />
-              )}
-            </button>
+                <div className="p-5">
+                  {/* Icon */}
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                    style={{
+                      background: `color-mix(in srgb, ${report.color} 12%, transparent)`,
+                      border: `1px solid color-mix(in srgb, ${report.color} 25%, transparent)`,
+                    }}
+                  >
+                    <report.icon className="w-5 h-5" style={{ color: report.color }} />
+                  </div>
 
-            {/* Rapport clients */}
-            <button
-              disabled={isExportingClients || !can('view_reports')}
-              onClick={async () => {
-                setIsExportingClients(true);
-                try {
-                  const data = await clientService.getAll({ page_size: '1000' });
-                  await exportClients(data.results);
-                  toast.success('Rapport clients téléchargé');
-                } catch {
-                  toast.error("Erreur lors de l'export");
-                } finally {
-                  setIsExportingClients(false);
-                }
-              }}
-              className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-warning bg-warning/10">
-                <Users className="w-4 h-4" />
+                  <h3 className="font-heading font-bold text-sm text-foreground mb-1">
+                    {report.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                    {report.description}
+                  </p>
+
+                  {/* Metadata */}
+                  <div className="flex items-center gap-3 mb-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <FileSpreadsheet className="w-3 h-3" />
+                      Excel .xlsx
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {report.period}
+                    </span>
+                  </div>
+
+                  {/* Download button */}
+                  <button
+                    onClick={() => report.onDownload()}
+                    disabled={report.disabled}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: report.isLoading
+                        ? "hsl(var(--muted))"
+                        : `linear-gradient(135deg, ${report.color}, color-mix(in srgb, ${report.color} 75%, hsl(36 88% 52%)))`,
+                      color: report.isLoading ? "hsl(var(--muted-foreground))" : "white",
+                      border: "none",
+                      boxShadow: report.isLoading
+                        ? "none"
+                        : `0 4px 12px color-mix(in srgb, ${report.color} 30%, transparent)`,
+                      cursor: report.disabled ? (report.isLoading ? "wait" : "not-allowed") : "pointer",
+                    }}
+                  >
+                    {report.isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                        Export en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Télécharger
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold font-heading truncate">Rapport clients</p>
-                <p className="text-xs text-muted-foreground">Historique d'achats</p>
-              </div>
-              {isExportingClients ? (
-                <Loader2 className="w-4 h-4 text-muted-foreground ml-auto shrink-0 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 shrink-0 transition-opacity" />
-              )}
-            </button>
+            ))}
           </div>
         </div>
 

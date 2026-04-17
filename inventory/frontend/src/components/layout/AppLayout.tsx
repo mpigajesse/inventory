@@ -46,7 +46,10 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen w-screen max-w-full overflow-hidden">
+    <div
+      className="flex h-screen w-screen max-w-full overflow-hidden"
+      style={{ background: "hsl(30 20% 97%)" }}
+    >
       <AppSidebar
         collapsed={collapsed}
         onCollapsedChange={setCollapsed}
@@ -63,10 +66,13 @@ export function AppLayout() {
         <div
           className={[
             "hidden md:block shrink-0 transition-all duration-200",
-            collapsed ? "w-[60px]" : "w-[240px]",
+            collapsed ? "w-[64px]" : "w-[256px]",
           ].join(" ")}
         />
-        <main className="flex flex-col flex-1 h-screen min-w-0 max-w-full overflow-x-hidden overflow-y-auto">
+        <main
+          className="flex flex-col flex-1 h-screen min-w-0 max-w-full overflow-x-hidden overflow-y-auto"
+          style={{ background: "hsl(30 20% 97%)" }}
+        >
           <PageTransition>
             <Outlet
               context={

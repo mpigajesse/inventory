@@ -22,7 +22,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Plus, Phone, Mail, Edit, Trash2, History, Users, UserPlus, FileSpreadsheet, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  History,
+  Users,
+  UserPlus,
+  FileSpreadsheet,
+  Loader2,
+  Eye,
+  Phone,
+  Mail,
+  MapPin,
+} from "lucide-react";
 import { exportClients } from "@/lib/exportClients";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +45,13 @@ import type { Client } from "@/services/clientService";
 import { toast } from "sonner";
 import type { Sale } from "@/services/salesService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
+
+const TERRACOTTA = "hsl(22 72% 48%)";
+const TERRACOTTA_LIGHT = "hsl(36 88% 52%)";
+const FOREST = "hsl(152 38% 38%)";
+const DANGER = "hsl(4 72% 52%)";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,37 +72,40 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
+// ─── Loading skeleton (table rows) ───────────────────────────────────────────
 
-function ClientCardSkeleton() {
+function TableRowSkeleton() {
   return (
-    <div className="bg-card rounded-lg border p-5 animate-pulse">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-muted shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="h-3.5 bg-muted rounded w-3/4" />
-          <div className="h-3 bg-muted rounded w-1/2" />
+    <tr className="border-b border-border/60 animate-pulse">
+      <td className="px-4 py-3.5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-muted shrink-0" />
+          <div className="space-y-1.5 flex-1">
+            <div className="h-3.5 bg-muted rounded w-32" />
+            <div className="h-3 bg-muted rounded w-24" />
+          </div>
         </div>
-      </div>
-      <div className="space-y-2">
-        <div className="h-3 bg-muted rounded w-2/3" />
-        <div className="h-3 bg-muted rounded w-1/2" />
-      </div>
-      <div className="flex items-center justify-between mt-4 pt-4 border-t">
-        <div className="space-y-1">
-          <div className="h-3 bg-muted rounded w-16" />
-          <div className="h-4 bg-muted rounded w-24" />
-        </div>
-        <div className="space-y-1 items-end flex flex-col">
-          <div className="h-3 bg-muted rounded w-20" />
-          <div className="h-4 bg-muted rounded w-16" />
-        </div>
-      </div>
-    </div>
+      </td>
+      <td className="px-4 py-3.5 hidden md:table-cell">
+        <div className="h-3.5 bg-muted rounded w-28" />
+      </td>
+      <td className="px-4 py-3.5">
+        <div className="h-4 bg-muted rounded w-28" />
+      </td>
+      <td className="px-4 py-3.5 hidden lg:table-cell">
+        <div className="h-5 bg-muted rounded-full w-24" />
+      </td>
+      <td className="px-4 py-3.5 hidden sm:table-cell">
+        <div className="h-3 bg-muted rounded w-20" />
+      </td>
+      <td className="px-4 py-3.5">
+        <div className="h-6 bg-muted rounded w-16" />
+      </td>
+    </tr>
   );
 }
 
-// ─── Purchase history modal content ──────────────────────────────────────────
+// ─── Purchase history modal ───────────────────────────────────────────────────
 
 interface HistoryModalProps {
   client: Client | null;
@@ -100,7 +123,17 @@ function HistoryModal({ client, onClose }: HistoryModalProps) {
     <Dialog open={client !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Historique — {client?.name}</DialogTitle>
+          <div className="flex items-center gap-3">
+            {client && (
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                style={{ background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})` }}
+              >
+                {initials(client.name)}
+              </div>
+            )}
+            <DialogTitle>Historique — {client?.name}</DialogTitle>
+          </div>
         </DialogHeader>
 
         {isLoading ? (
@@ -116,9 +149,9 @@ function HistoryModal({ client, onClose }: HistoryModalProps) {
         ) : (
           <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
             {purchases.map((sale) => (
-              <div key={sale.id} className="rounded-md border p-3 text-sm space-y-1">
+              <div key={sale.id} className="rounded-xl border border-border/60 p-3 text-sm space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">{formatDate(sale.created_at)}</span>
+                  <span className="font-medium text-foreground">{formatDate(sale.created_at)}</span>
                   <StatusBadge
                     label={sale.amount_paid >= sale.total_amount ? "Payé" : "Impayé"}
                     variant={sale.amount_paid >= sale.total_amount ? "success" : "warning"}
@@ -129,7 +162,12 @@ function HistoryModal({ client, onClose }: HistoryModalProps) {
                     Facture {sale.invoice_number}
                   </p>
                 )}
-                <p className="font-semibold text-sm">{formatFcfa(sale.total_amount)}</p>
+                <p
+                  className="font-bold text-sm"
+                  style={{ fontFamily: "Fraunces, Georgia, serif", color: TERRACOTTA }}
+                >
+                  {formatFcfa(sale.total_amount)}
+                </p>
               </div>
             ))}
           </div>
@@ -158,11 +196,12 @@ export default function ClientsPage() {
   // ── Fetch clients ────────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
     queryKey: ["clients", search],
-    queryFn: () =>
-      clientService.getAll(search ? { search } : undefined),
+    queryFn: () => clientService.getAll(search ? { search } : undefined),
   });
 
   const clients: Client[] = data?.results ?? [];
+  const totalClients = data?.count ?? clients.length;
+  const clientsWithCredit = clients.filter((c) => (c.credit_balance ?? 0) > 0).length;
 
   // ── Delete mutation ──────────────────────────────────────────────────────────
   const deleteMutation = useMutation({
@@ -191,50 +230,66 @@ export default function ClientsPage() {
       <Topbar title="Clients" subtitle="Gestion de la base clients" onMenuClick={onMenuClick} />
       <div className="page-container animate-slide-in">
 
-        {/* ── Premium Header ─────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
-              <Users className="w-4 h-4 text-primary" />
-            </div>
+        {/* ── Premium Header ──────────────────────────────────────────────── */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold tracking-tight">Clients</h1>
-                <span className="inline-flex items-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold">
-                  {clients.length}
-                </span>
+              <div className="flex items-center gap-2 mb-1">
+                <div
+                  className="w-1 h-6 rounded-full shrink-0"
+                  style={{ background: `linear-gradient(to bottom, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})` }}
+                />
+                <h1
+                  className="text-2xl font-extrabold"
+                  style={{ letterSpacing: "-0.025em" }}
+                >
+                  Clients
+                </h1>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Gestion de la base clients
+              <p className="text-sm text-muted-foreground ml-3">
+                {isLoading ? (
+                  <span className="inline-block w-40 h-3.5 bg-muted rounded animate-pulse" />
+                ) : (
+                  <>
+                    {totalClients} client{totalClients !== 1 ? "s" : ""}
+                    {clientsWithCredit > 0 && (
+                      <> · <span style={{ color: DANGER }}>{clientsWithCredit} avec crédit</span></>
+                    )}
+                  </>
+                )}
               </p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {can('manage_clients') && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => exportClients(clients)}
-              >
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Exporter Excel
-              </Button>
-            )}
-            {can('manage_clients') && (
-              <Button
-                size="sm"
-                className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
-                onClick={() => navigate("/clients/new")}
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Nouveau client
-              </Button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {can("manage_clients") && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportClients(clients)}
+                  className="h-9"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Exporter Excel
+                </Button>
+              )}
+              {can("manage_clients") && (
+                <button
+                  onClick={() => navigate("/clients/new")}
+                  className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95"
+                  style={{
+                    background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})`,
+                    boxShadow: `0 4px 14px hsl(22 72% 48% / 0.35)`,
+                  }}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Nouveau client
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ── Search bar ─────────────────────────────────────────── */}
+        {/* ── Search bar ──────────────────────────────────────────────────── */}
         <div className="mb-5">
           <SearchInput
             placeholder="Rechercher un client par nom, téléphone ou email..."
@@ -243,107 +298,49 @@ export default function ClientsPage() {
           />
         </div>
 
-        {/* Loading skeleton */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => <ClientCardSkeleton key={i} />)}
-          </div>
-        ) : clients.length === 0 ? (
+        {/* ── Table ───────────────────────────────────────────────────────── */}
+        {!isLoading && clients.length === 0 ? (
           <EmptyState
             message="Aucun client trouvé."
             icon={<Users className="w-10 h-10" />}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {clients.map((client) => (
-              <div
-                key={client.id}
-                className="group bg-card rounded-xl border p-4 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200"
-              >
-                {/* Header row */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all"
-                    style={{
-                      background: "hsl(var(--primary) / 0.12)",
-                      color: "hsl(var(--primary))",
-                    }}
-                  >
-                    {initials(client.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{client.name}</p>
-                    <p className="text-[11px] text-muted-foreground tabular-nums">
-                      {client.purchases_count} achat{client.purchases_count !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-                    <button
-                      className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                      title="Voir historique"
-                      onClick={() => setHistoryClient(client)}
-                    >
-                      <History className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                    {can('manage_clients') && (
-                      <button
-                        className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                        title="Modifier"
-                        onClick={() => navigate(`/clients/${client.id}/edit`)}
-                      >
-                        <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                    )}
-                    {can('manage_clients') && (
-                      <button
-                        className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
-                        title="Supprimer"
-                        onClick={() => setDeletingClient(client)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Contact info */}
-                <div className="space-y-1.5 text-xs">
-                  {client.phone && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="w-3.5 h-3.5 shrink-0" />
-                      <span className="font-mono tabular-nums">{client.phone}</span>
-                    </div>
-                  )}
-                  {client.email && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{client.email}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer stats */}
-                <div className="flex items-end justify-between mt-3 pt-3 border-t gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                      Total achats
-                    </p>
-                    <p className="font-mono font-bold text-primary text-sm tabular-nums leading-tight mt-0.5">
-                      {formatFcfa(client.total_purchases)}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                      Depuis
-                    </p>
-                    <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-                      {formatDate(client.created_at)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="rounded-xl border border-border/60 overflow-hidden bg-card">
+            <table className="w-full text-sm">
+              <thead>
+                <tr
+                  className="border-b border-border/60 text-xs font-semibold uppercase tracking-wider"
+                  style={{ background: "hsl(22 72% 48% / 0.04)" }}
+                >
+                  <th className="px-4 py-3 text-left text-muted-foreground">Client</th>
+                  <th className="px-4 py-3 text-left text-muted-foreground hidden md:table-cell">
+                    Contact
+                  </th>
+                  <th className="px-4 py-3 text-left text-muted-foreground">Total achats</th>
+                  <th className="px-4 py-3 text-left text-muted-foreground hidden lg:table-cell">
+                    Crédit dû
+                  </th>
+                  <th className="px-4 py-3 text-left text-muted-foreground hidden sm:table-cell">
+                    Depuis
+                  </th>
+                  <th className="px-4 py-3 text-right text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading
+                  ? [1, 2, 3, 4, 5, 6].map((i) => <TableRowSkeleton key={i} />)
+                  : clients.map((client) => (
+                      <ClientRow
+                        key={client.id}
+                        client={client}
+                        canManage={can("manage_clients")}
+                        onHistory={() => setHistoryClient(client)}
+                        onEdit={() => navigate(`/clients/${client.id}/edit`)}
+                        onDelete={() => setDeletingClient(client)}
+                      />
+                    ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -354,7 +351,7 @@ export default function ClientsPage() {
         onClose={() => setHistoryClient(null)}
       />
 
-      {/* ── AlertDialog : Supprimer client ── */}
+      {/* ── AlertDialog : Archiver client ── */}
       <AlertDialog
         open={!!deletingClient}
         onOpenChange={(open) => { if (!open) setDeletingClient(null); }}
@@ -393,5 +390,139 @@ export default function ClientsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+// ─── Table row component ──────────────────────────────────────────────────────
+
+interface ClientRowProps {
+  client: Client;
+  canManage: boolean;
+  onHistory: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function ClientRow({ client, canManage, onHistory, onEdit, onDelete }: ClientRowProps) {
+  const [hovered, setHovered] = useState(false);
+
+  const creditBalance = client.credit_balance ?? 0;
+
+  return (
+    <tr
+      className="group border-b border-border/60 transition-colors"
+      style={{ background: hovered ? "hsl(22 72% 48% / 0.03)" : "transparent" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Nom + Avatar */}
+      <td className="px-4 py-3.5">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+            style={{
+              background: `linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))`,
+            }}
+          >
+            {initials(client.name)}
+          </div>
+          <div>
+            <p className="font-semibold text-sm text-foreground leading-tight">{client.name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {client.purchases_count} achat{client.purchases_count !== 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+      </td>
+
+      {/* Contact */}
+      <td className="px-4 py-3.5 hidden md:table-cell">
+        <div className="space-y-1">
+          {client.phone && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Phone className="w-3 h-3 shrink-0" />
+              <span className="font-mono tabular-nums">{client.phone}</span>
+            </div>
+          )}
+          {client.email && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Mail className="w-3 h-3 shrink-0" />
+              <span className="truncate max-w-[160px]">{client.email}</span>
+            </div>
+          )}
+          {!client.phone && !client.email && (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </div>
+      </td>
+
+      {/* Total achats en Fraunces */}
+      <td className="px-4 py-3.5">
+        <span
+          className="font-bold text-sm tabular-nums"
+          style={{
+            fontFamily: "Fraunces, Georgia, serif",
+            color: "hsl(22 72% 48%)",
+          }}
+        >
+          {formatFcfa(client.total_purchases)}
+        </span>
+      </td>
+
+      {/* Solde crédit */}
+      <td className="px-4 py-3.5 hidden lg:table-cell">
+        {creditBalance > 0 ? (
+          <span
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+            style={{
+              background: "hsl(4 72% 52% / 0.1)",
+              color: "hsl(4 72% 52%)",
+            }}
+          >
+            ↑ {creditBalance.toLocaleString("fr-FR")} FCFA dû
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        )}
+      </td>
+
+      {/* Date d'entrée */}
+      <td className="px-4 py-3.5 hidden sm:table-cell">
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {formatDate(client.created_at)}
+        </span>
+      </td>
+
+      {/* Actions (visibles au hover) */}
+      <td className="px-4 py-3.5">
+        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+            title="Historique d'achats"
+            onClick={onHistory}
+          >
+            <History className="w-4 h-4 text-muted-foreground" />
+          </button>
+          {canManage && (
+            <button
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              title="Modifier"
+              onClick={onEdit}
+            >
+              <Edit2 className="w-4 h-4 text-muted-foreground" />
+            </button>
+          )}
+          {canManage && (
+            <button
+              className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+              title="Archiver"
+              onClick={onDelete}
+            >
+              <Trash2 className="w-4 h-4 text-destructive/70" />
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
   );
 }

@@ -19,8 +19,9 @@ import {
   ArrowRight,
   Trophy,
   Users,
-  Calendar,
+  BarChart2,
   ShieldCheck,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
@@ -43,17 +44,26 @@ function formatDate(iso: string): string {
 }
 
 function formatLongDate(d: Date): string {
-  return d.toLocaleDateString("fr-FR", {
+  const str = d.toLocaleDateString("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function Sparkline({ data, tint = "primary", className }: { data: number[]; tint?: "primary" | "accent" | "warning" | "info"; className?: string }) {
+function Sparkline({
+  data,
+  tint = "primary",
+  className,
+}: {
+  data: number[];
+  tint?: "primary" | "accent" | "warning" | "info";
+  className?: string;
+}) {
   if (!data.length) return null;
   const max = Math.max(...data);
   const min = Math.min(...data);
@@ -63,7 +73,10 @@ function Sparkline({ data, tint = "primary", className }: { data: number[]; tint
     primary: { active: "bg-primary", muted: "bg-primary/20" },
     accent: { active: "bg-accent", muted: "bg-accent/20" },
     warning: { active: "bg-warning", muted: "bg-warning/20" },
-    info: { active: "bg-[hsl(var(--badge-blue))]", muted: "bg-[hsl(var(--badge-blue))]/20" },
+    info: {
+      active: "bg-[hsl(var(--badge-blue))]",
+      muted: "bg-[hsl(var(--badge-blue))]/20",
+    },
   };
   const tc = tintMap[tint];
 
@@ -87,9 +100,22 @@ function Sparkline({ data, tint = "primary", className }: { data: number[]; tint
   );
 }
 
-function KpiValue({ end, suffix, duration }: { end: number; suffix: string; duration: number }) {
+function KpiValue({
+  end,
+  suffix,
+  duration,
+}: {
+  end: number;
+  suffix: string;
+  duration: number;
+}) {
   const counted = useCountUp({ end, duration });
-  return <>{counted}{suffix}</>;
+  return (
+    <>
+      {counted}
+      {suffix}
+    </>
+  );
 }
 
 type KpiTint = "primary" | "accent" | "warning" | "info";
@@ -107,40 +133,52 @@ interface PremiumKpiProps {
   trend?: { direction: "up" | "down" | "neutral"; label: string };
 }
 
-const tintStyles: Record<KpiTint, {
-  iconBg: string;
-  iconFg: string;
-  ring: string;
-  gradient: string;
-  valueTone: string;
-}> = {
+const tintConfig: Record<
+  KpiTint,
+  {
+    iconGradient: string;
+    iconShadow: string;
+    glow: string;
+    trendUpBg: string;
+    trendUpColor: string;
+    sparkTint: KpiTint;
+  }
+> = {
   primary: {
-    iconBg: "bg-primary/12",
-    iconFg: "text-primary",
-    ring: "ring-primary/20",
-    gradient: "from-primary/[0.07] via-transparent",
-    valueTone: "text-foreground",
+    iconGradient:
+      "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+    iconShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+    glow: "radial-gradient(circle, hsl(22 72% 48% / 0.06) 0%, transparent 70%)",
+    trendUpBg: "hsl(152 38% 38% / 0.1)",
+    trendUpColor: "hsl(152 38% 38%)",
+    sparkTint: "primary",
   },
   accent: {
-    iconBg: "bg-accent/14",
-    iconFg: "text-accent",
-    ring: "ring-accent/20",
-    gradient: "from-accent/[0.07] via-transparent",
-    valueTone: "text-foreground",
+    iconGradient:
+      "linear-gradient(135deg, hsl(152 38% 38%), hsl(152 50% 48%))",
+    iconShadow: "0 4px 14px hsl(152 38% 38% / 0.3)",
+    glow: "radial-gradient(circle, hsl(152 38% 38% / 0.06) 0%, transparent 70%)",
+    trendUpBg: "hsl(152 38% 38% / 0.1)",
+    trendUpColor: "hsl(152 38% 38%)",
+    sparkTint: "accent",
   },
   warning: {
-    iconBg: "bg-warning/18",
-    iconFg: "text-warning",
-    ring: "ring-warning/30",
-    gradient: "from-warning/[0.08] via-transparent",
-    valueTone: "text-foreground",
+    iconGradient:
+      "linear-gradient(135deg, hsl(36 88% 52%), hsl(42 95% 58%))",
+    iconShadow: "0 4px 14px hsl(36 88% 52% / 0.35)",
+    glow: "radial-gradient(circle, hsl(36 88% 52% / 0.07) 0%, transparent 70%)",
+    trendUpBg: "hsl(36 88% 52% / 0.12)",
+    trendUpColor: "hsl(36 70% 38%)",
+    sparkTint: "warning",
   },
   info: {
-    iconBg: "bg-[hsl(var(--badge-blue))]/14",
-    iconFg: "text-[hsl(var(--badge-blue))]",
-    ring: "ring-[hsl(var(--badge-blue))]/20",
-    gradient: "from-[hsl(var(--badge-blue))]/[0.07] via-transparent",
-    valueTone: "text-foreground",
+    iconGradient:
+      "linear-gradient(135deg, hsl(var(--badge-blue)), hsl(218 80% 58%))",
+    iconShadow: "0 4px 14px hsl(var(--badge-blue) / 0.3)",
+    glow: "radial-gradient(circle, hsl(var(--badge-blue) / 0.06) 0%, transparent 70%)",
+    trendUpBg: "hsl(152 38% 38% / 0.1)",
+    trendUpColor: "hsl(152 38% 38%)",
+    sparkTint: "info",
   },
 };
 
@@ -156,71 +194,106 @@ function PremiumKpi({
   delay = 0,
   trend,
 }: PremiumKpiProps) {
-  const t = tintStyles[tint];
+  const tc = tintConfig[tint];
 
   return (
     <div
-      className={cn(
-        "group relative overflow-hidden rounded-2xl border bg-card p-5 md:p-6",
-        "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
-        "focus-within:ring-2",
-        t.ring,
-      )}
+      className="relative overflow-hidden rounded-2xl cursor-default transition-all duration-300"
       style={{
+        background: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))",
+        boxShadow:
+          "0 2px 8px hsl(22 30% 15% / 0.06), 0 8px 24px hsl(22 30% 15% / 0.04)",
         animation: "fadeScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
         animationDelay: `${delay}ms`,
-        boxShadow: "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-3px)";
+        e.currentTarget.style.boxShadow =
+          "0 8px 24px hsl(22 30% 15% / 0.12), 0 16px 48px hsl(22 30% 15% / 0.08)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow =
+          "0 2px 8px hsl(22 30% 15% / 0.06), 0 8px 24px hsl(22 30% 15% / 0.04)";
       }}
     >
-      {/* soft diagonal wash */}
+      {/* Gradient overlay décoratif */}
       <div
         aria-hidden
-        className={cn(
-          "pointer-events-none absolute inset-0 bg-gradient-to-br to-transparent opacity-80",
-          t.gradient,
-        )}
+        className="absolute top-0 right-0 w-32 h-32 rounded-full pointer-events-none"
+        style={{
+          background: tc.glow,
+          transform: "translate(30%, -30%)",
+        }}
       />
 
-      <div className="relative">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            {label}
-          </span>
+      <div className="relative p-5 md:p-6">
+        {/* Header: icon + trend */}
+        <div className="flex items-start justify-between mb-4">
           <div
-            className={cn(
-              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-              t.iconBg,
-            )}
+            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background: tc.iconGradient,
+              boxShadow: tc.iconShadow,
+            }}
           >
-            <Icon className={cn("w-5 h-5", t.iconFg)} />
+            <Icon className="w-5 h-5 text-white" />
           </div>
-        </div>
 
-        <div className={cn("text-[1.65rem] md:text-[1.9rem] font-bold leading-none tracking-tight tabular-nums", t.valueTone)}>
-          <KpiValue key={`${label}-${value}`} end={value} suffix={suffix} duration={duration} />
-        </div>
-
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground font-medium truncate">{hint}</p>
           {trend && (
             <span
-              className={cn(
-                "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0",
-                trend.direction === "up" && "bg-success/12 text-success",
-                trend.direction === "down" && "bg-destructive/12 text-destructive",
-                trend.direction === "neutral" && "bg-muted text-muted-foreground",
-              )}
+              className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+              style={{
+                background:
+                  trend.direction === "up"
+                    ? tc.trendUpBg
+                    : trend.direction === "down"
+                    ? "hsl(4 72% 52% / 0.1)"
+                    : "hsl(var(--muted))",
+                color:
+                  trend.direction === "up"
+                    ? tc.trendUpColor
+                    : trend.direction === "down"
+                    ? "hsl(4 72% 52%)"
+                    : "hsl(var(--muted-foreground))",
+              }}
             >
-              {trend.direction === "up" && <TrendingUp className="w-3 h-3" />}
-              {trend.direction === "down" && <TrendingDown className="w-3 h-3" />}
-              {trend.direction === "neutral" && <Minus className="w-3 h-3" />}
+              {trend.direction === "up" && (
+                <TrendingUp className="w-3 h-3 inline mr-0.5 mb-0.5" />
+              )}
+              {trend.direction === "down" && (
+                <TrendingDown className="w-3 h-3 inline mr-0.5 mb-0.5" />
+              )}
+              {trend.direction === "neutral" && (
+                <Minus className="w-3 h-3 inline mr-0.5 mb-0.5" />
+              )}
               {trend.label}
             </span>
           )}
         </div>
 
+        {/* Valeur principale — chiffres proéminents */}
+        <div
+          className="text-[1.75rem] md:text-[2rem] font-bold leading-none tracking-tight tabular-nums text-foreground mb-1"
+          style={{ fontFamily: "'Fraunces', 'Georgia', serif", letterSpacing: "-0.03em" }}
+        >
+          <KpiValue key={`${label}-${value}`} end={value} suffix={suffix} duration={duration} />
+        </div>
+
+        {/* Label */}
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mt-2">
+          {label}
+        </p>
+
+        {/* Hint */}
+        {hint && (
+          <p className="text-xs text-muted-foreground/70 mt-0.5">{hint}</p>
+        )}
+
+        {/* Sparkline */}
         {spark && spark.length > 0 && (
-          <Sparkline data={spark} tint={tint} className="mt-4" />
+          <Sparkline data={spark} tint={tc.sparkTint} className="mt-4" />
         )}
       </div>
     </div>
@@ -230,12 +303,13 @@ function PremiumKpi({
 function KpiCardSkeleton() {
   return (
     <div className="rounded-2xl border bg-card p-5 md:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="w-10 h-10 rounded-xl" />
+      <div className="flex items-start justify-between mb-4">
+        <Skeleton className="w-11 h-11 rounded-xl" />
+        <Skeleton className="h-5 w-16 rounded-full" />
       </div>
-      <Skeleton className="h-8 w-32 mb-3" />
-      <Skeleton className="h-3 w-28" />
+      <Skeleton className="h-8 w-36 mb-2" />
+      <Skeleton className="h-3 w-20 mb-1" />
+      <Skeleton className="h-3 w-24" />
       <Skeleton className="h-6 w-full mt-4 rounded-sm" />
     </div>
   );
@@ -251,19 +325,81 @@ function TableSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
-function SectionHeader({ title, kicker, right }: { title: string; kicker?: string; right?: React.ReactNode }) {
+function SectionHeader({
+  title,
+  kicker,
+  right,
+}: {
+  title: string;
+  kicker?: string;
+  right?: React.ReactNode;
+}) {
   return (
-    <div className="flex items-center justify-between gap-3 mb-4">
-      <div className="border-l-2 border-primary/30 pl-3">
+    <div className="flex items-center gap-3 mb-4">
+      <div
+        className="w-1 h-5 rounded-full shrink-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
+        }}
+      />
+      <div>
         {kicker && (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground leading-none mb-0.5">
             {kicker}
           </p>
         )}
-        <h2 className="text-base md:text-lg font-bold tracking-tight">{title}</h2>
+        <h2 className="text-base md:text-[0.95rem] font-bold tracking-tight text-foreground leading-none">
+          {title}
+        </h2>
       </div>
+      <div className="flex-1 h-px bg-border/60 ml-1" />
       {right}
     </div>
+  );
+}
+
+// ─── Gradient CTA button ──────────────────────────────────────────────────────
+
+function GradientButton({
+  onClick,
+  children,
+  className,
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn("inline-flex items-center gap-2", className)}
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+        boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+        color: "white",
+        borderRadius: "12px",
+        padding: "0.625rem 1.25rem",
+        fontWeight: "600",
+        fontSize: "0.875rem",
+        transition: "all 0.2s",
+        border: "none",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-1px)";
+        e.currentTarget.style.boxShadow =
+          "0 6px 20px hsl(22 72% 48% / 0.45)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow =
+          "0 4px 14px hsl(22 72% 48% / 0.35)";
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -297,12 +433,17 @@ export default function DashboardPage() {
 
   // top products
   const topProducts = stats?.top_products ?? [];
-  const maxTopSold = topProducts.length > 0
-    ? Math.max(...topProducts.map((p) => p.total_sold))
-    : 0;
+  const maxTopSold =
+    topProducts.length > 0
+      ? Math.max(...topProducts.map((p) => p.total_sold))
+      : 0;
 
-  // Top product progress bar tints (rotating palette — African contemporary)
-  const rankTints = ["bg-primary", "bg-accent", "bg-warning", "bg-[hsl(var(--badge-blue))]"];
+  const rankTints = [
+    "bg-primary",
+    "bg-accent",
+    "bg-warning",
+    "bg-[hsl(var(--badge-blue))]",
+  ];
 
   const today = new Date();
 
@@ -315,35 +456,59 @@ export default function DashboardPage() {
       />
       <div className="page-container animate-slide-in">
 
-        {/* ── Header premium ── */}
-        <div className="mb-7">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        {/* ── Page header premium ── */}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 flex-wrap">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-semibold tracking-wide">
+              {/* Badge Admin + Date */}
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide"
+                  style={{
+                    background: "hsl(22 72% 48% / 0.1)",
+                    color: "hsl(22 72% 48%)",
+                  }}
+                >
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Admin
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground font-medium">
                   <Calendar className="w-3.5 h-3.5" />
-                  <span className="capitalize">{formatLongDate(today)}</span>
+                  <span>{formatLongDate(today)}</span>
+                  <span className="text-muted-foreground/40 mx-0.5">·</span>
+                  <span>Libreville, Gabon</span>
                 </span>
               </div>
-              <h1 className="text-2xl md:text-[1.75rem] font-bold tracking-tight">
-                Bonjour, voici votre activité
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
+
+              {/* Grand titre avec accent bar */}
+              <div className="flex items-center gap-3 mb-1">
+                <div
+                  className="w-1 h-7 rounded-full shrink-0"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
+                  }}
+                />
+                <h1
+                  className="text-2xl md:text-[1.85rem] font-extrabold text-foreground"
+                  style={{ letterSpacing: "-0.028em" }}
+                >
+                  Bonjour, voici votre activité
+                </h1>
+              </div>
+              <p className="text-sm text-muted-foreground ml-4 mt-1">
                 Suivi en temps réel des ventes, du stock et de votre boutique.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Quick actions */}
+            <div className="flex items-center gap-2 flex-wrap">
               <Link
                 to="/statistics"
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border bg-card text-sm font-semibold hover:bg-secondary/60 transition-colors"
               >
-                <TrendingUp className="w-4 h-4" />
-                Voir les statistiques détaillées →
+                <BarChart2 className="w-4 h-4" />
+                Statistiques
               </Link>
               <button
                 onClick={() => navigate("/reports")}
@@ -352,18 +517,55 @@ export default function DashboardPage() {
                 <TrendingUp className="w-4 h-4" />
                 Rapports
               </button>
-              <button
-                onClick={() => navigate("/pos")}
-                className="group inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-primary/90 active:scale-[0.97] transition-all"
-                style={{ boxShadow: "0 6px 20px hsl(22 72% 48% / 0.22)" }}
-              >
+              <GradientButton onClick={() => navigate("/pos")}>
                 <ShoppingCart className="w-4 h-4" />
-                Ouvrir la caisse
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </button>
+                Accéder à la caisse
+                <ArrowRight className="w-4 h-4" />
+              </GradientButton>
             </div>
           </div>
         </div>
+
+        {/* ── Bandeau alerte stock ── */}
+        {!isLoading && lowCount > 0 && (
+          <div
+            className="flex items-center gap-3 p-4 rounded-xl mb-6 border"
+            style={{
+              background:
+                "linear-gradient(135deg, hsl(36 88% 52% / 0.08), hsl(22 72% 48% / 0.05))",
+              borderColor: "hsl(36 88% 52% / 0.3)",
+            }}
+          >
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: "hsl(36 88% 52% / 0.15)" }}
+            >
+              <AlertTriangle
+                className="w-4 h-4"
+                style={{ color: "hsl(36 80% 42%)" }}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-sm font-semibold"
+                style={{ color: "hsl(22 25% 20%)" }}
+              >
+                {lowCount} produit{lowCount !== 1 ? "s" : ""} en rupture ou
+                stock critique
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Vérifiez votre stock pour maintenir vos ventes
+              </p>
+            </div>
+            <Link
+              to="/stock"
+              className="ml-auto text-xs font-semibold shrink-0 hover:underline"
+              style={{ color: "hsl(22 72% 48%)" }}
+            >
+              Voir le stock →
+            </Link>
+          </div>
+        )}
 
         {/* ── KPI Cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -386,7 +588,11 @@ export default function DashboardPage() {
                 tint="primary"
                 spark={daySparkFilled}
                 delay={0}
-                trend={todayCount > 0 ? { direction: "up", label: "Actif" } : { direction: "neutral", label: "Inactif" }}
+                trend={
+                  todayCount > 0
+                    ? { direction: "up", label: "Actif" }
+                    : { direction: "neutral", label: "Inactif" }
+                }
               />
               <PremiumKpi
                 label="CA ce mois"
@@ -397,7 +603,7 @@ export default function DashboardPage() {
                 icon={TrendingUp}
                 tint="accent"
                 spark={daySparkFilled}
-                delay={50}
+                delay={60}
               />
               <PremiumKpi
                 label="Panier moyen"
@@ -408,18 +614,29 @@ export default function DashboardPage() {
                 icon={ShoppingCart}
                 tint="info"
                 spark={daySparkFilled}
-                delay={100}
+                delay={120}
               />
               <PremiumKpi
                 label="Clients"
                 value={totalClients}
                 suffix=""
                 duration={800}
-                hint={lowCount > 0 ? `${lowCount} produit${lowCount !== 1 ? "s" : ""} en stock bas` : "Stock OK"}
+                hint={
+                  lowCount > 0
+                    ? `${lowCount} produit${lowCount !== 1 ? "s" : ""} en stock bas`
+                    : "Stock OK"
+                }
                 icon={Users}
                 tint={lowCount > 0 ? "warning" : "accent"}
-                delay={150}
-                trend={lowCount > 0 ? { direction: "down", label: `${lowCount} alerte${lowCount !== 1 ? "s" : ""}` } : { direction: "up", label: "OK" }}
+                delay={180}
+                trend={
+                  lowCount > 0
+                    ? {
+                        direction: "down",
+                        label: `${lowCount} alerte${lowCount !== 1 ? "s" : ""}`,
+                      }
+                    : { direction: "up", label: "OK" }
+                }
               />
             </>
           )}
@@ -436,13 +653,20 @@ export default function DashboardPage() {
               right={
                 <button
                   onClick={() => navigate("/invoices")}
-                  className="text-xs font-semibold text-primary hover:underline"
+                  className="text-xs font-semibold hover:underline shrink-0"
+                  style={{ color: "hsl(22 72% 48%)" }}
                 >
                   Voir tout →
                 </button>
               }
             />
-            <div className="bg-card rounded-2xl border overflow-hidden" style={{ boxShadow: "0 2px 12px hsl(22 72% 48% / 0.05)" }}>
+            <div
+              className="bg-card rounded-2xl border overflow-hidden"
+              style={{
+                boxShadow:
+                  "0 2px 8px hsl(22 30% 15% / 0.05), 0 8px 24px hsl(22 30% 15% / 0.03)",
+              }}
+            >
               {isLoading ? (
                 <TableSkeleton rows={5} />
               ) : recentSales.length === 0 ? (
@@ -450,31 +674,51 @@ export default function DashboardPage() {
                   <div className="inline-flex w-12 h-12 rounded-full bg-muted items-center justify-center mb-3">
                     <ShoppingCart className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <p className="text-sm font-semibold">Aucune vente pour le moment</p>
+                  <p className="text-sm font-semibold">
+                    Aucune vente pour le moment
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Les ventes enregistrées apparaîtront ici.
                   </p>
                 </div>
               ) : (
                 <>
-                  {/* Mobile cards — md:hidden */}
+                  {/* Mobile cards */}
                   <div className="md:hidden divide-y">
                     {recentSales.map((sale) => (
                       <div
                         key={sale.id}
-                        className="p-4 flex items-start justify-between gap-3 hover:bg-primary/5 transition-colors cursor-pointer"
+                        className="p-4 flex items-start justify-between gap-3 transition-colors cursor-pointer"
+                        style={{ ["--hover-bg" as string]: "hsl(22 72% 48% / 0.04)" }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background =
+                            "hsl(22 72% 48% / 0.04)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
                         onClick={() => navigate("/invoices")}
                       >
                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                            <ShoppingBag className="w-4 h-4 text-primary" />
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                            style={{
+                              background: "hsl(22 72% 48% / 0.1)",
+                            }}
+                          >
+                            <ShoppingBag
+                              className="w-4 h-4"
+                              style={{ color: "hsl(22 72% 48%)" }}
+                            />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm truncate">
                               {sale.invoice_number ?? `VNT-${sale.id}`}
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                              {formatDate(sale.created_at)} · {sale.items.length} article{sale.items.length !== 1 ? "s" : ""}
+                              {formatDate(sale.created_at)} ·{" "}
+                              {sale.items.length} article
+                              {sale.items.length !== 1 ? "s" : ""}
                             </p>
                             <p className="text-sm font-bold mt-1 tabular-nums">
                               {formatFcfa(sale.total_amount)}
@@ -485,7 +729,8 @@ export default function DashboardPage() {
                       </div>
                     ))}
                   </div>
-                  {/* Desktop table — hidden md:block */}
+
+                  {/* Desktop table */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="data-table">
                       <thead>
@@ -512,10 +757,18 @@ export default function DashboardPage() {
                                 </span>
                               </div>
                             </td>
-                            <td className="text-muted-foreground">{formatDate(sale.created_at)}</td>
-                            <td className="tabular-nums">{sale.items.length}</td>
-                            <td className="font-semibold tabular-nums text-right">{formatFcfa(sale.total_amount)}</td>
-                            <td><StatusBadge label="Terminée" variant="success" /></td>
+                            <td className="text-muted-foreground">
+                              {formatDate(sale.created_at)}
+                            </td>
+                            <td className="tabular-nums">
+                              {sale.items.length}
+                            </td>
+                            <td className="font-semibold tabular-nums text-right">
+                              {formatFcfa(sale.total_amount)}
+                            </td>
+                            <td>
+                              <StatusBadge label="Terminée" variant="success" />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -536,21 +789,29 @@ export default function DashboardPage() {
                 title="Alertes"
                 right={
                   !isLoading && lowCount > 0 ? (
-                    <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold">
+                    <span
+                      className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full text-[11px] font-bold"
+                      style={{
+                        background: "hsl(4 72% 52%)",
+                        color: "white",
+                      }}
+                    >
                       {lowCount}
                     </span>
                   ) : null
                 }
               />
               <div
-                className={cn(
-                  "rounded-2xl border bg-card overflow-hidden",
-                  !isLoading && lowCount > 0 && "border-warning/40",
-                )}
+                className="rounded-2xl border bg-card overflow-hidden"
                 style={{
-                  boxShadow: !isLoading && lowCount > 0
-                    ? "0 2px 12px hsl(36 88% 52% / 0.12)"
-                    : "0 2px 12px hsl(22 72% 48% / 0.05)",
+                  borderColor:
+                    !isLoading && lowCount > 0
+                      ? "hsl(36 88% 52% / 0.4)"
+                      : undefined,
+                  boxShadow:
+                    !isLoading && lowCount > 0
+                      ? "0 2px 12px hsl(36 88% 52% / 0.1)"
+                      : "0 2px 8px hsl(22 30% 15% / 0.05)",
                 }}
               >
                 {isLoading ? (
@@ -572,12 +833,20 @@ export default function DashboardPage() {
                 ) : (
                   <div className="p-5">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-warning/15 flex items-center justify-center shrink-0">
-                        <AlertTriangle className="w-5 h-5 text-warning" />
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: "hsl(36 88% 52% / 0.15)" }}
+                      >
+                        <AlertTriangle
+                          className="w-5 h-5"
+                          style={{ color: "hsl(36 80% 42%)" }}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold">
-                          <span className="text-destructive">{lowCount}</span>{" "}
+                          <span style={{ color: "hsl(4 72% 52%)" }}>
+                            {lowCount}
+                          </span>{" "}
                           produit{lowCount !== 1 ? "s" : ""} sous le seuil
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
@@ -587,7 +856,19 @@ export default function DashboardPage() {
                     </div>
                     <button
                       onClick={() => navigate("/stock")}
-                      className="mt-4 w-full inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-primary border border-primary/30 rounded-xl hover:bg-primary/5 active:scale-[0.98] transition-all"
+                      className="mt-4 w-full inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold rounded-xl transition-all active:scale-[0.98]"
+                      style={{
+                        color: "hsl(22 72% 48%)",
+                        border: "1px solid hsl(22 72% 48% / 0.3)",
+                        background: "transparent",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background =
+                          "hsl(22 72% 48% / 0.05)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
                     >
                       Gérer le stock
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -602,9 +883,15 @@ export default function DashboardPage() {
               <SectionHeader
                 kicker="Performance"
                 title="Top produits"
-                right={<Trophy className="w-4 h-4 text-warning" />}
+                right={<Trophy className="w-4 h-4 text-warning shrink-0" />}
               />
-              <div className="rounded-2xl border bg-card overflow-hidden" style={{ boxShadow: "0 2px 12px hsl(22 72% 48% / 0.05)" }}>
+              <div
+                className="rounded-2xl border bg-card overflow-hidden"
+                style={{
+                  boxShadow:
+                    "0 2px 8px hsl(22 30% 15% / 0.05), 0 8px 24px hsl(22 30% 15% / 0.03)",
+                }}
+              >
                 {isLoading ? (
                   <div className="p-4 space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -616,7 +903,9 @@ export default function DashboardPage() {
                     <div className="inline-flex w-12 h-12 rounded-full bg-muted items-center justify-center mb-2">
                       <Trophy className="w-5 h-5 text-muted-foreground" />
                     </div>
-                    <p className="text-sm font-semibold">Pas encore de classement</p>
+                    <p className="text-sm font-semibold">
+                      Pas encore de classement
+                    </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Les ventes alimenteront le top produits.
                     </p>
@@ -625,11 +914,21 @@ export default function DashboardPage() {
                   <div className="p-2">
                     {topProducts.slice(0, 5).map((p, i) => {
                       const barTint = rankTints[i % rankTints.length];
-                      const pct = maxTopSold > 0 ? Math.max(8, (p.total_sold / maxTopSold) * 100) : 0;
+                      const pct =
+                        maxTopSold > 0
+                          ? Math.max(8, (p.total_sold / maxTopSold) * 100)
+                          : 0;
                       return (
                         <div
                           key={p.product__name}
-                          className="group relative p-3 rounded-xl hover:bg-primary/5 transition-colors cursor-pointer"
+                          className="group relative p-3 rounded-xl transition-colors cursor-pointer"
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background =
+                              "hsl(22 72% 48% / 0.04)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "transparent")
+                          }
                         >
                           <div className="flex items-center gap-3">
                             <span
@@ -637,8 +936,9 @@ export default function DashboardPage() {
                                 "inline-flex items-center justify-center w-7 h-7 rounded-lg text-[11px] font-bold shrink-0",
                                 i === 0 && "bg-primary text-primary-foreground",
                                 i === 1 && "bg-accent text-accent-foreground",
-                                i === 2 && "bg-warning text-[hsl(var(--warning-foreground))]",
-                                i > 2 && "bg-muted text-muted-foreground",
+                                i === 2 &&
+                                  "bg-warning text-[hsl(var(--warning-foreground))]",
+                                i > 2 && "bg-muted text-muted-foreground"
                               )}
                             >
                               {i + 1}
@@ -654,7 +954,10 @@ export default function DashboardPage() {
                               </div>
                               <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                                 <div
-                                  className={cn("h-full rounded-full transition-all duration-500", barTint)}
+                                  className={cn(
+                                    "h-full rounded-full transition-all duration-500",
+                                    barTint
+                                  )}
                                   style={{ width: `${pct}%` }}
                                 />
                               </div>
@@ -671,7 +974,8 @@ export default function DashboardPage() {
                 <div className="px-4 py-3 border-t bg-secondary/30">
                   <button
                     onClick={() => navigate("/reports")}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    className="inline-flex items-center gap-1 text-xs font-semibold hover:underline"
+                    style={{ color: "hsl(22 72% 48%)" }}
                   >
                     Voir les rapports détaillés
                     <ArrowRight className="w-3 h-3" />

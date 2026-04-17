@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Receipt } from "lucide-react";
+import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus } from "lucide-react";
 import { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { useTableManager } from "@/hooks/useTableManager";
@@ -69,6 +69,44 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "unpaid", label: "Impayées" },
   { value: "cancelled", label: "Annulées" },
 ];
+
+// ─── Payment method helpers ───────────────────────────────────────────────────
+
+function getPaymentLabel(method: string | undefined): string {
+  switch (method) {
+    case "cash": return "💵 Espèces";
+    case "mobile_money": return "📱 Mobile";
+    case "card": return "💳 Carte";
+    default: return "📋 Crédit";
+  }
+}
+
+function getPaymentStyle(method: string | undefined): { background: string; color: string } {
+  switch (method) {
+    case "cash":
+      return { background: "hsl(152 38% 38% / 0.1)", color: "hsl(152 38% 38%)" };
+    case "mobile_money":
+      return { background: "hsl(22 72% 48% / 0.1)", color: "hsl(22 72% 48%)" };
+    case "card":
+      return { background: "hsl(210 70% 52% / 0.1)", color: "hsl(210 70% 52%)" };
+    default:
+      return { background: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" };
+  }
+}
+
+// ─── Client avatar initiales ──────────────────────────────────────────────────
+
+function ClientAvatar({ name }: { name: string | null | undefined }) {
+  const initial = (name || "C")[0].toUpperCase();
+  return (
+    <div
+      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+      style={{ background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+    >
+      {initial}
+    </div>
+  );
+}
 
 // ─── Composant d'impression isolé (rendu dans un div caché) ──────────────────
 
@@ -279,22 +317,39 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
         </div>
       </div>
 
-      <div className="space-y-5 text-sm">
-        {/* Header */}
+      {/* ── Dialog header premium ── */}
+      <div
+        className="-mx-6 -mt-2 mb-5 px-6 py-5 rounded-t-lg"
+        style={{
+          background: "linear-gradient(135deg, hsl(22 72% 22%), hsl(22 72% 32%))",
+        }}
+      >
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center shrink-0">
-              <Package className="w-5 h-5 text-primary-foreground" />
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center"
+              style={{ background: "hsl(22 72% 48% / 0.3)", border: "1px solid hsl(22 72% 55% / 0.4)" }}
+            >
+              <Package className="w-5 h-5" style={{ color: "hsl(36 88% 70%)" }} />
             </div>
             <div>
-              <p className="font-bold text-base leading-tight">Naoservices</p>
-              <p className="text-xs text-muted-foreground">INVENTORY</p>
+              <p className="font-bold text-sm leading-tight" style={{ color: "hsl(36 88% 88%)" }}>
+                Naoservices
+              </p>
+              <p className="text-xs" style={{ color: "hsl(22 72% 65%)" }}>INVENTORY</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="font-mono font-semibold text-base">{invoice.invoice_number}</p>
-            <p className="text-xs text-muted-foreground">{formatDate(invoice.issued_at)}</p>
-            <div className="mt-1">
+            <p
+              className="font-bold text-xl leading-tight font-editorial"
+              style={{ color: "hsl(36 88% 82%)", letterSpacing: "-0.02em" }}
+            >
+              {invoice.invoice_number}
+            </p>
+            <p className="text-xs mt-1" style={{ color: "hsl(22 72% 65%)" }}>
+              {formatDate(invoice.issued_at)}
+            </p>
+            <div className="mt-2">
               <StatusBadge
                 label={STATUS_LABELS[invoice.status]}
                 variant={STATUS_VARIANTS[invoice.status]}
@@ -302,13 +357,24 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
             </div>
           </div>
         </div>
+      </div>
 
-        <Separator />
-
+      <div className="space-y-4 text-sm">
         {/* Client */}
-        <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Client</p>
-          <p className="font-medium">{invoice.client_name ?? "Client comptoir"}</p>
+        <div className="flex items-center gap-3">
+          <ClientAvatar name={invoice.client_name} />
+          <div>
+            <p className="text-xs text-muted-foreground leading-none mb-1">Client</p>
+            <p className="font-semibold text-sm">{invoice.client_name ?? "Client comptoir"}</p>
+          </div>
+          {invoice.payment_method && (
+            <span
+              className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+              style={getPaymentStyle(invoice.payment_method)}
+            >
+              {getPaymentLabel(invoice.payment_method)}
+            </span>
+          )}
         </div>
 
         <Separator />
@@ -317,20 +383,20 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
         {invoice.items && invoice.items.length > 0 ? (
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b">
-                <th className="text-left font-medium text-muted-foreground pb-2">Article</th>
-                <th className="text-center font-medium text-muted-foreground pb-2 w-12">Qté</th>
-                <th className="text-right font-medium text-muted-foreground pb-2 w-28">Prix unit.</th>
-                <th className="text-right font-medium text-muted-foreground pb-2 w-28">Total</th>
+              <tr style={{ background: "linear-gradient(to right, hsl(var(--muted)), hsl(var(--muted) / 0.6))" }}>
+                <th className="text-left font-bold uppercase tracking-wider text-muted-foreground pb-2 pt-2 pl-2 rounded-l">Article</th>
+                <th className="text-center font-bold uppercase tracking-wider text-muted-foreground pb-2 pt-2 w-12">Qté</th>
+                <th className="text-right font-bold uppercase tracking-wider text-muted-foreground pb-2 pt-2 w-28">Prix unit.</th>
+                <th className="text-right font-bold uppercase tracking-wider text-muted-foreground pb-2 pt-2 pr-2 w-28 rounded-r">Total</th>
               </tr>
             </thead>
             <tbody>
               {invoice.items.map((item) => (
                 <tr key={item.id} className="border-b last:border-0">
-                  <td className="py-2 pr-2">{item.product_name}</td>
+                  <td className="py-2 pr-2 pl-2">{item.product_name}</td>
                   <td className="py-2 text-center text-muted-foreground">{item.quantity}</td>
                   <td className="py-2 text-right text-muted-foreground">{formatFCFA(item.unit_price)}</td>
-                  <td className="py-2 text-right font-medium">{formatFCFA(item.subtotal)}</td>
+                  <td className="py-2 pr-2 text-right font-semibold">{formatFCFA(item.subtotal)}</td>
                 </tr>
               ))}
             </tbody>
@@ -341,34 +407,48 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
 
         <Separator />
 
-        {/* Totals */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between font-semibold text-base">
-            <span>Total</span>
-            <span>{formatFCFA(totalAmount)}</span>
-          </div>
-          <div className="flex justify-between text-muted-foreground">
+        {/* Totals — section premium */}
+        <div
+          className="rounded-xl p-4 space-y-2"
+          style={{ background: "hsl(22 72% 48% / 0.05)", border: "1px solid hsl(22 72% 48% / 0.15)" }}
+        >
+          <div className="flex justify-between text-muted-foreground text-sm">
             <span>Somme payée</span>
             <span>{formatFCFA(amountPaid)}</span>
           </div>
           {changeGiven > 0 && (
-            <div className="flex justify-between text-success font-medium">
+            <div className="flex justify-between text-success text-sm font-medium">
               <span>Monnaie rendue</span>
               <span>{formatFCFA(changeGiven)}</span>
             </div>
           )}
           {balanceDue > 0 && (
-            <div className="flex justify-between text-warning font-medium">
+            <div className="flex justify-between text-warning text-sm font-medium">
               <span>Reste à payer</span>
               <span>{formatFCFA(balanceDue)}</span>
             </div>
           )}
+          <div
+            className="flex justify-between items-center pt-3 mt-1"
+            style={{ borderTop: "1px solid hsl(22 72% 48% / 0.2)" }}
+          >
+            <span className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Total</span>
+            <span
+              className="font-bold text-2xl font-editorial"
+              style={{ color: "hsl(22 72% 48%)" }}
+            >
+              {formatFCFA(totalAmount)}
+            </span>
+          </div>
         </div>
       </div>
 
-      <DialogFooter className="mt-2">
+      <DialogFooter className="mt-4">
         <Button variant="outline" onClick={onClose}>Fermer</Button>
-        <Button onClick={() => handlePrint()}>
+        <Button
+          onClick={() => handlePrint()}
+          style={{ background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))", border: "none" }}
+        >
           <Printer className="w-4 h-4 mr-2" />
           Imprimer
         </Button>
@@ -408,7 +488,7 @@ function InlinePrintButton({ invoice, className, iconSize = "w-3.5 h-3.5" }: Inl
         </div>
       </div>
       <button
-        className={className ?? "p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"}
+        className={className ?? "p-1.5 rounded-lg transition-colors hover:bg-muted"}
         title="Imprimer"
         onClick={() => handlePrint()}
       >
@@ -473,49 +553,82 @@ export default function InvoicesPage() {
       <Topbar title="Factures" subtitle="Historique des factures générées" onMenuClick={onMenuClick} />
       <div className="page-container animate-slide-in">
 
-        {/* ── Premium Header ─────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
-              <Receipt className="w-4 h-4 text-primary" />
-            </div>
+        {/* ── Page Header premium ─────────────────────────────────────── */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold tracking-tight">Factures</h1>
-                <span className="inline-flex items-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold">
+              <div className="flex items-center gap-2 mb-1">
+                <div
+                  className="w-1 h-6 rounded-full"
+                  style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+                />
+                <h1
+                  className="text-2xl font-extrabold font-heading"
+                  style={{ letterSpacing: "-0.025em" }}
+                >
+                  Factures
+                </h1>
+                <span
+                  className="inline-flex items-center h-6 px-2.5 rounded-full text-xs font-mono font-bold"
+                  style={{
+                    background: "hsl(22 72% 48% / 0.1)",
+                    color: "hsl(22 72% 48%)",
+                    border: "1px solid hsl(22 72% 48% / 0.2)",
+                  }}
+                >
                   {allInvoices.length}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Historique des factures générées
+              <p className="text-sm text-muted-foreground ml-3">
+                {allInvoices.length} factures · Total :{" "}
+                <span
+                  className="font-editorial font-bold"
+                  style={{ color: "hsl(22 72% 48%)" }}
+                >
+                  {grandTotal.toLocaleString("fr-FR")} FCFA
+                </span>
               </p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {can('view_reports') && (
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              {can("view_reports") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportInvoicesToExcel(invoices)}
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Exporter Excel
+                </Button>
+              )}
               <Button
-                variant="outline"
                 size="sm"
-                onClick={() => exportInvoicesToExcel(invoices)}
+                onClick={() => { window.location.href = "/pos"; }}
+                style={{
+                  background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                  border: "none",
+                  boxShadow: "0 2px 8px hsl(22 72% 48% / 0.35)",
+                }}
+                className="hover:opacity-90 transition-opacity"
               >
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Exporter Excel
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle facture
               </Button>
-            )}
-            <Button
-              size="sm"
-              className="bg-primary text-primary-foreground shadow-sm hover:shadow-md transition-shadow"
-              onClick={() => { window.location.href = "/pos"; }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle facture
-            </Button>
+            </div>
           </div>
         </div>
 
-        {/* ── Filtres : search + statut — ligne horizontale ─────────── */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
+        {/* ── Barre de filtres premium ─────────────────────────────────── */}
+        <div
+          className="flex flex-col lg:flex-row lg:items-center gap-3 p-4 rounded-2xl mb-6"
+          style={{
+            background: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
+            boxShadow: "0 1px 4px hsl(0 0% 0% / 0.04)",
+          }}
+        >
+          {/* Search */}
           <div className="flex-1 min-w-0">
             <SearchInput
               placeholder="Rechercher par numéro ou client..."
@@ -524,20 +637,28 @@ export default function InvoicesPage() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-1 bg-muted/40 rounded-lg p-1 w-fit shrink-0">
+          {/* Filtre statut — pills */}
+          <div className="flex flex-wrap items-center gap-1 bg-muted/40 rounded-xl p-1 w-fit shrink-0">
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.value}
                 onClick={() => setStatusFilter(f.value)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                style={
                   statusFilter === f.value
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                    ? {
+                        background: "hsl(22 72% 48%)",
+                        color: "white",
+                        boxShadow: "0 1px 4px hsl(22 72% 48% / 0.4)",
+                      }
+                    : {
+                        color: "hsl(var(--muted-foreground))",
+                      }
+                }
               >
                 {f.label}
                 {f.value !== "all" && !isLoading && (
-                  <span className="ml-1.5 text-[11px] opacity-60 font-mono">
+                  <span className="ml-1.5 text-[11px] font-mono" style={{ opacity: statusFilter === f.value ? 0.8 : 0.6 }}>
                     {countByStatus(f.value as Invoice["status"])}
                   </span>
                 )}
@@ -553,27 +674,50 @@ export default function InvoicesPage() {
           </div>
         )}
 
-        {/* Desktop : tableau normal */}
+        {/* Desktop : tableau premium */}
         {!isLoading && (
           <>
-            <div className="hidden md:block bg-card rounded-xl border overflow-hidden shadow-sm">
+            <div className="hidden md:block bg-card rounded-2xl border overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="data-table">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr>
-                      <th>N° Facture</th>
-                      <SortableHeader label="Date" sortKey="issued_at" currentSort={sort} onSort={toggleSort} />
-                      <th>Client</th>
-                      <th className="text-center">Articles</th>
-                      <SortableHeader label="Total" sortKey="total_amount" currentSort={sort} onSort={toggleSort} />
-                      <th>Statut</th>
-                      <th className="w-24 text-right pr-4">Actions</th>
+                    <tr style={{ background: "linear-gradient(to right, hsl(var(--muted)), hsl(var(--muted) / 0.6))" }}>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        N° Facture
+                      </th>
+                      <SortableHeader
+                        label="Date"
+                        sortKey="issued_at"
+                        currentSort={sort}
+                        onSort={toggleSort}
+                        className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                      />
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Client
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Articles
+                      </th>
+                      <SortableHeader
+                        label="Montant"
+                        sortKey="total_amount"
+                        currentSort={sort}
+                        onSort={toggleSort}
+                        className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                      />
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Paiement
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Statut
+                      </th>
+                      <th className="px-4 py-3 w-24" />
                     </tr>
                   </thead>
                   <tbody>
                     {typedPaginated.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="text-center py-12">
+                        <td colSpan={8} className="text-center py-12">
                           <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <FileText className="w-8 h-8 opacity-40" />
                             <p className="text-sm">Aucune facture trouvée.</p>
@@ -582,38 +726,79 @@ export default function InvoicesPage() {
                       </tr>
                     )}
                     {typedPaginated.map((inv) => (
-                      <tr key={inv.id} className="group">
-                        <td className="font-mono text-xs text-muted-foreground tracking-tight">
-                          {inv.invoice_number}
+                      <tr
+                        key={inv.id}
+                        className="group border-b border-border/60 transition-colors"
+                        style={{ cursor: "pointer" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(22 72% 48% / 0.03)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      >
+                        {/* N° Facture */}
+                        <td className="px-4 py-3.5">
+                          <span className="font-mono text-xs font-bold text-foreground tracking-tight">
+                            {inv.invoice_number}
+                          </span>
                         </td>
-                        <td className="text-sm tabular-nums">{formatDate(inv.issued_at)}</td>
-                        <td className="font-medium text-sm">
-                          {inv.client_name ?? (
-                            <span className="text-muted-foreground italic font-normal">Client comptoir</span>
-                          )}
+
+                        {/* Date */}
+                        <td className="px-4 py-3.5 text-sm tabular-nums text-muted-foreground">
+                          {formatDate(inv.issued_at)}
                         </td>
-                        <td className="text-center text-sm tabular-nums text-muted-foreground">
+
+                        {/* Client avec avatar */}
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <ClientAvatar name={inv.client_name} />
+                            <span className="text-sm font-medium text-foreground">
+                              {inv.client_name ?? (
+                                <span className="text-muted-foreground italic font-normal">Client comptoir</span>
+                              )}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Articles */}
+                        <td className="px-4 py-3.5 text-center text-sm tabular-nums text-muted-foreground">
                           {inv.items?.length ?? 0}
                         </td>
-                        <td>
-                          <span className="font-mono font-bold text-primary tabular-nums">
+
+                        {/* Montant en Fraunces */}
+                        <td className="px-4 py-3.5 text-right">
+                          <span
+                            className="font-bold text-sm font-editorial"
+                            style={{ color: "hsl(22 72% 48%)" }}
+                          >
                             {formatFCFA(inv.total_amount)}
                           </span>
                         </td>
-                        <td>
+
+                        {/* Mode paiement pill */}
+                        <td className="px-4 py-3.5">
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+                            style={getPaymentStyle(inv.payment_method)}
+                          >
+                            {getPaymentLabel(inv.payment_method)}
+                          </span>
+                        </td>
+
+                        {/* Statut */}
+                        <td className="px-4 py-3.5">
                           <StatusBadge
                             label={STATUS_LABELS[inv.status]}
                             variant={STATUS_VARIANTS[inv.status]}
                           />
                         </td>
-                        <td className="pr-4">
-                          <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+
+                        {/* Actions — visible au hover */}
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
-                              className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                              title="Voir la facture"
+                              className="p-1.5 rounded-lg transition-colors hover:bg-muted"
+                              title="Voir"
                               onClick={() => setViewingInvoice(inv)}
                             >
-                              <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                              <Eye className="w-4 h-4 text-muted-foreground" />
                             </button>
                             <InlinePrintButton invoice={inv} />
                           </div>
@@ -623,16 +808,27 @@ export default function InvoicesPage() {
                   </tbody>
                   {typedPaginated.length > 0 && (
                     <tfoot>
-                      <tr className="bg-muted/30 border-t-2 border-primary/20">
-                        <td colSpan={4} className="text-right text-xs uppercase tracking-wider font-semibold text-muted-foreground py-3">
+                      <tr
+                        style={{
+                          background: "linear-gradient(to right, hsl(22 72% 48% / 0.05), hsl(22 72% 48% / 0.02))",
+                          borderTop: "2px solid hsl(22 72% 48% / 0.2)",
+                        }}
+                      >
+                        <td
+                          colSpan={4}
+                          className="text-right text-xs uppercase tracking-wider font-bold text-muted-foreground py-3"
+                        >
                           Total général
                         </td>
-                        <td className="py-3">
-                          <span className="font-mono font-bold text-lg text-primary tabular-nums">
+                        <td className="py-3 text-right px-4">
+                          <span
+                            className="font-bold text-lg font-editorial tabular-nums"
+                            style={{ color: "hsl(22 72% 48%)" }}
+                          >
                             {formatFCFA(grandTotal)}
                           </span>
                         </td>
-                        <td colSpan={2} />
+                        <td colSpan={3} />
                       </tr>
                     </tfoot>
                   )}
@@ -643,7 +839,7 @@ export default function InvoicesPage() {
             {/* Mobile : card list — md:hidden */}
             <div className="md:hidden space-y-2.5">
               {typedPaginated.length === 0 && (
-                <div className="bg-card border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                <div className="bg-card border rounded-2xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
                   <FileText className="w-8 h-8 opacity-40" />
                   <p className="text-sm">Aucune facture trouvée.</p>
                 </div>
@@ -651,20 +847,32 @@ export default function InvoicesPage() {
               {typedPaginated.map((inv) => (
                 <div
                   key={inv.id}
-                  className="bg-card border rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
+                  className="bg-card border rounded-2xl p-4 flex flex-col gap-3 shadow-sm transition-all"
+                  style={{ borderColor: "hsl(var(--border))" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "hsl(22 72% 48% / 0.4)";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px hsl(22 72% 48% / 0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "hsl(var(--border))";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = "";
+                  }}
                 >
                   {/* Header row : numéro + statut */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-mono text-[11px] text-muted-foreground truncate tracking-tight">
+                      <p className="font-mono text-[11px] font-bold text-muted-foreground truncate tracking-tight">
                         {inv.invoice_number}
                       </p>
-                      <p className="text-sm font-semibold mt-0.5 truncate">
-                        {inv.client_name ?? (
-                          <span className="text-muted-foreground italic font-normal">Client comptoir</span>
-                        )}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">
+                      <div className="flex items-center gap-2 mt-1">
+                        <ClientAvatar name={inv.client_name} />
+                        <p className="text-sm font-semibold truncate">
+                          {inv.client_name ?? (
+                            <span className="text-muted-foreground italic font-normal">Client comptoir</span>
+                          )}
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1.5 tabular-nums">
                         {formatDate(inv.issued_at)}
                         <span className="mx-1.5 opacity-40">·</span>
                         {inv.items?.length ?? 0} article
@@ -677,19 +885,31 @@ export default function InvoicesPage() {
                     />
                   </div>
 
-                  {/* Footer row : total + actions */}
-                  <div className="flex items-center justify-between gap-3 pt-3 border-t">
+                  {/* Footer row : total + paiement + actions */}
+                  <div
+                    className="flex items-center justify-between gap-3 pt-3"
+                    style={{ borderTop: "1px solid hsl(var(--border))" }}
+                  >
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
                         Total
                       </span>
-                      <span className="font-mono font-bold text-lg text-primary tabular-nums leading-tight">
+                      <span
+                        className="font-bold text-lg font-editorial tabular-nums leading-tight"
+                        style={{ color: "hsl(22 72% 48%)" }}
+                      >
                         {formatFCFA(inv.total_amount)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                        style={getPaymentStyle(inv.payment_method)}
+                      >
+                        {getPaymentLabel(inv.payment_method)}
+                      </span>
                       <button
-                        className="p-2 rounded-md hover:bg-primary/10 transition-colors"
+                        className="p-2 rounded-lg hover:bg-muted transition-colors"
                         title="Voir la facture"
                         onClick={() => setViewingInvoice(inv)}
                       >
@@ -697,7 +917,7 @@ export default function InvoicesPage() {
                       </button>
                       <InlinePrintButton
                         invoice={inv}
-                        className="p-2 rounded-md hover:bg-primary/10 transition-colors"
+                        className="p-2 rounded-lg hover:bg-muted transition-colors"
                         iconSize="w-4 h-4"
                       />
                     </div>
@@ -730,7 +950,7 @@ export default function InvoicesPage() {
       >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Détail de la facture</DialogTitle>
+            <DialogTitle className="sr-only">Détail de la facture</DialogTitle>
           </DialogHeader>
           {viewingInvoice && (
             <InvoiceDetail

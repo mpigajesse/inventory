@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
-import { StatCard } from "@/components/ui/StatCard";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +48,8 @@ import {
   Settings,
   Tag,
   ExternalLink,
+  Crown,
+  Zap,
 } from "lucide-react";
 import {
   userService,
@@ -179,73 +179,49 @@ function resolveActivityIcon(action: string, targetModel: string): React.Element
 function resolveActivityColor(action: string, targetModel: string): string {
   const model = (targetModel ?? "").toLowerCase();
   const act = (action ?? "").toLowerCase();
-  if (model === "sale" || model === "saleitem") return "bg-success/10 text-success";
-  if (model === "product") return "bg-primary/10 text-primary";
+  if (model === "sale" || model === "saleitem")
+    return "bg-[hsl(152_38%_38%/0.1)] text-[hsl(152_38%_38%)]";
+  if (model === "product")
+    return "bg-[hsl(22_72%_48%/0.1)] text-[hsl(22_72%_48%)]";
   if (model === "stock" || model === "stockmovement")
     return "bg-amber-500/10 text-amber-600";
   if (act === "login" || act === "logout") return "bg-muted text-muted-foreground";
   return "bg-muted text-muted-foreground";
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
+// ─── Premium KPI Card ─────────────────────────────────────────────────────────
 
-interface UserAvatarLargeProps {
-  name: string;
-  username: string;
-}
-
-function UserAvatarLarge({ name, username }: UserAvatarLargeProps) {
-  const initials = getInitialsFromName(name, username);
-  return (
-    <div
-      className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 font-bold text-xl text-primary-foreground ring-1 ring-primary/15 shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
-      style={{
-        background:
-          "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.78) 100%)",
-      }}
-      aria-hidden="true"
-    >
-      {initials}
-    </div>
-  );
-}
-
-// ─── Role pill ────────────────────────────────────────────────────────────────
-
-function RolePill({ role }: { role: "admin" | "vendeur" }) {
-  const isAdmin = role === "admin";
-  return (
-    <span
-      className={[
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ring-1",
-        isAdmin
-          ? "bg-primary/10 text-primary ring-primary/25"
-          : "bg-accent/15 text-accent ring-accent/25",
-      ].join(" ")}
-    >
-      <Shield className="w-3 h-3" aria-hidden="true" />
-      {isAdmin ? "Admin" : "Vendeur"}
-    </span>
-  );
-}
-
-// ─── Info row ─────────────────────────────────────────────────────────────────
-
-interface InfoRowProps {
-  icon: React.ElementType;
+interface KpiCardProps {
   label: string;
   value: string;
+  icon: React.ElementType;
+  accent?: "copper" | "green" | "blue";
 }
 
-function InfoRow({ icon: Icon, label, value }: InfoRowProps) {
+function KpiCard({ label, value, icon: Icon, accent = "copper" }: KpiCardProps) {
+  const colors = {
+    copper: { bg: "hsl(22 72% 48% / 0.08)", icon: "hsl(22 72% 48%)", border: "hsl(22 72% 48% / 0.2)" },
+    green: { bg: "hsl(152 38% 38% / 0.08)", icon: "hsl(152 38% 38%)", border: "hsl(152 38% 38% / 0.2)" },
+    blue: { bg: "hsl(210 70% 52% / 0.08)", icon: "hsl(210 70% 52%)", border: "hsl(210 70% 52% / 0.2)" },
+  };
+  const c = colors[accent];
+
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-border/50 last:border-0">
-      <div className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="w-4 h-4 text-muted-foreground" />
+    <div
+      className="rounded-2xl p-4 flex items-center gap-4"
+      style={{ background: "hsl(var(--card))", border: `1px solid hsl(var(--border) / 0.7)` }}
+    >
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: c.bg, border: `1px solid ${c.border}` }}
+      >
+        <Icon className="w-4.5 h-4.5" style={{ color: c.icon, width: "18px", height: "18px" }} />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className={FIELD_LABEL_CLASSES}>{label}</p>
-        <p className="text-sm text-foreground mt-0.5 break-words">{value}</p>
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em] mb-0.5">
+          {label}
+        </p>
+        <p className="text-base font-extrabold text-foreground leading-tight truncate">{value}</p>
       </div>
     </div>
   );
@@ -261,14 +237,52 @@ interface SectionCardProps {
 
 function SectionCard({ title, children, action }: SectionCardProps) {
   return (
-    <div className="bg-card rounded-xl border border-border/70 overflow-hidden shadow-[0_1px_2px_rgba(120,60,20,0.04),0_8px_24px_-12px_rgba(120,60,20,0.08)]">
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border) / 0.7)",
+        boxShadow: "0 1px 2px rgba(120,60,20,0.04), 0 8px 24px -12px rgba(120,60,20,0.08)",
+      }}
+    >
       <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
-        <h3 className="text-[13px] font-semibold text-foreground uppercase tracking-wide">
-          {title}
-        </h3>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-0.5 h-4 rounded-full"
+            style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+          />
+          <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wide">
+            {title}
+          </h3>
+        </div>
         {action}
       </div>
       <div className="p-5">{children}</div>
+    </div>
+  );
+}
+
+// ─── Info row ─────────────────────────────────────────────────────────────────
+
+interface InfoRowProps {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+}
+
+function InfoRow({ icon: Icon, label, value }: InfoRowProps) {
+  return (
+    <div className="flex items-start gap-3 py-3 border-b border-border/40 last:border-0">
+      <div
+        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+        style={{ background: "hsl(22 72% 48% / 0.07)" }}
+      >
+        <Icon className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={FIELD_LABEL_CLASSES}>{label}</p>
+        <p className="text-sm text-foreground mt-0.5 break-words">{value}</p>
+      </div>
     </div>
   );
 }
@@ -305,27 +319,15 @@ function EditUserForm({
           <Label htmlFor="detail-first-name" className={FIELD_LABEL_CLASSES}>
             Prénom <span className="text-destructive">*</span>
           </Label>
-          <Input
-            id="detail-first-name"
-            className="h-11 rounded-lg"
-            {...register("first_name")}
-          />
-          {errors.first_name && (
-            <p className="text-xs text-destructive">{errors.first_name.message}</p>
-          )}
+          <Input id="detail-first-name" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("first_name")} />
+          {errors.first_name && <p className="text-xs text-destructive">{errors.first_name.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="detail-last-name" className={FIELD_LABEL_CLASSES}>
             Nom <span className="text-destructive">*</span>
           </Label>
-          <Input
-            id="detail-last-name"
-            className="h-11 rounded-lg"
-            {...register("last_name")}
-          />
-          {errors.last_name && (
-            <p className="text-xs text-destructive">{errors.last_name.message}</p>
-          )}
+          <Input id="detail-last-name" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("last_name")} />
+          {errors.last_name && <p className="text-xs text-destructive">{errors.last_name.message}</p>}
         </div>
       </div>
 
@@ -333,29 +335,16 @@ function EditUserForm({
         <Label htmlFor="detail-username" className={FIELD_LABEL_CLASSES}>
           Nom d'utilisateur <span className="text-destructive">*</span>
         </Label>
-        <Input
-          id="detail-username"
-          className="h-11 rounded-lg"
-          {...register("username")}
-        />
-        {errors.username && (
-          <p className="text-xs text-destructive">{errors.username.message}</p>
-        )}
+        <Input id="detail-username" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("username")} />
+        {errors.username && <p className="text-xs text-destructive">{errors.username.message}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="detail-email" className={FIELD_LABEL_CLASSES}>
           Email <span className="text-destructive">*</span>
         </Label>
-        <Input
-          id="detail-email"
-          type="email"
-          className="h-11 rounded-lg"
-          {...register("email")}
-        />
-        {errors.email && (
-          <p className="text-xs text-destructive">{errors.email.message}</p>
-        )}
+        <Input id="detail-email" type="email" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("email")} />
+        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -368,67 +357,60 @@ function EditUserForm({
             name="role"
             render={({ field }) => (
               <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger className="h-11 rounded-lg">
+                <SelectTrigger className="h-11 rounded-xl border-border/80">
                   <SelectValue placeholder="Rôle" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="vendeur">Vendeur</SelectItem>
+                  <SelectItem value="admin">
+                    <span className="flex items-center gap-2">
+                      <Crown className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+                      Admin
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="vendeur">
+                    <span className="flex items-center gap-2">
+                      <ShoppingBag className="w-3.5 h-3.5" style={{ color: "hsl(210 70% 52%)" }} />
+                      Vendeur
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             )}
           />
-          {errors.role && (
-            <p className="text-xs text-destructive">{errors.role.message}</p>
-          )}
+          {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="detail-phone" className={FIELD_LABEL_CLASSES}>
-            Téléphone
-          </Label>
-          <Input
-            id="detail-phone"
-            placeholder="+241 07 XX XX XX"
-            className="h-11 rounded-lg"
-            {...register("phone")}
-          />
+          <Label htmlFor="detail-phone" className={FIELD_LABEL_CLASSES}>Téléphone</Label>
+          <Input id="detail-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+      <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
         <div className="space-y-0.5">
           <Label className={FIELD_LABEL_CLASSES}>Statut du compte</Label>
-          <p className="text-xs text-muted-foreground">
-            Activer ou désactiver l'accès
-          </p>
+          <p className="text-xs text-muted-foreground">Activer ou désactiver l'accès</p>
         </div>
         <Controller
           control={control}
           name="is_active_profile"
           render={({ field }) => (
-            <Switch
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              aria-label="Statut du compte"
-            />
+            <Switch checked={field.value} onCheckedChange={field.onChange} aria-label="Statut du compte" />
           )}
         />
       </div>
 
-      <DialogFooter className="gap-2 sm:gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isSubmitting}
-          className="min-h-[44px] rounded-lg"
-        >
+      <DialogFooter className="gap-2 sm:gap-3 pt-2">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="min-h-[44px] rounded-xl">
           Annuler
         </Button>
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+          className="min-h-[44px] rounded-xl text-white border-0"
+          style={{
+            background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+            boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+          }}
         >
           {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Enregistrer
@@ -499,11 +481,7 @@ export default function UserDetailPage() {
   if (isLoading) {
     return (
       <>
-        <Topbar
-          title="Détail utilisateur"
-          subtitle="Chargement…"
-          onMenuClick={onMenuClick}
-        />
+        <Topbar title="Détail utilisateur" subtitle="Chargement…" onMenuClick={onMenuClick} />
         <div className="page-container animate-slide-in flex items-center justify-center py-20">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -517,16 +495,10 @@ export default function UserDetailPage() {
   if (isError || !user) {
     return (
       <>
-        <Topbar
-          title="Détail utilisateur"
-          subtitle="Utilisateur introuvable"
-          onMenuClick={onMenuClick}
-        />
+        <Topbar title="Détail utilisateur" subtitle="Utilisateur introuvable" onMenuClick={onMenuClick} />
         <div className="page-container animate-slide-in flex items-center justify-center py-20">
           <div className="text-center space-y-3">
-            <p className="text-muted-foreground text-sm">
-              Impossible de charger cet utilisateur.
-            </p>
+            <p className="text-muted-foreground text-sm">Impossible de charger cet utilisateur.</p>
             <Button variant="outline" onClick={() => navigate(-1)}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Retour
@@ -542,6 +514,8 @@ export default function UserDetailPage() {
   const permissions = (user.profile.permissions ?? []) as Permission[];
   const isAdmin = role === "admin";
   const permissionCount = isAdmin ? ALL_PERMISSIONS.length : permissions.length;
+  const memberSince = formatDateOnly(user.date_joined);
+  const userInitials = getInitialsFromName(displayName, user.username);
 
   function handleEdit(values: EditUserFormValues) {
     updateMutation.mutate({
@@ -567,141 +541,194 @@ export default function UserDetailPage() {
 
   return (
     <>
-      <Topbar
-        title={displayName}
-        subtitle="Profil utilisateur"
-        onMenuClick={onMenuClick}
-      />
+      <Topbar title={displayName} subtitle="Profil utilisateur" onMenuClick={onMenuClick} />
 
       <div className="page-container animate-slide-in">
+
         {/* ── Back button ── */}
         <div className="mb-5">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             Retour
           </button>
         </div>
 
-        {/* ── Header card ── */}
-        <div className="bg-card rounded-xl border border-border/70 p-5 mb-6 shadow-[0_1px_2px_rgba(120,60,20,0.04),0_8px_24px_-12px_rgba(120,60,20,0.08)]">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-            {/* Avatar + identity */}
-            <div className="flex items-start gap-4 flex-1 min-w-0">
-              <UserAvatarLarge name={displayName} username={user.username} />
-              <div className="min-w-0">
-                <h2 className="text-xl font-bold text-foreground leading-tight">
-                  {displayName}
-                </h2>
-                <p className="text-sm text-muted-foreground font-mono mt-0.5">
-                  @{user.username}
-                </p>
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <RolePill role={role} />
-                  <StatusBadge
-                    label={user.is_active ? "Actif" : "Inactif"}
-                    variant={user.is_active ? "success" : "default"}
-                  />
-                </div>
+        {/* ── Hero Card — dark/copper premium ── */}
+        <div
+          className="relative overflow-hidden rounded-2xl mb-6 p-6"
+          style={{
+            background: "linear-gradient(135deg, hsl(20 30% 8%) 0%, hsl(22 26% 13%) 100%)",
+          }}
+        >
+          {/* Diagonal pattern overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              opacity: 0.035,
+              backgroundImage:
+                "repeating-linear-gradient(45deg, hsl(22 72% 48%) 0px, hsl(22 72% 48%) 1px, transparent 1px, transparent 15px)",
+            }}
+          />
+
+          {/* Glow blob */}
+          <div
+            className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, hsl(22 72% 48% / 0.18) 0%, transparent 70%)",
+            }}
+          />
+
+          <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
+            {/* Grand avatar */}
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-extrabold flex-shrink-0"
+              style={{
+                background: isAdmin
+                  ? "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))"
+                  : "linear-gradient(135deg, hsl(210 70% 48%), hsl(220 75% 60%))",
+                boxShadow: isAdmin
+                  ? "0 8px 24px hsl(22 72% 48% / 0.45)"
+                  : "0 8px 24px hsl(210 70% 48% / 0.35)",
+              }}
+              aria-hidden="true"
+            >
+              {userInitials}
+            </div>
+
+            {/* Identity */}
+            <div className="flex-1 min-w-0">
+              <h2
+                className="text-xl font-extrabold text-white leading-tight"
+                style={{ letterSpacing: "-0.02em" }}
+              >
+                {displayName}
+              </h2>
+              <p className="text-white/50 text-sm font-mono mt-0.5">@{user.username}</p>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {/* Role badge */}
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold"
+                  style={
+                    isAdmin
+                      ? { background: "hsl(22 72% 48% / 0.3)", color: "hsl(22 72% 72%)" }
+                      : { background: "hsl(210 70% 52% / 0.3)", color: "hsl(210 70% 78%)" }
+                  }
+                >
+                  {isAdmin ? <Crown className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
+                  {isAdmin ? "Administrateur" : "Vendeur"}
+                </span>
+                {/* Active status */}
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                  style={
+                    user.is_active
+                      ? { background: "hsl(152 38% 38% / 0.25)", color: "hsl(152 50% 60%)" }
+                      : { background: "hsl(var(--muted) / 0.3)", color: "hsl(var(--muted-foreground))" }
+                  }
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: "currentColor" }} />
+                  {user.is_active ? "Actif" : "Inactif"}
+                </span>
+                <span className="text-white/30 text-xs">Membre depuis {memberSince}</span>
               </div>
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center gap-2 flex-wrap shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-[40px] rounded-lg gap-2"
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <button
+                type="button"
                 onClick={() => setEditOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+                style={{
+                  background: "hsl(22 72% 48% / 0.2)",
+                  color: "hsl(22 72% 72%)",
+                  border: "1px solid hsl(22 72% 48% / 0.3)",
+                }}
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-3.5 h-3.5" />
                 Modifier
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className={[
-                  "min-h-[40px] rounded-lg gap-2",
-                  user.is_active
-                    ? "border-destructive/40 text-destructive hover:bg-destructive/10"
-                    : "border-success/40 text-success hover:bg-success/10",
-                ].join(" ")}
+              </button>
+              <button
+                type="button"
                 onClick={() => activateMutation.mutate()}
                 disabled={activateMutation.isPending}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                style={
+                  user.is_active
+                    ? { background: "hsl(0 70% 50% / 0.2)", color: "hsl(0 80% 72%)", border: "1px solid hsl(0 70% 50% / 0.3)" }
+                    : { background: "hsl(152 38% 38% / 0.2)", color: "hsl(152 50% 65%)", border: "1px solid hsl(152 38% 38% / 0.3)" }
+                }
               >
                 {activateMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : user.is_active ? (
-                  <UserX className="w-4 h-4" />
+                  <UserX className="w-3.5 h-3.5" />
                 ) : (
-                  <UserCheck className="w-4 h-4" />
+                  <UserCheck className="w-3.5 h-3.5" />
                 )}
                 {user.is_active ? "Désactiver" : "Réactiver"}
-              </Button>
+              </button>
             </div>
           </div>
+        </div>
+
+        {/* ── KPI row ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <KpiCard
+            label="Ventes réalisées"
+            value={String(user.total_sales ?? 0)}
+            icon={ShoppingCart}
+            accent="copper"
+          />
+          <KpiCard
+            label="Chiffre d'affaires"
+            value={formatRevenue(user.total_revenue ?? 0)}
+            icon={TrendingUp}
+            accent="green"
+          />
+          <KpiCard
+            label="Permissions accordées"
+            value={`${permissionCount} / ${ALL_PERMISSIONS.length}`}
+            icon={ShieldCheck}
+            accent="blue"
+          />
         </div>
 
         {/* ── Main grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left column (2/3) */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Section 1: Informations personnelles */}
+
+            {/* Informations personnelles */}
             <SectionCard title="Informations personnelles">
-              <div className="divide-y divide-border/50">
-                <InfoRow
-                  icon={Users}
-                  label="Prénom"
-                  value={user.first_name || "—"}
-                />
-                <InfoRow
-                  icon={Users}
-                  label="Nom"
-                  value={user.last_name || "—"}
-                />
-                <InfoRow
-                  icon={Mail}
-                  label="Adresse email"
-                  value={user.email || "—"}
-                />
-                <InfoRow
-                  icon={AtSign}
-                  label="Nom d'utilisateur"
-                  value={`@${user.username}`}
-                />
-                <InfoRow
-                  icon={Phone}
-                  label="Téléphone"
-                  value={user.profile.phone || "Non renseigné"}
-                />
-                <InfoRow
-                  icon={Calendar}
-                  label="Date d'inscription"
-                  value={formatDateOnly(user.date_joined)}
-                />
+              <div className="divide-y divide-border/40">
+                <InfoRow icon={Users} label="Prénom" value={user.first_name || "—"} />
+                <InfoRow icon={Users} label="Nom" value={user.last_name || "—"} />
+                <InfoRow icon={Mail} label="Adresse email" value={user.email || "—"} />
+                <InfoRow icon={AtSign} label="Nom d'utilisateur" value={`@${user.username}`} />
+                <InfoRow icon={Phone} label="Téléphone" value={user.profile.phone || "Non renseigné"} />
+                <InfoRow icon={Calendar} label="Date d'inscription" value={formatDateOnly(user.date_joined)} />
                 <InfoRow
                   icon={Clock}
                   label="Dernière connexion"
-                  value={
-                    user.last_login
-                      ? formatDateFr(user.last_login)
-                      : "Jamais connecté"
-                  }
+                  value={user.last_login ? formatDateFr(user.last_login) : "Jamais connecté"}
                 />
               </div>
             </SectionCard>
 
-            {/* Section 3: Permissions */}
+            {/* Permissions */}
             <SectionCard
               title="Permissions"
               action={
                 role === "vendeur" ? (
                   <Link
                     to="/admin/permissions"
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    className="inline-flex items-center gap-1 text-xs font-semibold hover:underline transition-colors"
+                    style={{ color: "hsl(22 72% 48%)" }}
                   >
                     Gérer
                     <ExternalLink className="w-3 h-3" />
@@ -710,59 +737,81 @@ export default function UserDetailPage() {
               }
             >
               {isAdmin ? (
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
-                  <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div
+                  className="flex items-start gap-3 p-4 rounded-xl"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(22 72% 48% / 0.06), hsl(36 88% 52% / 0.04))",
+                    border: "1px solid hsl(22 72% 48% / 0.2)",
+                  }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "hsl(22 72% 48% / 0.12)" }}
+                  >
+                    <Zap className="w-4 h-4" style={{ color: "hsl(22 72% 48%)" }} />
+                  </div>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className="text-sm font-bold text-foreground">
                       Accès complet à toutes les fonctionnalités
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Les administrateurs ont accès à l'intégralité du système
-                      sans restriction.
+                      Les administrateurs ont accès à l'intégralité du système sans restriction.
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
+                  {permissions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {permissions.map((p) => (
+                        <span
+                          key={p}
+                          className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                          style={{ background: "hsl(22 72% 48% / 0.1)", color: "hsl(22 72% 48%)" }}
+                        >
+                          {PERMISSION_LABELS[p]}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {ALL_PERMISSIONS.map((p) => {
                     const granted = permissions.includes(p);
                     const Icon = PERMISSION_ICONS[p];
                     return (
                       <div
                         key={p}
-                        className={[
-                          "flex items-center gap-3 rounded-lg border px-4 py-2.5",
-                          granted
-                            ? "border-border/60 bg-muted/30"
-                            : "border-border/30 bg-muted/10 opacity-50",
-                        ].join(" ")}
+                        className="flex items-center gap-3 rounded-xl border px-4 py-2.5 transition-colors"
+                        style={{
+                          borderColor: granted ? "hsl(22 72% 48% / 0.2)" : "hsl(var(--border) / 0.3)",
+                          background: granted ? "hsl(22 72% 48% / 0.04)" : "hsl(var(--muted) / 0.1)",
+                          opacity: granted ? 1 : 0.5,
+                        }}
                       >
                         <input
                           type="checkbox"
                           checked={granted}
                           readOnly
-                          className="h-4 w-4 rounded border-input accent-primary cursor-default shrink-0"
+                          className="h-4 w-4 rounded border-input cursor-default shrink-0"
+                          style={{ accentColor: "hsl(22 72% 48%)" }}
                           aria-label={PERMISSION_LABELS[p]}
                         />
                         <Icon
-                          className={[
-                            "w-4 h-4 shrink-0",
-                            granted ? "text-primary" : "text-muted-foreground",
-                          ].join(" ")}
+                          className="w-4 h-4 shrink-0"
+                          style={{ color: granted ? "hsl(22 72% 48%)" : "hsl(var(--muted-foreground))" }}
                         />
                         <span
-                          className={[
-                            "text-sm",
-                            granted ? "text-foreground" : "text-muted-foreground",
-                          ].join(" ")}
+                          className="text-sm"
+                          style={{ color: granted ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}
                         >
                           {PERMISSION_LABELS[p]}
                         </span>
-                        {granted && (
-                          <ShieldCheck className="w-3.5 h-3.5 text-success ml-auto shrink-0" />
-                        )}
-                        {!granted && (
-                          <ShieldOff className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto shrink-0" />
+                        {granted ? (
+                          <ShieldCheck
+                            className="w-3.5 h-3.5 ml-auto shrink-0"
+                            style={{ color: "hsl(152 38% 38%)" }}
+                          />
+                        ) : (
+                          <ShieldOff className="w-3.5 h-3.5 text-muted-foreground/40 ml-auto shrink-0" />
                         )}
                       </div>
                     );
@@ -776,7 +825,7 @@ export default function UserDetailPage() {
               )}
             </SectionCard>
 
-            {/* Section 4: Activité récente */}
+            {/* Activité récente */}
             <SectionCard title="Activité récente">
               {activityLoading ? (
                 <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
@@ -789,21 +838,18 @@ export default function UserDetailPage() {
                   <p className="text-sm">Aucune activité enregistrée.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-border/50">
+                <div className="space-y-1">
                   {activityLogs.slice(0, 20).map((log) => {
                     const Icon = resolveActivityIcon(log.action, log.target_model);
-                    const colorClass = resolveActivityColor(
-                      log.action,
-                      log.target_model
-                    );
+                    const colorClass = resolveActivityColor(log.action, log.target_model);
                     return (
                       <div
                         key={log.id}
-                        className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
+                        className="flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0"
                       >
                         <div
                           className={[
-                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
+                            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
                             colorClass,
                           ].join(" ")}
                         >
@@ -814,8 +860,7 @@ export default function UserDetailPage() {
                             <span className="font-medium">{log.action}</span>
                             {log.target_model && (
                               <span className="text-muted-foreground">
-                                {" "}
-                                — {log.target_model}
+                                {" "}— {log.target_model}
                                 {log.target_id ? ` #${log.target_id}` : ""}
                               </span>
                             )}
@@ -837,52 +882,52 @@ export default function UserDetailPage() {
             </SectionCard>
           </div>
 
-          {/* Right column (1/3): Stats */}
+          {/* Right column (1/3): Quick actions */}
           <div className="space-y-4">
-            <StatCard
-              label="Ventes réalisées"
-              value={String(user.total_sales ?? 0)}
-              numericValue={user.total_sales ?? 0}
-              animated
-              icon={ShoppingCart}
-            />
-            <StatCard
-              label="Chiffre d'affaires"
-              value={formatRevenue(user.total_revenue ?? 0)}
-              numericValue={user.total_revenue ?? 0}
-              animated
-              icon={TrendingUp}
-            />
-            <StatCard
-              label="Permissions accordées"
-              value={String(permissionCount)}
-              numericValue={permissionCount}
-              animated
-              icon={ShieldCheck}
-            />
 
             {/* Quick actions card */}
-            <div className="bg-card rounded-xl border border-border/70 overflow-hidden shadow-[0_1px_2px_rgba(120,60,20,0.04)]">
-              <div className="px-5 py-4 border-b border-border/50">
-                <h3 className="text-[13px] font-semibold text-foreground uppercase tracking-wide">
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border) / 0.7)",
+                boxShadow: "0 1px 2px rgba(120,60,20,0.04)",
+              }}
+            >
+              <div className="flex items-center gap-2 px-5 py-4 border-b border-border/50">
+                <div
+                  className="w-0.5 h-4 rounded-full"
+                  style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+                />
+                <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wide">
                   Actions rapides
                 </h3>
               </div>
-              <div className="p-4 space-y-2">
+              <div className="p-4 space-y-1.5">
                 <button
                   type="button"
                   onClick={() => setEditOpen(true)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
                 >
-                  <Pencil className="w-4 h-4 text-muted-foreground" />
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "hsl(22 72% 48% / 0.1)" }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+                  </div>
                   Modifier le profil
                 </button>
                 {role === "vendeur" && (
                   <Link
                     to="/admin/permissions"
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
                   >
-                    <ShieldCheck className="w-4 h-4 text-muted-foreground" />
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: "hsl(22 72% 48% / 0.1)" }}
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+                    </div>
                     Gérer les permissions
                   </Link>
                 )}
@@ -890,21 +935,85 @@ export default function UserDetailPage() {
                   type="button"
                   onClick={() => activateMutation.mutate()}
                   disabled={activateMutation.isPending}
-                  className={[
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left",
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left disabled:opacity-50"
+                  style={
                     user.is_active
-                      ? "text-destructive hover:bg-destructive/10"
-                      : "text-success hover:bg-success/10",
-                  ].join(" ")}
+                      ? { color: "hsl(var(--destructive))" }
+                      : { color: "hsl(152 38% 38%)" }
+                  }
                 >
-                  {user.is_active ? (
-                    <UserX className="w-4 h-4" />
-                  ) : (
-                    <UserCheck className="w-4 h-4" />
-                  )}
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{
+                      background: user.is_active
+                        ? "hsl(var(--destructive) / 0.1)"
+                        : "hsl(152 38% 38% / 0.1)",
+                    }}
+                  >
+                    {user.is_active ? (
+                      <UserX className="w-3.5 h-3.5" />
+                    ) : (
+                      <UserCheck className="w-3.5 h-3.5" />
+                    )}
+                  </div>
                   {user.is_active ? "Désactiver le compte" : "Réactiver le compte"}
                 </button>
               </div>
+            </div>
+
+            {/* Last login card */}
+            <div
+              className="rounded-2xl p-4"
+              style={{
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border) / 0.7)",
+              }}
+            >
+              <p className={[FIELD_LABEL_CLASSES, "mb-1"].join(" ")}>Dernière connexion</p>
+              <p className="text-sm font-semibold text-foreground">
+                {user.last_login ? formatDateFr(user.last_login) : "Jamais connecté"}
+              </p>
+              <p className={[FIELD_LABEL_CLASSES, "mt-3 mb-1"].join(" ")}>Membre depuis</p>
+              <p className="text-sm font-semibold text-foreground">{memberSince}</p>
+            </div>
+
+            {/* Role info card */}
+            <div
+              className="rounded-2xl p-4"
+              style={{
+                background: isAdmin
+                  ? "linear-gradient(135deg, hsl(22 72% 48% / 0.06), hsl(36 88% 52% / 0.04))"
+                  : "linear-gradient(135deg, hsl(210 70% 52% / 0.06), hsl(220 75% 60% / 0.04))",
+                border: `1px solid ${isAdmin ? "hsl(22 72% 48% / 0.2)" : "hsl(210 70% 52% / 0.2)"}`,
+              }}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: isAdmin ? "hsl(22 72% 48% / 0.15)" : "hsl(210 70% 52% / 0.15)",
+                  }}
+                >
+                  {isAdmin ? (
+                    <Crown className="w-4 h-4" style={{ color: "hsl(22 72% 48%)" }} />
+                  ) : (
+                    <ShoppingBag className="w-4 h-4" style={{ color: "hsl(210 70% 52%)" }} />
+                  )}
+                </div>
+                <div>
+                  <p
+                    className="text-xs font-bold uppercase tracking-wider"
+                    style={{ color: isAdmin ? "hsl(22 72% 48%)" : "hsl(210 70% 52%)" }}
+                  >
+                    {isAdmin ? "Administrateur" : "Vendeur"}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isAdmin
+                  ? "Accès complet à toutes les fonctionnalités et paramètres du système."
+                  : `${permissionCount} permission${permissionCount > 1 ? "s" : ""} accordée${permissionCount > 1 ? "s" : ""} sur ${ALL_PERMISSIONS.length} disponibles.`}
+              </p>
             </div>
           </div>
         </div>
@@ -917,23 +1026,22 @@ export default function UserDetailPage() {
           if (!updateMutation.isPending && !open) setEditOpen(false);
         }}
       >
-        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both]">
-          <DialogHeader className="pb-2 border-b border-border/60">
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] rounded-2xl">
+          <DialogHeader className="pb-3 border-b border-border/60">
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 text-primary shrink-0">
-                <Pencil className="w-4 h-4" />
+              <span
+                className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
+                style={{ background: "hsl(22 72% 48% / 0.1)" }}
+              >
+                <Pencil className="w-4 h-4" style={{ color: "hsl(22 72% 48%)" }} />
               </span>
               <div>
-                <DialogTitle className="text-base font-semibold">
-                  Modifier l'utilisateur
-                </DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {displayName}
-                </p>
+                <DialogTitle className="text-base font-bold">Modifier l'utilisateur</DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">{displayName}</p>
               </div>
             </div>
           </DialogHeader>
-          <div className="pt-1">
+          <div className="pt-2">
             <EditUserForm
               defaultValues={editDefaultValues}
               onSubmit={handleEdit}

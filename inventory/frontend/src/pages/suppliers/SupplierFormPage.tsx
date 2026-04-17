@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Truck, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Truck, X, Loader2, Building2, Phone, Mail, MapPin, Tag, CalendarDays, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -103,6 +103,72 @@ const MOCK_SUPPLIERS: MockSupplier[] = [
   },
 ];
 
+// ─── Field wrapper ────────────────────────────────────────────────────────────
+
+interface FieldProps {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}
+
+function Field({ label, required, error, children }: FieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium text-foreground">
+        {label}
+        {required && <span className="ml-1 text-destructive">*</span>}
+      </label>
+      {children}
+      {error && (
+        <p className="text-xs text-destructive flex items-center gap-1">
+          <span className="inline-block w-1 h-1 rounded-full bg-destructive" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Section card ─────────────────────────────────────────────────────────────
+
+interface SectionCardProps {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}
+
+function SectionCard({ title, icon, children }: SectionCardProps) {
+  return (
+    <div
+      className="rounded-2xl p-6"
+      style={{
+        background: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))",
+        boxShadow: "0 2px 8px hsl(22 30% 15% / 0.05)",
+      }}
+    >
+      {/* Section header */}
+      <div className="flex items-center gap-2 mb-5 pb-4"
+           style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}>
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: "hsl(22 72% 48% / 0.10)" }}
+        >
+          <span style={{ color: "hsl(22 72% 48%)" }}>{icon}</span>
+        </div>
+        <p
+          className="text-xs font-bold uppercase tracking-[0.12em]"
+          style={{ color: "hsl(22 72% 48%)" }}
+        >
+          {title}
+        </p>
+      </div>
+      <div className="space-y-5">{children}</div>
+    </div>
+  );
+}
+
 // ─── Tag input for products ───────────────────────────────────────────────────
 
 interface TagInputProps {
@@ -134,17 +200,35 @@ function TagInput({ value, onChange }: TagInputProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2 border rounded-lg bg-background min-h-[44px] focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-0 transition-shadow">
+    <div
+      className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-background min-h-[48px] transition-shadow"
+      style={{ border: "1.5px solid hsl(var(--border))" }}
+      onFocus={(e) => {
+        (e.currentTarget as HTMLDivElement).style.borderColor = "hsl(22 72% 48%)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow =
+          "0 0 0 3px hsl(22 72% 48% / 0.12)";
+      }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "hsl(var(--border))";
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+        }
+      }}
+    >
       {value.map((tag, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+          style={{
+            background: "hsl(22 72% 48% / 0.10)",
+            color: "hsl(22 72% 48%)",
+          }}
         >
           {tag}
           <button
             type="button"
             onClick={() => removeTag(i)}
-            className="hover:text-destructive transition-colors"
+            className="hover:text-destructive transition-colors ml-0.5"
             aria-label={`Supprimer ${tag}`}
           >
             <X className="w-3 h-3" />
@@ -161,6 +245,34 @@ function TagInput({ value, onChange }: TagInputProps) {
         className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder:text-muted-foreground"
       />
     </div>
+  );
+}
+
+// ─── Styled Input ─────────────────────────────────────────────────────────────
+
+function StyledInput(props: React.ComponentProps<typeof Input>) {
+  return (
+    <Input
+      {...props}
+      className={[
+        "h-11 rounded-xl bg-background transition-shadow",
+        props.className ?? "",
+      ].join(" ")}
+      style={{
+        border: "1.5px solid hsl(var(--border))",
+        ...(props.style ?? {}),
+      }}
+      onFocus={(e) => {
+        e.currentTarget.style.borderColor = "hsl(22 72% 48%)";
+        e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.12)";
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.borderColor = "hsl(var(--border))";
+        e.currentTarget.style.boxShadow = "none";
+        props.onBlur?.(e);
+      }}
+    />
   );
 }
 
@@ -211,7 +323,6 @@ export default function SupplierFormPage() {
 
   function onSubmit(values: SupplierFormValues) {
     setIsSubmitting(true);
-    // In V1 (mock data), simulate async save then navigate
     setTimeout(() => {
       void values;
       void productTags;
@@ -233,26 +344,44 @@ export default function SupplierFormPage() {
       />
       <div className="page-container animate-slide-in">
 
-        {/* ── Page header ───────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-6">
+        {/* ── Breadcrumb ────────────────────────────────────────────── */}
+        <div className="mb-6">
           <Link
             to="/suppliers"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors group"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             Retour aux fournisseurs
           </Link>
         </div>
 
+        {/* ── Page heading ──────────────────────────────────────────── */}
         <div className="flex items-center gap-4 mb-8">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 shrink-0">
-            <Truck className="w-6 h-6 text-primary" />
+          <div
+            className="w-13 h-13 w-[52px] h-[52px] rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{
+              background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+              boxShadow: "0 4px 14px hsl(22 72% 48% / 0.3)",
+            }}
+          >
+            <Truck className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-foreground leading-tight">
-              {pageTitle}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-2 mb-0.5">
+              <div
+                className="w-1 h-5 rounded-full"
+                style={{
+                  background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
+                }}
+              />
+              <h1
+                className="text-xl font-extrabold text-foreground"
+                style={{ letterSpacing: "-0.02em" }}
+              >
+                {pageTitle}
+              </h1>
+            </div>
+            <p className="text-sm text-muted-foreground pl-3">
               {isEdit
                 ? "Modifiez les informations du fournisseur ci-dessous."
                 : "Renseignez les coordonnées et produits du nouveau fournisseur."}
@@ -261,172 +390,186 @@ export default function SupplierFormPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-            {/* ── Colonne gauche : Informations entreprise ───────────────── */}
-            <div className="bg-card rounded-xl border p-6">
-
-              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
-                Informations entreprise
-              </p>
-
-              {/* Nom entreprise */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="name" className="text-sm font-medium mb-1.5">
-                  Nom du fournisseur <span className="text-destructive">*</span>
-                </Label>
-                <Input
+            {/* ── Colonne gauche : Informations entreprise ──────────── */}
+            <SectionCard
+              title="Informations entreprise"
+              icon={<Building2 className="w-3.5 h-3.5" />}
+            >
+              <Field
+                label="Nom du fournisseur"
+                required
+                error={errors.name?.message}
+              >
+                <StyledInput
                   id="name"
                   placeholder="Ex : Distribugo Gabon"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
                   aria-invalid={errors.name ? "true" : undefined}
                   {...register("name")}
                 />
-                {errors.name && (
-                  <p className="text-xs text-destructive">{errors.name.message}</p>
-                )}
-              </div>
+              </Field>
 
-              {/* Contact */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="contact" className="text-sm font-medium mb-1.5">
-                  Nom du contact <span className="text-destructive">*</span>
-                </Label>
-                <Input
+              <Field
+                label="Nom du contact"
+                required
+                error={errors.contact?.message}
+              >
+                <StyledInput
                   id="contact"
                   placeholder="Ex : Jean Mouloungui"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
                   aria-invalid={errors.contact ? "true" : undefined}
                   {...register("contact")}
                 />
-                {errors.contact && (
-                  <p className="text-xs text-destructive">{errors.contact.message}</p>
-                )}
-              </div>
+              </Field>
 
-              {/* Téléphone */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="phone" className="text-sm font-medium mb-1.5">
-                  Téléphone <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="phone"
-                  placeholder="+241 07 XX XX XX"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
-                  aria-invalid={errors.phone ? "true" : undefined}
-                  {...register("phone")}
-                />
-                {errors.phone && (
-                  <p className="text-xs text-destructive">{errors.phone.message}</p>
-                )}
-              </div>
+              <Field
+                label="Téléphone"
+                required
+                error={errors.phone?.message}
+              >
+                <div className="relative">
+                  <Phone
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                  />
+                  <StyledInput
+                    id="phone"
+                    placeholder="+241 07 XX XX XX"
+                    className="pl-9"
+                    aria-invalid={errors.phone ? "true" : undefined}
+                    {...register("phone")}
+                  />
+                </div>
+              </Field>
 
-              {/* Email */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="email" className="text-sm font-medium mb-1.5">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="contact@fournisseur.ga"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
-                  aria-invalid={errors.email ? "true" : undefined}
-                  {...register("email")}
-                />
-                {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email.message}</p>
-                )}
-              </div>
+              <Field
+                label="Email"
+                error={errors.email?.message}
+              >
+                <div className="relative">
+                  <Mail
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                  />
+                  <StyledInput
+                    id="email"
+                    type="email"
+                    placeholder="contact@fournisseur.ga"
+                    className="pl-9"
+                    aria-invalid={errors.email ? "true" : undefined}
+                    {...register("email")}
+                  />
+                </div>
+              </Field>
 
-              {/* Adresse */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="address" className="text-sm font-medium mb-1.5">
-                  Adresse
-                </Label>
-                <Input
-                  id="address"
-                  placeholder="Ex : Zone Industrielle d'Oloumi, Libreville"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
-                  {...register("address")}
-                />
-              </div>
-            </div>
+              <Field label="Adresse">
+                <div className="relative">
+                  <MapPin
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                  />
+                  <StyledInput
+                    id="address"
+                    placeholder="Ex : Zone Industrielle d'Oloumi, Libreville"
+                    className="pl-9"
+                    {...register("address")}
+                  />
+                </div>
+              </Field>
+            </SectionCard>
 
-            {/* ── Colonne droite : Produits + Commande + Statut ─────────── */}
-            <div className="space-y-6">
+            {/* ── Colonne droite ────────────────────────────────────── */}
+            <div className="space-y-5">
 
               {/* Produits fournis */}
-              <div className="bg-card rounded-xl border p-6">
-                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
-                  Produits fournis
-                </p>
-
-                <div className="space-y-1.5 mt-6">
-                  <Label className="text-sm font-medium mb-1.5">Produits</Label>
+              <SectionCard
+                title="Produits fournis"
+                icon={<Tag className="w-3.5 h-3.5" />}
+              >
+                <Field label="Produits">
                   <TagInput value={productTags} onChange={setProductTags} />
-                  <p className="text-xs text-muted-foreground">
-                    Saisir le nom d'un produit puis appuyer sur Entrée ou virgule pour l'ajouter.
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Saisir le nom d'un produit puis appuyer sur{" "}
+                    <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted border border-border">
+                      Entrée
+                    </kbd>{" "}
+                    ou virgule pour l'ajouter.
                   </p>
-                </div>
-              </div>
+                </Field>
+              </SectionCard>
 
-              {/* Commande + Statut */}
-              <div className="bg-card rounded-xl border p-6">
-                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
-                  Statut et commandes
-                </p>
+              {/* Statut et commandes */}
+              <SectionCard
+                title="Statut et commandes"
+                icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+              >
+                <Field
+                  label="Dernière commande"
+                  error={errors.lastOrder?.message}
+                >
+                  <div className="relative">
+                    <CalendarDays
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                    />
+                    <StyledInput
+                      id="lastOrder"
+                      placeholder="JJ/MM/AAAA"
+                      className="pl-9"
+                      {...register("lastOrder")}
+                    />
+                  </div>
+                </Field>
 
-                {/* Dernière commande */}
-                <div className="space-y-1.5 mt-6">
-                  <Label htmlFor="lastOrder" className="text-sm font-medium mb-1.5">
-                    Dernière commande
-                  </Label>
-                  <Input
-                    id="lastOrder"
-                    placeholder="JJ/MM/AAAA"
-                    className="h-11 rounded-lg focus-visible:ring-primary/50"
-                    {...register("lastOrder")}
-                  />
-                  {errors.lastOrder && (
-                    <p className="text-xs text-destructive">{errors.lastOrder.message}</p>
-                  )}
-                </div>
-
-                {/* Statut */}
-                <div className="space-y-1.5 mt-6">
-                  <Label className="text-sm font-medium mb-1.5">
-                    Statut <span className="text-destructive">*</span>
-                  </Label>
+                <Field
+                  label="Statut"
+                  required
+                  error={errors.status?.message}
+                >
                   <Controller
                     name="status"
                     control={control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger className="w-full h-11 rounded-lg focus:ring-primary/50">
+                        <SelectTrigger
+                          className="w-full h-11 rounded-xl bg-background transition-shadow"
+                          style={{
+                            border: "1.5px solid hsl(var(--border))",
+                          }}
+                        >
                           <SelectValue placeholder="Sélectionner un statut" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="actif">Actif</SelectItem>
-                          <SelectItem value="inactif">Inactif</SelectItem>
+                          <SelectItem value="actif">
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="w-2 h-2 rounded-full inline-block"
+                                style={{ background: "hsl(152 38% 38%)" }}
+                              />
+                              Actif
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="inactif">
+                            <span className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full inline-block bg-muted-foreground/50" />
+                              Inactif
+                            </span>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     )}
                   />
-                  {errors.status && (
-                    <p className="text-xs text-destructive">{errors.status.message}</p>
-                  )}
-                </div>
-              </div>
+                </Field>
+              </SectionCard>
             </div>
           </div>
 
-          {/* ── Actions ─────────────────────────────────────────────────── */}
-          <div className="flex items-center gap-3 justify-end pt-6 border-t border-border mt-6">
+          {/* ── Actions ───────────────────────────────────────────────── */}
+          <div
+            className="flex items-center gap-3 justify-end pt-6 mt-6"
+            style={{ borderTop: "1px solid hsl(var(--border))" }}
+          >
             <Button
               type="button"
               variant="outline"
-              className="h-10 rounded-lg"
+              className="h-10 rounded-xl px-5 font-medium transition-colors hover:border-primary/30 hover:text-primary"
               onClick={() => navigate("/suppliers")}
               disabled={isSubmitting}
             >
@@ -435,7 +578,11 @@ export default function SupplierFormPage() {
             </Button>
             <Button
               type="submit"
-              className="h-10 rounded-lg bg-gradient-primary shadow-md shadow-primary/20 border-0 hover:-translate-y-px transition-transform"
+              className="h-10 rounded-xl px-6 text-white font-semibold border-0 transition-all hover:brightness-105 hover:-translate-y-px"
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                boxShadow: "0 4px 14px hsl(22 72% 48% / 0.30)",
+              }}
               disabled={isSubmitting}
             >
               {isSubmitting ? (

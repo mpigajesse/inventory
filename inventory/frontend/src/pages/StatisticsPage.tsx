@@ -49,13 +49,13 @@ function pctLabel(pct: number | null | undefined): string {
 
 type KpiTint = "primary" | "accent" | "warning" | "info" | "destructive" | "success";
 
-const TINT_MAP: Record<KpiTint, { bg: string; fg: string; ring: string; grad: string }> = {
-  primary:     { bg: "bg-primary/12",                  fg: "text-primary",                  ring: "ring-primary/20",     grad: "from-primary/[0.06] via-transparent" },
-  accent:      { bg: "bg-accent/12",                   fg: "text-accent",                   ring: "ring-accent/20",      grad: "from-accent/[0.06] via-transparent" },
-  warning:     { bg: "bg-warning/15",                  fg: "text-warning",                  ring: "ring-warning/25",     grad: "from-warning/[0.07] via-transparent" },
-  info:        { bg: "bg-[hsl(var(--badge-blue))]/12", fg: "text-[hsl(var(--badge-blue))]", ring: "ring-[hsl(var(--badge-blue))]/20", grad: "from-[hsl(var(--badge-blue))]/[0.06] via-transparent" },
-  destructive: { bg: "bg-destructive/10",              fg: "text-destructive",              ring: "ring-destructive/20", grad: "from-destructive/[0.05] via-transparent" },
-  success:     { bg: "bg-success/10",                  fg: "text-success",                  ring: "ring-success/20",     grad: "from-success/[0.05] via-transparent" },
+const TINT_ICON_GRADIENT: Record<KpiTint, { from: string; to: string; shadow: string }> = {
+  primary:     { from: "hsl(22, 72%, 48%)",  to: "hsl(36, 88%, 52%)",  shadow: "hsl(22 72% 48% / 0.28)" },
+  accent:      { from: "hsl(152, 38%, 38%)", to: "hsl(160, 48%, 46%)", shadow: "hsl(152 38% 38% / 0.28)" },
+  warning:     { from: "hsl(36, 88%, 48%)",  to: "hsl(22, 72%, 52%)",  shadow: "hsl(36 88% 48% / 0.28)" },
+  info:        { from: "hsl(210, 70%, 52%)", to: "hsl(220, 65%, 60%)", shadow: "hsl(210 70% 52% / 0.28)" },
+  destructive: { from: "hsl(4, 72%, 52%)",   to: "hsl(15, 78%, 58%)",  shadow: "hsl(4 72% 52% / 0.28)"  },
+  success:     { from: "hsl(152, 38%, 38%)", to: "hsl(160, 48%, 50%)", shadow: "hsl(152 38% 38% / 0.28)" },
 };
 
 interface KpiCardProps {
@@ -65,52 +65,77 @@ interface KpiCardProps {
   changePct?: number | null;
   icon: React.ComponentType<{ className?: string }>;
   tint: KpiTint;
+  isMoney?: boolean;
   delay?: number;
 }
 
-function KpiCard({ label, value, hint, changePct, icon: Icon, tint, delay = 0 }: KpiCardProps) {
-  const t = TINT_MAP[tint];
+function KpiCard({ label, value, hint, changePct, icon: Icon, tint, isMoney = false, delay = 0 }: KpiCardProps) {
+  const g = TINT_ICON_GRADIENT[tint];
   const isUp = changePct !== null && changePct !== undefined && changePct > 0;
   const isDown = changePct !== null && changePct !== undefined && changePct < 0;
   const hasChange = changePct !== null && changePct !== undefined;
 
   return (
     <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border bg-card p-5",
-        "hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 focus-within:ring-2",
-        t.ring
-      )}
+      className="relative overflow-hidden rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-300"
       style={{
+        background: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))",
+        boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
         animation: "fadeScale 0.35s cubic-bezier(0.16,1,0.3,1) both",
         animationDelay: `${delay}ms`,
-        boxShadow: "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
       }}
     >
-      <div aria-hidden className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br to-transparent opacity-70", t.grad)} />
+      {/* Decorative orb */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-4 -right-4 w-20 h-20 rounded-full"
+        style={{ background: `radial-gradient(circle, ${g.from.replace(")", " / 0.1)")} 0%, transparent 70%)` }}
+      />
+
       <div className="relative">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground leading-tight">{label}</p>
-          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", t.bg)}>
-            <Icon className={cn("w-4 h-4", t.fg)} />
-          </div>
+        {/* Icon */}
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shrink-0"
+          style={{
+            background: `linear-gradient(135deg, ${g.from}, ${g.to})`,
+            boxShadow: `0 4px 12px ${g.shadow}`,
+          }}
+        >
+          <Icon className="w-4 h-4 text-white" />
         </div>
-        <p className="text-2xl font-bold tracking-tight tabular-nums text-foreground">{value}</p>
-        <div className="mt-2 flex items-center gap-2 flex-wrap">
-          {hint && <p className="text-xs text-muted-foreground truncate">{hint}</p>}
-          {hasChange && (
-            <span className={cn(
-              "inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-full shrink-0",
-              isUp && "bg-success/12 text-success",
-              isDown && "bg-destructive/12 text-destructive",
-              !isUp && !isDown && "bg-muted text-muted-foreground"
-            )}>
+
+        {/* Value */}
+        <p
+          className="text-2xl font-bold tracking-tight tabular-nums text-foreground mb-0.5"
+          style={isMoney ? { fontFamily: "Fraunces, Georgia, serif", letterSpacing: "-0.02em" } : {}}
+        >
+          {value}
+        </p>
+
+        {/* Trend badge */}
+        {hasChange && (
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            <span
+              className="inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
+              style={{
+                background: isUp ? "hsl(152 38% 38% / 0.1)" : isDown ? "hsl(4 72% 52% / 0.1)" : "hsl(var(--muted))",
+                color: isUp ? "hsl(152 38% 38%)" : isDown ? "hsl(4 72% 52%)" : "hsl(var(--muted-foreground))",
+              }}
+            >
               {isUp && <TrendingUp className="w-3 h-3" />}
               {isDown && <TrendingDown className="w-3 h-3" />}
               {pctLabel(changePct)}
             </span>
-          )}
-        </div>
+            <span className="text-xs text-muted-foreground">vs période préc.</span>
+          </div>
+        )}
+
+        {/* Label + hint */}
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mt-2 leading-tight">
+          {label}
+        </p>
+        {hint && <p className="text-xs text-muted-foreground truncate mt-0.5">{hint}</p>}
       </div>
     </div>
   );
@@ -149,12 +174,12 @@ function OverviewKpiGrid({ data, isLoading }: { data: OverviewStats | undefined;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <KpiCard label="Revenus"           value={data ? fmt(data.revenue.current) : "—"}       hint={`Période préc. : ${data ? fmt(data.revenue.previous) : "—"}`}           changePct={data?.revenue.change_pct}      icon={DollarSign}     tint="primary"   delay={0}   />
-      <KpiCard label="Transactions"      value={data ? `${data.transactions.current}` : "—"}  hint={`Période préc. : ${data?.transactions.previous ?? "—"} txns`}             changePct={data?.transactions.change_pct} icon={ShoppingCart}   tint="accent"    delay={50}  />
-      <KpiCard label="Panier moyen"      value={data ? fmt(data.avg_basket.current) : "—"}    hint={`Période préc. : ${data ? fmt(data.avg_basket.previous) : "—"}`}           changePct={data?.avg_basket.change_pct}   icon={ShoppingBag}    tint="info"      delay={100} />
-      <KpiCard label="Nouveaux clients"  value={data ? `${data.new_clients.current}` : "—"}   hint={`Période préc. : ${data?.new_clients.previous ?? "—"}`}                    changePct={data?.new_clients.change_pct}  icon={UserCheck}      tint="accent"    delay={150} />
+      <KpiCard label="Revenus"           value={data ? fmt(data.revenue.current) : "—"}       hint={`Période préc. : ${data ? fmt(data.revenue.previous) : "—"}`}           changePct={data?.revenue.change_pct}      icon={DollarSign}     tint="primary"     isMoney  delay={0}   />
+      <KpiCard label="Transactions"      value={data ? `${data.transactions.current}` : "—"}  hint={`Période préc. : ${data?.transactions.previous ?? "—"} txns`}             changePct={data?.transactions.change_pct} icon={ShoppingCart}   tint="accent"              delay={50}  />
+      <KpiCard label="Panier moyen"      value={data ? fmt(data.avg_basket.current) : "—"}    hint={`Période préc. : ${data ? fmt(data.avg_basket.previous) : "—"}`}           changePct={data?.avg_basket.change_pct}   icon={ShoppingBag}    tint="info"        isMoney  delay={100} />
+      <KpiCard label="Nouveaux clients"  value={data ? `${data.new_clients.current}` : "—"}   hint={`Période préc. : ${data?.new_clients.previous ?? "—"}`}                    changePct={data?.new_clients.change_pct}  icon={UserCheck}      tint="accent"              delay={150} />
       <KpiCard label="Alertes stock"     value={data ? `${data.stock_alerts.low} bas · ${data.stock_alerts.critical} critique` : "—"} hint={hasCrit ? "Rupture imminente" : hasLow ? "Réapprovisionnement recommandé" : "Stock en bonne santé"} icon={AlertTriangle} tint={alertTint} delay={200} />
-      <KpiCard label="Paiement dominant" value={topPayLabel}                                   hint="Mode le plus utilisé sur la période"                                       icon={CreditCard}     tint="primary"   delay={250} />
+      <KpiCard label="Paiement dominant" value={topPayLabel}                                   hint="Mode le plus utilisé sur la période"                                       icon={CreditCard}     tint="primary"             delay={250} />
     </div>
   );
 }
@@ -214,20 +239,32 @@ interface TabNavProps {
 
 function TabNav({ active, onChange }: TabNavProps) {
   return (
-    <div className="flex items-center gap-1 overflow-x-auto border-b border-border pb-0 mb-6 -mb-px">
+    <div
+      className="flex items-center gap-1 p-1 rounded-xl overflow-x-auto mb-6"
+      style={{
+        background: "hsl(var(--muted))",
+        border: "1px solid hsl(var(--border))",
+      }}
+    >
       {TABS.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           onClick={() => onChange(id)}
-          className={cn(
-            "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-all duration-150 border-b-2 -mb-px whitespace-nowrap shrink-0",
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0"
+          style={
             active === id
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-          )}
+              ? {
+                  background: "hsl(var(--card))",
+                  color: "hsl(22 72% 48%)",
+                  boxShadow: "0 1px 4px hsl(22 30% 15% / 0.1)",
+                }
+              : {
+                  color: "hsl(var(--muted-foreground))",
+                }
+          }
         >
           <Icon className="w-4 h-4 shrink-0" />
-          {label}
+          <span className="hidden sm:inline">{label}</span>
         </button>
       ))}
     </div>
@@ -257,6 +294,23 @@ export default function StatisticsPage() {
       />
 
       <div className="page-container animate-slide-in space-y-6">
+
+        {/* ── Premium page header ── */}
+        <div className="mb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <div
+              className="w-1 h-7 rounded-full shrink-0"
+              style={{ background: "linear-gradient(to bottom, hsl(22, 72%, 48%), hsl(152, 38%, 38%))" }}
+            />
+            <h1
+              className="text-2xl font-extrabold text-foreground"
+              style={{ fontFamily: "var(--font-heading, inherit)", letterSpacing: "-0.025em" }}
+            >
+              Statistiques &amp; Analytics
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground ml-3">Vue d'ensemble des performances du magasin</p>
+        </div>
 
         {/* ── Period selector + real-time badge ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

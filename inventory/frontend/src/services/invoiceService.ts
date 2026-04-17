@@ -16,6 +16,7 @@ export interface Invoice {
   issued_at: string;
   updated_at: string;
   items: SaleItem[];
+  payment_method?: 'cash' | 'mobile_money' | 'card' | 'credit';
 }
 
 export interface PaginatedInvoices {

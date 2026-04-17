@@ -1,7 +1,6 @@
 import { useOutletContext, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +44,9 @@ import {
   UserX,
   UserCheck,
   ShieldCheck,
+  LayoutGrid,
+  Crown,
+  ShoppingBag,
 } from "lucide-react";
 import { useState } from "react";
 import { useTableManager } from "@/hooks/useTableManager";
@@ -125,26 +127,33 @@ function getInitialsFromName(name: string, fallback: string): string {
 interface UserAvatarProps {
   name: string;
   username: string;
+  role?: UserRole;
   size?: "sm" | "md" | "lg";
 }
 
-function UserAvatar({ name, username, size = "md" }: UserAvatarProps) {
+function UserAvatar({ name, username, role = "vendeur", size = "md" }: UserAvatarProps) {
   const initials = getInitialsFromName(name, username);
+  const isAdmin = role === "admin";
   const dimensions =
     size === "sm"
       ? "w-9 h-9 text-xs"
       : size === "lg"
       ? "w-12 h-12 text-base"
-      : "w-11 h-11 text-sm";
+      : "w-10 h-10 text-sm";
+
   return (
     <div
       className={[
-        "relative rounded-full flex items-center justify-center shrink-0 font-semibold text-primary-foreground ring-1 ring-primary/15 shadow-[0_4px_14px_-8px_hsl(var(--primary)/0.5)]",
+        "relative rounded-full flex items-center justify-center shrink-0 font-bold text-white",
         dimensions,
       ].join(" ")}
       style={{
-        background:
-          "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.78) 100%)",
+        background: isAdmin
+          ? "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))"
+          : "linear-gradient(135deg, hsl(210 70% 48%), hsl(220 75% 58%))",
+        boxShadow: isAdmin
+          ? "0 4px 14px hsl(22 72% 48% / 0.35)"
+          : "0 4px 14px hsl(210 70% 48% / 0.25)",
       }}
       aria-hidden="true"
     >
@@ -159,16 +168,60 @@ function RolePill({ role }: { role: UserRole }) {
   const isAdmin = role === "admin";
   return (
     <span
-      className={[
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ring-1",
-        isAdmin
-          ? "bg-primary/10 text-primary ring-primary/25"
-          : "bg-accent/15 text-accent ring-accent/25",
-      ].join(" ")}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider"
+      style={{
+        background: isAdmin ? "hsl(22 72% 48% / 0.12)" : "hsl(210 70% 52% / 0.12)",
+        color: isAdmin ? "hsl(22 72% 48%)" : "hsl(210 70% 52%)",
+        border: `1px solid ${isAdmin ? "hsl(22 72% 48% / 0.25)" : "hsl(210 70% 52% / 0.25)"}`,
+      }}
     >
-      <Shield className="w-3 h-3" aria-hidden="true" />
+      {isAdmin ? <Crown className="w-3 h-3" aria-hidden="true" /> : <ShoppingBag className="w-3 h-3" aria-hidden="true" />}
       {isAdmin ? "Admin" : "Vendeur"}
     </span>
+  );
+}
+
+// ─── Status dot ──────────────────────────────────────────────────────────────
+
+function StatusDot({ active }: { active: boolean }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold"
+      style={{
+        background: active ? "hsl(152 38% 38% / 0.1)" : "hsl(var(--muted))",
+        color: active ? "hsl(152 38% 38%)" : "hsl(var(--muted-foreground))",
+      }}
+    >
+      <span
+        className="w-1.5 h-1.5 rounded-full"
+        style={{ background: "currentColor" }}
+      />
+      {active ? "Actif" : "Inactif"}
+    </span>
+  );
+}
+
+// ─── Premium form input ───────────────────────────────────────────────────────
+
+function FieldWrapper({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className={FIELD_LABEL_CLASSES}>
+        {label} {required && <span className="text-destructive">*</span>}
+      </Label>
+      {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   );
 }
 
@@ -204,146 +257,94 @@ function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProp
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="create-first-name" className={FIELD_LABEL_CLASSES}>
-            Prénom <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="create-first-name"
-            placeholder="Ex : Fatou"
-            className="h-11 rounded-lg"
-            {...register("first_name")}
-          />
-          {errors.first_name && (
-            <p className="text-xs text-destructive">{errors.first_name.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="create-last-name" className={FIELD_LABEL_CLASSES}>
-            Nom <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="create-last-name"
-            placeholder="Ex : Mbaye"
-            className="h-11 rounded-lg"
-            {...register("last_name")}
-          />
-          {errors.last_name && (
-            <p className="text-xs text-destructive">{errors.last_name.message}</p>
-          )}
-        </div>
+        <FieldWrapper label="Prénom" required error={errors.first_name?.message}>
+          <Input id="create-first-name" placeholder="Ex : Fatou" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("first_name")} />
+        </FieldWrapper>
+        <FieldWrapper label="Nom" required error={errors.last_name?.message}>
+          <Input id="create-last-name" placeholder="Ex : Mbaye" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("last_name")} />
+        </FieldWrapper>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="create-username" className={FIELD_LABEL_CLASSES}>
-          Nom d'utilisateur <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="create-username"
-          placeholder="Ex : fatou.mbaye"
-          className="h-11 rounded-lg"
-          {...register("username")}
-        />
-        {errors.username && (
-          <p className="text-xs text-destructive">{errors.username.message}</p>
-        )}
-      </div>
+      <FieldWrapper label="Nom d'utilisateur" required error={errors.username?.message}>
+        <Input id="create-username" placeholder="Ex : fatou.mbaye" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("username")} />
+      </FieldWrapper>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="create-email" className={FIELD_LABEL_CLASSES}>
-          Email <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="create-email"
-          type="email"
-          placeholder="utilisateur@naoservices.ga"
-          className="h-11 rounded-lg"
-          {...register("email")}
-        />
-        {errors.email && (
-          <p className="text-xs text-destructive">{errors.email.message}</p>
-        )}
-      </div>
+      <FieldWrapper label="Email" required error={errors.email?.message}>
+        <Input id="create-email" type="email" placeholder="utilisateur@naoservices.ga" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("email")} />
+      </FieldWrapper>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label className={FIELD_LABEL_CLASSES}>
-            Rôle <span className="text-destructive">*</span>
-          </Label>
+        <FieldWrapper label="Rôle" required error={errors.role?.message}>
           <Controller
             control={control}
             name="role"
             render={({ field }) => (
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger className="h-11 rounded-lg">
+                <SelectTrigger className="h-11 rounded-xl border-border/80">
                   <SelectValue placeholder="Sélectionner un rôle" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="vendeur">Vendeur</SelectItem>
+                  <SelectItem value="admin">
+                    <span className="flex items-center gap-2">
+                      <Crown className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+                      Admin
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="vendeur">
+                    <span className="flex items-center gap-2">
+                      <ShoppingBag className="w-3.5 h-3.5" style={{ color: "hsl(210 70% 52%)" }} />
+                      Vendeur
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             )}
           />
-          {errors.role && (
-            <p className="text-xs text-destructive">{errors.role.message}</p>
-          )}
-        </div>
+        </FieldWrapper>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="create-phone" className={FIELD_LABEL_CLASSES}>
-            Téléphone
-          </Label>
-          <Input
-            id="create-phone"
-            placeholder="+241 07 XX XX XX"
-            className="h-11 rounded-lg"
-            {...register("phone")}
-          />
-        </div>
+        <FieldWrapper label="Téléphone">
+          <Input id="create-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
+        </FieldWrapper>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="create-password" className={FIELD_LABEL_CLASSES}>
-          Mot de passe temporaire <span className="text-destructive">*</span>
-        </Label>
+      <FieldWrapper label="Mot de passe temporaire" required error={errors.password?.message}>
         <div className="relative">
           <Input
             id="create-password"
             type={showPassword ? "text" : "password"}
             placeholder="••••••••"
-            className="h-11 rounded-lg pr-11"
+            className="h-11 rounded-xl pr-11 border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]"
             {...register("password")}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
-        {errors.password && (
-          <p className="text-xs text-destructive">{errors.password.message}</p>
-        )}
-      </div>
+      </FieldWrapper>
 
-      <DialogFooter className="gap-2 sm:gap-3">
+      <DialogFooter className="gap-2 sm:gap-3 pt-2">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="min-h-[44px] rounded-lg"
+          className="min-h-[44px] rounded-xl"
         >
           Annuler
         </Button>
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+          className="min-h-[44px] rounded-xl text-white border-0"
+          style={{
+            background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+            boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+          }}
         >
           {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Créer l'utilisateur
@@ -384,107 +385,56 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="edit-first-name" className={FIELD_LABEL_CLASSES}>
-            Prénom <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="edit-first-name"
-            placeholder="Ex : Fatou"
-            className="h-11 rounded-lg"
-            {...register("first_name")}
-          />
-          {errors.first_name && (
-            <p className="text-xs text-destructive">{errors.first_name.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="edit-last-name" className={FIELD_LABEL_CLASSES}>
-            Nom <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="edit-last-name"
-            placeholder="Ex : Mbaye"
-            className="h-11 rounded-lg"
-            {...register("last_name")}
-          />
-          {errors.last_name && (
-            <p className="text-xs text-destructive">{errors.last_name.message}</p>
-          )}
-        </div>
+        <FieldWrapper label="Prénom" required error={errors.first_name?.message}>
+          <Input id="edit-first-name" placeholder="Ex : Fatou" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("first_name")} />
+        </FieldWrapper>
+        <FieldWrapper label="Nom" required error={errors.last_name?.message}>
+          <Input id="edit-last-name" placeholder="Ex : Mbaye" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("last_name")} />
+        </FieldWrapper>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="edit-username" className={FIELD_LABEL_CLASSES}>
-          Nom d'utilisateur <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="edit-username"
-          placeholder="Ex : fatou.mbaye"
-          className="h-11 rounded-lg"
-          {...register("username")}
-        />
-        {errors.username && (
-          <p className="text-xs text-destructive">{errors.username.message}</p>
-        )}
-      </div>
+      <FieldWrapper label="Nom d'utilisateur" required error={errors.username?.message}>
+        <Input id="edit-username" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("username")} />
+      </FieldWrapper>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="edit-email" className={FIELD_LABEL_CLASSES}>
-          Email <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="edit-email"
-          type="email"
-          placeholder="utilisateur@naoservices.ga"
-          className="h-11 rounded-lg"
-          {...register("email")}
-        />
-        {errors.email && (
-          <p className="text-xs text-destructive">{errors.email.message}</p>
-        )}
-      </div>
+      <FieldWrapper label="Email" required error={errors.email?.message}>
+        <Input id="edit-email" type="email" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("email")} />
+      </FieldWrapper>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label className={FIELD_LABEL_CLASSES}>
-            Rôle <span className="text-destructive">*</span>
-          </Label>
+        <FieldWrapper label="Rôle" required error={errors.role?.message}>
           <Controller
             control={control}
             name="role"
             render={({ field }) => (
               <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger className="h-11 rounded-lg">
+                <SelectTrigger className="h-11 rounded-xl border-border/80">
                   <SelectValue placeholder="Sélectionner un rôle" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="vendeur">Vendeur</SelectItem>
+                  <SelectItem value="admin">
+                    <span className="flex items-center gap-2">
+                      <Crown className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+                      Admin
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="vendeur">
+                    <span className="flex items-center gap-2">
+                      <ShoppingBag className="w-3.5 h-3.5" style={{ color: "hsl(210 70% 52%)" }} />
+                      Vendeur
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             )}
           />
-          {errors.role && (
-            <p className="text-xs text-destructive">{errors.role.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="edit-phone" className={FIELD_LABEL_CLASSES}>
-            Téléphone
-          </Label>
-          <Input
-            id="edit-phone"
-            placeholder="+241 07 XX XX XX"
-            className="h-11 rounded-lg"
-            {...register("phone")}
-          />
-        </div>
+        </FieldWrapper>
+        <FieldWrapper label="Téléphone">
+          <Input id="edit-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
+        </FieldWrapper>
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+      <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
         <div className="space-y-0.5">
           <Label className={FIELD_LABEL_CLASSES}>Statut du compte</Label>
           <p className="text-xs text-muted-foreground">
@@ -504,20 +454,24 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
         />
       </div>
 
-      <DialogFooter className="gap-2 sm:gap-3">
+      <DialogFooter className="gap-2 sm:gap-3 pt-2">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="min-h-[44px] rounded-lg"
+          className="min-h-[44px] rounded-xl"
         >
           Annuler
         </Button>
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+          className="min-h-[44px] rounded-xl text-white border-0"
+          style={{
+            background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+            boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+          }}
         >
           {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Enregistrer les modifications
@@ -551,24 +505,33 @@ function StatusFilterPills({ value, onChange, counts }: StatusFilterPillsProps) 
             key={opt.key}
             type="button"
             onClick={() => onChange(opt.key)}
-            className={[
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={
               isActive
-                ? "bg-primary text-primary-foreground shadow-[0_2px_8px_-4px_hsl(var(--primary)/0.6)]"
-                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
-            ].join(" ")}
+                ? {
+                    background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                    color: "white",
+                    boxShadow: "0 2px 8px hsl(22 72% 48% / 0.35)",
+                  }
+                : undefined
+            }
           >
-            {opt.label}
-            <span
-              className={[
-                "inline-flex items-center justify-center rounded-full px-1.5 py-0 text-[10px] font-bold min-w-[18px]",
-                isActive
-                  ? "bg-primary-foreground/20 text-primary-foreground"
-                  : "bg-background/60 text-muted-foreground",
-              ].join(" ")}
-            >
-              {opt.count}
-            </span>
+            {!isActive && (
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                {opt.label}
+                <span className="inline-flex items-center justify-center rounded-full px-1.5 py-0 text-[10px] font-bold min-w-[18px] bg-background/60">
+                  {opt.count}
+                </span>
+              </span>
+            )}
+            {isActive && (
+              <>
+                {opt.label}
+                <span className="inline-flex items-center justify-center rounded-full px-1.5 py-0 text-[10px] font-bold min-w-[18px] bg-white/25">
+                  {opt.count}
+                </span>
+              </>
+            )}
           </button>
         );
       })}
@@ -667,7 +630,7 @@ const PERMISSION_PRESETS: {
   },
 ];
 
-// ─── Permissions modal ────────────────────────────────────────────────────────
+// ─── Permissions modal content ────────────────────────────────────────────────
 
 interface PermissionsModalProps {
   user: UserListItem;
@@ -698,7 +661,7 @@ function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModal
 
   return (
     <div className="space-y-5">
-      {/* ── Présets rapides ── */}
+      {/* Présets rapides */}
       <div>
         <p className={[FIELD_LABEL_CLASSES, "mb-2.5"].join(" ")}>Application rapide</p>
         <div className="flex flex-wrap gap-1.5">
@@ -718,10 +681,9 @@ function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModal
         </div>
       </div>
 
-      {/* ── Séparateur ── */}
       <div className="border-t border-border/50" />
 
-      {/* ── Checkboxes par groupe ── */}
+      {/* Checkboxes par groupe */}
       {PERMISSION_GROUPS.map((group) => (
         <div key={group.label}>
           <p className={[FIELD_LABEL_CLASSES, "mb-2"].join(" ")}>{group.label}</p>
@@ -731,15 +693,22 @@ function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModal
               return (
                 <label
                   key={p}
-                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(p)}
-                    className="h-4 w-4 rounded border-input accent-primary cursor-pointer shrink-0"
+                    className="h-4 w-4 rounded border-input cursor-pointer shrink-0"
+                    style={{ accentColor: "hsl(22 72% 48%)" }}
                   />
                   <span className="text-sm text-foreground">{PERMISSION_LABELS[p]}</span>
+                  {checked && (
+                    <ShieldCheck
+                      className="w-3.5 h-3.5 ml-auto shrink-0"
+                      style={{ color: "hsl(152 38% 38%)" }}
+                    />
+                  )}
                 </label>
               );
             })}
@@ -747,16 +716,16 @@ function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModal
         </div>
       ))}
 
-      {/* ── Lien vers la vue matrice ── */}
-      <div className="rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
+      {/* Lien vers la vue matrice */}
+      <div className="rounded-xl border border-border/50 bg-muted/20 px-4 py-3">
         <Link
           to="/admin/permissions"
-          className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm hover:underline transition-colors"
+          style={{ color: "hsl(22 72% 48%)" }}
           onClick={onCancel}
         >
-          <span>🔗</span>
-          <span>Gérer toutes les permissions depuis la vue matrice</span>
-          <span className="text-muted-foreground">→</span>
+          <LayoutGrid className="w-3.5 h-3.5" />
+          <span>Gérer depuis la vue matrice</span>
         </Link>
       </div>
 
@@ -766,14 +735,18 @@ function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModal
           variant="outline"
           onClick={onCancel}
           disabled={isSaving}
-          className="min-h-[44px] rounded-lg"
+          className="min-h-[44px] rounded-xl"
         >
           Annuler
         </Button>
         <Button
           type="button"
           disabled={isSaving}
-          className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+          className="min-h-[44px] rounded-xl text-white border-0"
+          style={{
+            background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+            boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+          }}
           onClick={() => onSave(Array.from(selected))}
         >
           {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -964,50 +937,66 @@ export default function UsersPage() {
         onMenuClick={onMenuClick}
       />
       <div className="page-container animate-slide-in">
-        {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary shrink-0">
-              <UsersIcon className="w-5 h-5" />
-            </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground leading-tight">
-                  Équipe
-                </h2>
-                <span
-                  className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[11px] font-semibold ring-1 ring-primary/20"
-                  aria-label={`${totalUsers} utilisateurs au total`}
+
+        {/* ── Premium Page Header ── */}
+        <div className="mb-6">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div
+                  className="w-1 h-7 rounded-full"
+                  style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+                />
+                <h2
+                  className="text-2xl font-extrabold text-foreground"
+                  style={{ letterSpacing: "-0.025em" }}
                 >
-                  {totalUsers} {totalUsers > 1 ? "membres" : "membre"}
-                </span>
+                  Gestion des utilisateurs
+                </h2>
               </div>
-              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold bg-primary/10 text-primary ring-1 ring-primary/25">
-                  <Shield className="w-3 h-3" />
+              <div className="flex items-center gap-3 ml-3.5">
+                <p className="text-sm text-muted-foreground">
+                  {totalUsers} utilisateur{totalUsers > 1 ? "s" : ""} ·{" "}
+                  <span style={{ color: "hsl(152 38% 38%)" }} className="font-medium">
+                    {activeCount} actif{activeCount > 1 ? "s" : ""}
+                  </span>
+                </p>
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold"
+                  style={{ background: "hsl(22 72% 48% / 0.1)", color: "hsl(22 72% 48%)" }}>
+                  <Crown className="w-3 h-3" />
                   {adminCount} admin{adminCount > 1 ? "s" : ""}
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold bg-accent/15 text-accent ring-1 ring-accent/25">
-                  <UsersIcon className="w-3 h-3" />
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold"
+                  style={{ background: "hsl(210 70% 52% / 0.1)", color: "hsl(210 70% 52%)" }}>
+                  <ShoppingBag className="w-3 h-3" />
                   {vendeurCount} vendeur{vendeurCount > 1 ? "s" : ""}
                 </span>
               </div>
             </div>
-          </div>
 
-          {can('manage_users') && (
-            <Button
-              onClick={() => setModal({ type: "create" })}
-              className="shrink-0 min-h-[44px] rounded-lg text-primary-foreground shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] hover:shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.7)] transition-shadow"
-              style={{
-                background:
-                  "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.82) 100%)",
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvel utilisateur
-            </Button>
-          )}
+            <div className="flex items-center gap-2">
+              <Link
+                to="/admin/permissions"
+                className="inline-flex items-center gap-2 text-sm font-semibold px-3.5 py-2 rounded-xl border border-border/70 bg-muted/40 hover:bg-muted/70 transition-colors text-foreground"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                Matrice permissions
+              </Link>
+              {can('manage_users') && (
+                <button
+                  onClick={() => setModal({ type: "create" })}
+                  className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                    boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                  Nouvel utilisateur
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Filtre statut */}
@@ -1054,12 +1043,12 @@ export default function UsersPage() {
 
         {/* Desktop : table */}
         {!isLoading && !isError && (
-          <div className="hidden md:block bg-card rounded-xl border border-border/70 overflow-hidden shadow-[0_1px_2px_rgba(120,60,20,0.04),0_8px_24px_-12px_rgba(120,60,20,0.10)]">
+          <div className="hidden md:block bg-card rounded-2xl border border-border/70 overflow-hidden shadow-[0_1px_2px_rgba(120,60,20,0.04),0_8px_24px_-12px_rgba(120,60,20,0.10)]">
             <div className="overflow-x-auto">
-              <table className="data-table">
+              <table className="w-full">
                 <thead>
-                  <tr>
-                    <th className="w-10 px-4">
+                  <tr style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}>
+                    <th className="w-10 px-4 py-3">
                       <span className="sr-only">Sélection</span>
                     </th>
                     <SortableHeader
@@ -1068,21 +1057,22 @@ export default function UsersPage() {
                       currentSort={sort}
                       onSort={toggleSort}
                     />
-                    <th>Email</th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">Email</th>
                     <SortableHeader
                       label="Rôle"
                       sortKey="profile.role"
                       currentSort={sort}
                       onSort={toggleSort}
                     />
-                    <th>Statut</th>
-                    <th className="w-32">Actions</th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">Permissions</th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">Statut</th>
+                    <th className="w-36 px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {typedPaginated.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="text-center py-10">
+                      <td colSpan={7} className="text-center py-12">
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted">
                             <UserCog className="w-5 h-5" />
@@ -1094,105 +1084,166 @@ export default function UsersPage() {
                   )}
                   {typedPaginated.map((user) => {
                     const displayName = user.full_name || user.username;
+                    const userRole = user.profile.role as UserRole;
+                    const isAdmin = userRole === "admin";
+                    const active = isUserActive(user);
                     return (
                       <tr
                         key={user.id}
-                        className={isSelected(user.id) ? "bg-primary/5" : undefined}
+                        className="group border-b border-border/40 last:border-0 transition-colors"
+                        style={isSelected(user.id) ? { background: "hsl(22 72% 48% / 0.04)" } : undefined}
+                        onMouseEnter={(e) => {
+                          if (!isSelected(user.id)) {
+                            e.currentTarget.style.background = "hsl(22 72% 48% / 0.025)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected(user.id)) {
+                            e.currentTarget.style.background = "transparent";
+                          }
+                        }}
                       >
-                        <td className="w-10">
+                        {/* Checkbox */}
+                        <td className="w-10 px-4 py-3.5">
                           <input
                             type="checkbox"
                             checked={isSelected(user.id)}
                             onChange={() => toggleRow(user.id)}
-                            className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                            className="h-4 w-4 rounded border-input cursor-pointer"
+                            style={{ accentColor: "hsl(22 72% 48%)" }}
                             aria-label={`Sélectionner ${displayName}`}
                           />
                         </td>
-                        <td>
+
+                        {/* Avatar + Nom */}
+                        <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
-                            <UserAvatar
-                              name={displayName}
-                              username={user.username}
-                              size="md"
-                            />
+                            <div className="relative">
+                              <UserAvatar name={displayName} username={user.username} role={userRole} size="sm" />
+                              <div
+                                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card"
+                                style={{ background: active ? "hsl(152 38% 38%)" : "hsl(var(--muted-foreground))" }}
+                              />
+                            </div>
                             <div className="min-w-0">
                               <Link
                                 to={`/users/${user.id}`}
-                                className="font-semibold block text-foreground truncate hover:text-primary hover:underline cursor-pointer transition-colors"
+                                className="font-semibold text-sm text-foreground truncate block hover:underline transition-colors"
+                                style={{ color: undefined }}
+                                onMouseEnter={(e) => { e.currentTarget.style.color = "hsl(22 72% 48%)"; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.color = ""; }}
                               >
                                 {displayName}
                               </Link>
-                              <span className="font-mono text-xs text-muted-foreground">
-                                @{user.username}
-                              </span>
+                              <span className="font-mono text-xs text-muted-foreground">@{user.username}</span>
                             </div>
                           </div>
                         </td>
-                        <td className="text-muted-foreground">{user.email}</td>
-                        <td>
-                          <RolePill role={user.profile.role as UserRole} />
+
+                        {/* Email */}
+                        <td className="px-4 py-3.5 text-sm text-muted-foreground">{user.email}</td>
+
+                        {/* Rôle */}
+                        <td className="px-4 py-3.5">
+                          <RolePill role={userRole} />
                         </td>
-                        <td>
-                          <StatusBadge
-                            label={isUserActive(user) ? "Actif" : "Inactif"}
-                            variant={isUserActive(user) ? "success" : "default"}
-                          />
+
+                        {/* Permissions */}
+                        <td className="px-4 py-3.5">
+                          {isAdmin ? (
+                            <span className="text-xs font-semibold" style={{ color: "hsl(152 38% 38%)" }}>
+                              Accès complet
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {(user.permissions?.length ?? 0)} permission{(user.permissions?.length ?? 0) > 1 ? "s" : ""}
+                            </span>
+                          )}
                         </td>
-                        <td>
+
+                        {/* Statut */}
+                        <td className="px-4 py-3.5">
+                          <StatusDot active={active} />
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-3.5">
                           {can('manage_users') && (
-                            <div className="flex items-center gap-0.5">
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Link
                                 to={`/users/${user.id}`}
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 title="Voir le détail"
                                 aria-label={`Voir le détail de ${displayName}`}
                               >
-                                <Eye className="w-4 h-4" />
+                                <Eye className="w-3.5 h-3.5" />
                               </Link>
                               <button
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 title="Modifier"
                                 aria-label={`Modifier ${displayName}`}
                                 onClick={() => setModal({ type: "edit", user })}
                               >
-                                <Pencil className="w-4 h-4" />
+                                <Pencil className="w-3.5 h-3.5" />
                               </button>
                               {user.profile.role === "vendeur" && (
                                 <button
-                                  className="inline-flex items-center justify-center w-9 h-9 rounded-md text-indigo-500/70 hover:text-indigo-600 hover:bg-indigo-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40"
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2"
+                                  style={{ color: "hsl(22 72% 48% / 0.7)" }}
                                   title="Gérer les permissions"
                                   aria-label={`Gérer les permissions de ${displayName}`}
                                   onClick={() => setModal({ type: "permissions", user })}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = "hsl(22 72% 48%)";
+                                    e.currentTarget.style.background = "hsl(22 72% 48% / 0.08)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = "hsl(22 72% 48% / 0.7)";
+                                    e.currentTarget.style.background = "transparent";
+                                  }}
                                 >
-                                  <ShieldCheck className="w-4 h-4" />
+                                  <ShieldCheck className="w-3.5 h-3.5" />
                                 </button>
                               )}
                               <button
                                 className={[
-                                  "inline-flex items-center justify-center w-9 h-9 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2",
+                                  "inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2",
                                   user.is_active
                                     ? "text-destructive/70 hover:text-destructive hover:bg-destructive/10 focus-visible:ring-destructive/40"
-                                    : "text-[hsl(var(--success,142_76%_36%))]/70 hover:text-[hsl(var(--success,142_76%_36%))] hover:bg-[hsl(var(--success,142_76%_36%))]/10 focus-visible:ring-[hsl(var(--success,142_76%_36%))]/40",
+                                    : "focus-visible:ring-emerald-400/40",
                                 ].join(" ")}
+                                style={!user.is_active ? { color: "hsl(152 38% 38% / 0.7)" } : undefined}
                                 title={user.is_active ? "Désactiver" : "Réactiver"}
                                 aria-label={user.is_active ? `Désactiver ${displayName}` : `Réactiver ${displayName}`}
                                 onClick={() => toggleActivation(user)}
                                 disabled={activateMutation.isPending}
+                                onMouseEnter={(e) => {
+                                  if (!user.is_active) {
+                                    e.currentTarget.style.color = "hsl(152 38% 38%)";
+                                    e.currentTarget.style.background = "hsl(152 38% 38% / 0.08)";
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!user.is_active) {
+                                    e.currentTarget.style.color = "hsl(152 38% 38% / 0.7)";
+                                    e.currentTarget.style.background = "transparent";
+                                  }
+                                }}
                               >
                                 {user.is_active ? (
-                                  <UserX className="w-4 h-4" />
+                                  <UserX className="w-3.5 h-3.5" />
                                 ) : (
-                                  <UserCheck className="w-4 h-4" />
+                                  <UserCheck className="w-3.5 h-3.5" />
                                 )}
                               </button>
                               {String(user.id) !== currentUser?.id && (
                                 <button
-                                  className="inline-flex items-center justify-center w-9 h-9 rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
                                   title="Désactiver l'utilisateur"
                                   aria-label={`Désactiver ${displayName}`}
                                   onClick={() => setModal({ type: "delete", user })}
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </div>
@@ -1207,7 +1258,7 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Mobile : card list — md:hidden */}
+        {/* Mobile : card list */}
         {!isLoading && !isError && (
           <div className="md:hidden space-y-3">
             {typedPaginated.length === 0 && (
@@ -1220,59 +1271,66 @@ export default function UsersPage() {
             )}
             {typedPaginated.map((user, idx) => {
               const displayName = user.full_name || user.username;
+              const userRole = user.profile.role as UserRole;
+              const active = isUserActive(user);
               return (
                 <div
                   key={user.id}
                   className={[
-                    "bg-card border rounded-xl p-4 flex items-start gap-3 transition-all duration-150 shadow-[0_1px_2px_rgba(120,60,20,0.04)]",
+                    "bg-card border rounded-2xl p-4 flex items-start gap-3 transition-all duration-150",
                     "animate-[fadeScale_0.2s_ease-out_both]",
                     isSelected(user.id)
-                      ? "border-primary/60 bg-primary/[0.04] shadow-[0_6px_20px_-12px_hsl(var(--primary)/0.45)]"
-                      : "border-border/70",
+                      ? "border-[hsl(22_72%_48%/0.4)] shadow-[0_6px_20px_-12px_hsl(22_72%_48%/0.35)]"
+                      : "border-border/70 shadow-[0_1px_2px_rgba(120,60,20,0.04)]",
                   ].join(" ")}
-                  style={{ animationDelay: `${idx * 40}ms` }}
+                  style={{
+                    animationDelay: `${idx * 40}ms`,
+                    background: isSelected(user.id) ? "hsl(22 72% 48% / 0.025)" : undefined,
+                  }}
                 >
                   <input
                     type="checkbox"
                     checked={isSelected(user.id)}
                     onChange={() => toggleRow(user.id)}
-                    className="h-4 w-4 mt-2 rounded border-input accent-primary cursor-pointer shrink-0"
+                    className="h-4 w-4 mt-2 rounded border-input cursor-pointer shrink-0"
+                    style={{ accentColor: "hsl(22 72% 48%)" }}
                     aria-label={`Sélectionner ${displayName}`}
                   />
-                  <UserAvatar name={displayName} username={user.username} size="lg" />
+                  <div className="relative">
+                    <UserAvatar name={displayName} username={user.username} role={userRole} size="lg" />
+                    <div
+                      className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card"
+                      style={{ background: active ? "hsl(152 38% 38%)" : "hsl(var(--muted-foreground))" }}
+                    />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <Link
                       to={`/users/${user.id}`}
-                      className="font-semibold text-sm text-foreground truncate block hover:text-primary hover:underline cursor-pointer transition-colors"
+                      className="font-semibold text-sm text-foreground truncate block hover:underline transition-colors"
                     >
                       {displayName}
                     </Link>
                     <p className="font-mono text-xs text-muted-foreground mt-0.5 truncate">
                       @{user.username}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {user.email}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{user.email}</p>
                     <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                      <RolePill role={user.profile.role as UserRole} />
-                      <StatusBadge
-                        label={isUserActive(user) ? "Actif" : "Inactif"}
-                        variant={isUserActive(user) ? "success" : "default"}
-                      />
+                      <RolePill role={userRole} />
+                      <StatusDot active={active} />
                     </div>
                   </div>
                   {can('manage_users') && (
                     <div className="flex flex-col gap-1 shrink-0">
                       <Link
                         to={`/users/${user.id}`}
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                         title="Voir le détail"
                         aria-label={`Voir le détail de ${displayName}`}
                       >
                         <Eye className="w-4 h-4" />
                       </Link>
                       <button
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                         title="Modifier"
                         aria-label={`Modifier ${displayName}`}
                         onClick={() => setModal({ type: "edit", user })}
@@ -1281,7 +1339,8 @@ export default function UsersPage() {
                       </button>
                       {user.profile.role === "vendeur" && (
                         <button
-                          className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-indigo-500/70 hover:text-indigo-600 hover:bg-indigo-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40"
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
+                          style={{ color: "hsl(22 72% 48% / 0.7)" }}
                           title="Gérer les permissions"
                           aria-label={`Gérer les permissions de ${displayName}`}
                           onClick={() => setModal({ type: "permissions", user })}
@@ -1291,11 +1350,12 @@ export default function UsersPage() {
                       )}
                       <button
                         className={[
-                          "inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          "inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors",
                           user.is_active
-                            ? "text-destructive/70 hover:text-destructive hover:bg-destructive/10 focus-visible:ring-destructive/40"
-                            : "text-success/70 hover:text-success hover:bg-success/10 focus-visible:ring-success/40",
+                            ? "text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                            : "",
                         ].join(" ")}
+                        style={!user.is_active ? { color: "hsl(152 38% 38% / 0.7)" } : undefined}
                         title={user.is_active ? "Désactiver" : "Réactiver"}
                         aria-label={user.is_active ? `Désactiver ${displayName}` : `Réactiver ${displayName}`}
                         onClick={() => toggleActivation(user)}
@@ -1309,7 +1369,7 @@ export default function UsersPage() {
                       </button>
                       {String(user.id) !== currentUser?.id && (
                         <button
-                          className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-xl text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
                           title="Désactiver l'utilisateur"
                           aria-label={`Désactiver ${displayName}`}
                           onClick={() => setModal({ type: "delete", user })}
@@ -1333,21 +1393,24 @@ export default function UsersPage() {
           if (!createMutation.isPending && !open) setModal({ type: "none" });
         }}
       >
-        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both]">
-          <DialogHeader className="pb-2 border-b border-border/60">
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl">
+          <DialogHeader className="pb-3 border-b border-border/60">
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 text-primary shrink-0">
-                <UsersIcon className="w-4 h-4" />
+              <span
+                className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
+                style={{ background: "hsl(22 72% 48% / 0.1)" }}
+              >
+                <UsersIcon className="w-4 h-4" style={{ color: "hsl(22 72% 48%)" }} />
               </span>
               <div>
-                <DialogTitle className="text-base font-semibold">Nouvel utilisateur</DialogTitle>
+                <DialogTitle className="text-base font-bold">Nouvel utilisateur</DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Créer un compte avec rôle et accès
                 </p>
               </div>
             </div>
           </DialogHeader>
-          <div className="pt-1">
+          <div className="pt-2">
             <CreateUserForm
               onSubmit={handleCreate}
               onCancel={() => setModal({ type: "none" })}
@@ -1364,14 +1427,17 @@ export default function UsersPage() {
           if (!updateMutation.isPending && !open) setModal({ type: "none" });
         }}
       >
-        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both]">
-          <DialogHeader className="pb-2 border-b border-border/60">
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl">
+          <DialogHeader className="pb-3 border-b border-border/60">
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 text-primary shrink-0">
-                <Pencil className="w-4 h-4" />
+              <span
+                className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
+                style={{ background: "hsl(22 72% 48% / 0.1)" }}
+              >
+                <Pencil className="w-4 h-4" style={{ color: "hsl(22 72% 48%)" }} />
               </span>
               <div>
-                <DialogTitle className="text-base font-semibold">Modifier l'utilisateur</DialogTitle>
+                <DialogTitle className="text-base font-bold">Modifier l'utilisateur</DialogTitle>
                 {modal.type === "edit" && (
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {modal.user.full_name || modal.user.username}
@@ -1380,7 +1446,7 @@ export default function UsersPage() {
               </div>
             </div>
           </DialogHeader>
-          <div className="pt-1">
+          <div className="pt-2">
             {modal.type === "edit" && (
               <EditUserForm
                 user={modal.user}
@@ -1400,14 +1466,17 @@ export default function UsersPage() {
           if (!permissionsMutation.isPending && !open) setModal({ type: "none" });
         }}
       >
-        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both]">
-          <DialogHeader className="pb-2 border-b border-border/60">
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl">
+          <DialogHeader className="pb-3 border-b border-border/60">
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 shrink-0">
-                <ShieldCheck className="w-4 h-4" />
+              <span
+                className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
+                style={{ background: "hsl(22 72% 48% / 0.1)" }}
+              >
+                <ShieldCheck className="w-4 h-4" style={{ color: "hsl(22 72% 48%)" }} />
               </span>
               <div>
-                <DialogTitle className="text-base font-semibold">
+                <DialogTitle className="text-base font-bold">
                   Permissions de{" "}
                   {modal.type === "permissions"
                     ? modal.user.full_name || modal.user.username
@@ -1419,7 +1488,7 @@ export default function UsersPage() {
               </div>
             </div>
           </DialogHeader>
-          <div className="pt-1 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="pt-2 max-h-[70vh] overflow-y-auto pr-1">
             {modal.type === "permissions" && (
               <PermissionsModal
                 user={modal.user}
@@ -1444,7 +1513,7 @@ export default function UsersPage() {
           if (!open) setModal({ type: "none" });
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Désactiver cet utilisateur ?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1457,11 +1526,11 @@ export default function UsersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>
+            <AlertDialogCancel disabled={deleteMutation.isPending} className="rounded-xl">
               Annuler
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
               onClick={handleRevoke}
               disabled={deleteMutation.isPending}
             >

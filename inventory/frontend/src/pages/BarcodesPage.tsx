@@ -126,15 +126,17 @@ function PrintableCard({ product }: PrintableCardProps) {
       </div>
 
       {/* Visible print button */}
-      <Button
-        size="sm"
-        variant="outline"
-        className="flex-1 text-xs h-9 rounded-lg border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all"
+      <button
+        type="button"
+        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
+        style={{ background: 'hsl(22 72% 48% / 0.1)', color: 'hsl(22 72% 48%)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'hsl(22 72% 48% / 0.18)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'hsl(22 72% 48% / 0.1)'; }}
         onClick={() => handlePrint()}
       >
-        <Printer className="w-3.5 h-3.5 mr-1.5" />
+        <Printer className="w-3.5 h-3.5" />
         Imprimer
-      </Button>
+      </button>
     </>
   );
 }
@@ -160,14 +162,24 @@ function ProductBarcodeCard({
     <div
       className={[
         "bg-card rounded-xl p-4 flex flex-col gap-3 transition-all duration-200",
-        // Border-left success accent for products that have a barcode
         hasBarcode
           ? "border border-l-4 border-l-[hsl(var(--success))] border-border/70"
           : "border border-border/70",
         selected
-          ? "ring-2 ring-primary border-primary shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.3)]"
-          : "hover:shadow-[0_4px_16px_-6px_hsl(var(--shadow-color-warm)/0.15)] hover:-translate-y-0.5",
+          ? "ring-2 ring-primary border-primary"
+          : "hover:-translate-y-0.5",
       ].join(" ")}
+      style={{
+        boxShadow: selected
+          ? '0 6px 20px hsl(22 72% 48% / 0.2)'
+          : '0 1px 4px hsl(22 30% 15% / 0.06)',
+      }}
+      onMouseEnter={e => {
+        if (!selected) (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 14px hsl(22 30% 15% / 0.12)';
+      }}
+      onMouseLeave={e => {
+        if (!selected) (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)';
+      }}
     >
       {/* Header */}
       <div className="flex items-start gap-3">
@@ -381,8 +393,11 @@ export default function BarcodesPage() {
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary shrink-0">
-              <QrCode className="w-5 h-5" />
+            <span
+              className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
+              style={{ background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+            >
+              <QrCode className="w-5 h-5 text-white" />
             </span>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">

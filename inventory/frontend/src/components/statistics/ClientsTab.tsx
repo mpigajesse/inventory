@@ -8,8 +8,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   Legend,
 } from "recharts";
 import { StatCard } from "@/components/ui/StatCard";
@@ -69,15 +69,15 @@ function CustomBarTooltip({ active, payload, label }: CustomTooltipProps) {
   const value = payload[0]?.value ?? 0;
   return (
     <div
-      className="rounded-lg px-3 py-2.5 text-xs shadow-lg"
+      className="rounded-xl px-3 py-2.5 text-xs"
       style={{
-        background: "hsl(var(--popover))",
-        border: "1px solid hsl(var(--border))",
-        color: "hsl(var(--popover-foreground))",
+        background: "hsl(20 25% 10%)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
       }}
     >
-      <p className="font-semibold truncate max-w-[160px] mb-1">{label}</p>
-      <p className="text-warning font-semibold">{formatFcfaFull(value)}</p>
+      <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "11px", marginBottom: "4px" }} className="truncate max-w-[160px]">{label}</p>
+      <p style={{ color: "white", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif", fontSize: "14px" }}>{formatFcfaFull(value)}</p>
     </div>
   );
 }
@@ -199,7 +199,7 @@ export function ClientsTab({ period }: ClientsTabProps) {
               <Tooltip content={<CustomBarTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
               <Bar
                 dataKey="total_spent"
-                fill="hsl(var(--warning))"
+                fill="hsl(22, 72%, 48%)"
                 radius={[0, 6, 6, 0]}
                 maxBarSize={28}
               />
@@ -222,10 +222,20 @@ export function ClientsTab({ period }: ClientsTabProps) {
           </div>
 
           <ResponsiveContainer width="100%" height={260}>
-            <LineChart
+            <AreaChart
               data={byPeriod}
               margin={{ top: 5, right: 16, left: 0, bottom: 0 }}
             >
+              <defs>
+                <linearGradient id="gradNewClients" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.02} />
+                </linearGradient>
+                <linearGradient id="gradActiveClients" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(152, 38%, 38%)" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="hsl(152, 38%, 38%)" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="hsl(var(--border))"
@@ -247,25 +257,27 @@ export function ClientsTab({ period }: ClientsTabProps) {
               <Legend
                 wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="new_clients"
                 name="Nouveaux clients"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "hsl(var(--primary))" }}
-                activeDot={{ r: 5 }}
+                stroke="hsl(22, 72%, 48%)"
+                strokeWidth={2.5}
+                fill="url(#gradNewClients)"
+                dot={false}
+                activeDot={{ r: 5, fill: "hsl(22, 72%, 48%)", stroke: "white", strokeWidth: 2 }}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="active_clients"
                 name="Clients actifs"
-                stroke="hsl(var(--accent))"
-                strokeWidth={2}
-                dot={{ r: 3, fill: "hsl(var(--accent))" }}
-                activeDot={{ r: 5 }}
+                stroke="hsl(152, 38%, 38%)"
+                strokeWidth={2.5}
+                fill="url(#gradActiveClients)"
+                dot={false}
+                activeDot={{ r: 5, fill: "hsl(152, 38%, 38%)", stroke: "white", strokeWidth: 2 }}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       )}

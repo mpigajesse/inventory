@@ -1,16 +1,19 @@
 import { useOutletContext, useNavigate, useParams, Link } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, UserPlus, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Save, UserPlus, Loader2, AlertTriangle } from "lucide-react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
+
+const TERRACOTTA = "hsl(22 72% 48%)";
+const TERRACOTTA_LIGHT = "hsl(36 88% 52%)";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
@@ -19,6 +22,7 @@ const clientSchema = z.object({
   phone: z.string().min(8, "Numéro de téléphone invalide"),
   email: z.string().email("Email invalide").or(z.literal("")),
   address: z.string().optional(),
+  credit_balance: z.coerce.number().min(0, "Le crédit ne peut pas être négatif").optional(),
   notes: z.string().optional(),
 });
 
@@ -32,16 +36,57 @@ interface MockClient {
   phone: string;
   email: string;
   address?: string;
+  credit_balance?: number;
   notes: string;
 }
 
 const MOCK_CLIENTS: MockClient[] = [
-  { id: 1, name: "Jean Mouloungui", phone: "+241 07 12 34 56", email: "jean@email.com", address: "Libreville, Quartier Louis", notes: "" },
-  { id: 2, name: "Marie Obiang", phone: "+241 06 78 90 12", email: "", address: "", notes: "Cliente régulière" },
-  { id: 3, name: "Paul Ndong", phone: "+241 07 45 67 89", email: "paul.n@email.com", address: "Libreville, Owendo", notes: "" },
-  { id: 4, name: "Sophie Mintsa", phone: "+241 06 23 45 67", email: "", address: "", notes: "" },
-  { id: 5, name: "André Nzé", phone: "+241 07 89 01 23", email: "andre.nze@email.com", address: "Libreville, Batterie IV", notes: "Gros client" },
+  { id: 1, name: "Jean Mouloungui", phone: "+241 07 12 34 56", email: "jean@email.com", address: "Libreville, Quartier Louis", credit_balance: 0, notes: "" },
+  { id: 2, name: "Marie Obiang", phone: "+241 06 78 90 12", email: "", address: "", credit_balance: 15000, notes: "Cliente régulière" },
+  { id: 3, name: "Paul Ndong", phone: "+241 07 45 67 89", email: "paul.n@email.com", address: "Libreville, Owendo", credit_balance: 0, notes: "" },
+  { id: 4, name: "Sophie Mintsa", phone: "+241 06 23 45 67", email: "", address: "", credit_balance: 0, notes: "" },
+  { id: 5, name: "André Nzé", phone: "+241 07 89 01 23", email: "andre.nze@email.com", address: "Libreville, Batterie IV", credit_balance: 45000, notes: "Gros client" },
 ];
+
+// ─── Premium input component ──────────────────────────────────────────────────
+
+interface PremiumInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+}
+
+function PremiumInput({ label, required, error, hint, ...props }: PremiumInputProps) {
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-foreground mb-1.5">
+        {label}
+        {required && <span style={{ color: "hsl(4 72% 52%)" }} className="ml-0.5"> *</span>}
+      </label>
+      <input
+        ref={inputRef}
+        className="w-full h-10 px-3.5 rounded-xl text-sm outline-none transition-all bg-card"
+        style={{
+          border: `1.5px solid ${focused ? TERRACOTTA : error ? "hsl(4 72% 52%)" : "hsl(var(--border))"}`,
+          boxShadow: focused ? `0 0 0 3px hsl(22 72% 48% / 0.12)` : error ? `0 0 0 3px hsl(4 72% 52% / 0.1)` : "none",
+        }}
+        onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
+        onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
+        {...props}
+      />
+      {hint && !error && (
+        <p className="text-xs text-muted-foreground mt-1">{hint}</p>
+      )}
+      {error && (
+        <p className="text-xs mt-1" style={{ color: "hsl(4 72% 52%)" }}>{error}</p>
+      )}
+    </div>
+  );
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -60,6 +105,7 @@ export default function ClientFormPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -69,6 +115,7 @@ export default function ClientFormPage() {
           phone: client.phone,
           email: client.email,
           address: client.address ?? "",
+          credit_balance: client.credit_balance ?? 0,
           notes: client.notes,
         }
       : {
@@ -76,13 +123,16 @@ export default function ClientFormPage() {
           phone: "",
           email: "",
           address: "",
+          credit_balance: 0,
           notes: "",
         },
   });
 
+  const creditBalanceValue = watch("credit_balance") ?? 0;
+  const hasCredit = Number(creditBalanceValue) > 0;
+
   function onSubmit(values: ClientFormValues) {
     setIsSubmitting(true);
-    // In V1 (mock data), simulate async save then navigate
     setTimeout(() => {
       if (isEdit) {
         toast.success("Client modifié", {
@@ -111,23 +161,32 @@ export default function ClientFormPage() {
       />
       <div className="page-container animate-slide-in">
 
-        {/* ── Page header ───────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-6">
+        {/* ── Breadcrumb + titre ───────────────────────────────────────── */}
+        <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground">
           <Link
             to="/clients"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Retour aux clients
+            Clients
           </Link>
+          <span>/</span>
+          <span className="text-foreground font-medium">{pageTitle}</span>
         </div>
 
+        {/* ── Hero header ──────────────────────────────────────────────── */}
         <div className="flex items-center gap-4 mb-8">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 shrink-0">
-            <UserPlus className="w-6 h-6 text-primary" />
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background: `linear-gradient(135deg, hsl(22 72% 48% / 0.12), hsl(36 88% 52% / 0.12))`,
+              border: `1.5px solid hsl(22 72% 48% / 0.2)`,
+            }}
+          >
+            <UserPlus className="w-5 h-5" style={{ color: TERRACOTTA }} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-foreground leading-tight">
+            <h1 className="text-xl font-extrabold text-foreground leading-tight" style={{ letterSpacing: "-0.02em" }}>
               {pageTitle}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -141,129 +200,192 @@ export default function ClientFormPage() {
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {/* ── Colonne gauche : Informations personnelles ─────────────── */}
-            <div className="bg-card rounded-xl border p-6">
-
-              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
+            {/* ── Colonne gauche : Informations personnelles ─────────── */}
+            <div
+              className="rounded-2xl p-6 space-y-5"
+              style={{
+                background: "hsl(var(--card))",
+                border: "1.5px solid hsl(var(--border))",
+                boxShadow: "0 1px 8px hsl(0 0% 0% / 0.04)",
+              }}
+            >
+              <p
+                className="text-xs font-bold uppercase tracking-[0.14em] pb-3 border-b border-border/60"
+                style={{ color: TERRACOTTA }}
+              >
                 Informations personnelles
               </p>
 
-              {/* Nom */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="name" className="text-sm font-medium mb-1.5">
-                  Nom complet <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="Ex : Jean Mouloungui"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
-                  aria-invalid={errors.name ? "true" : undefined}
-                  {...register("name")}
-                />
-                {errors.name && (
-                  <p className="text-xs text-destructive">{errors.name.message}</p>
-                )}
-              </div>
+              <PremiumInput
+                label="Nom complet"
+                required
+                placeholder="Ex : Jean Mouloungui"
+                error={errors.name?.message}
+                {...register("name")}
+              />
 
-              {/* Téléphone */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="phone" className="text-sm font-medium mb-1.5">
-                  Téléphone <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="phone"
-                  placeholder="+241 07 XX XX XX"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
-                  aria-invalid={errors.phone ? "true" : undefined}
-                  {...register("phone")}
-                />
-                {errors.phone && (
-                  <p className="text-xs text-destructive">{errors.phone.message}</p>
-                )}
-              </div>
+              <PremiumInput
+                label="Téléphone"
+                required
+                placeholder="+241 07 XX XX XX"
+                type="tel"
+                error={errors.phone?.message}
+                {...register("phone")}
+              />
 
-              {/* Email */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="email" className="text-sm font-medium mb-1.5">
-                  Adresse email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="exemple@email.com"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
-                  aria-invalid={errors.email ? "true" : undefined}
-                  {...register("email")}
-                />
-                {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email.message}</p>
-                )}
-              </div>
+              <PremiumInput
+                label="Adresse email"
+                placeholder="exemple@email.com"
+                type="email"
+                error={errors.email?.message}
+                hint="Optionnel — utilisé pour les factures par email"
+                {...register("email")}
+              />
             </div>
 
-            {/* ── Colonne droite : Coordonnées + Notes ──────────────────── */}
-            <div className="bg-card rounded-xl border p-6">
-
-              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
+            {/* ── Colonne droite : Coordonnées + Crédit + Notes ───────── */}
+            <div
+              className="rounded-2xl p-6 space-y-5"
+              style={{
+                background: "hsl(var(--card))",
+                border: "1.5px solid hsl(var(--border))",
+                boxShadow: "0 1px 8px hsl(0 0% 0% / 0.04)",
+              }}
+            >
+              <p
+                className="text-xs font-bold uppercase tracking-[0.14em] pb-3 border-b border-border/60"
+                style={{ color: TERRACOTTA }}
+              >
                 Coordonnées et notes
               </p>
 
-              {/* Adresse */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="address" className="text-sm font-medium mb-1.5">
-                  Adresse
-                </Label>
-                <Input
-                  id="address"
-                  placeholder="Ex : Libreville, Quartier Louis"
-                  className="h-11 rounded-lg focus-visible:ring-primary/50"
-                  {...register("address")}
+              <PremiumInput
+                label="Adresse"
+                placeholder="Ex : Libreville, Quartier Louis"
+                {...register("address")}
+              />
+
+              {/* Crédit dû — champ spécial avec alerte si > 0 */}
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                  Solde crédit dû
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">(FCFA)</span>
+                </label>
+                <CreditInput
+                  hasCredit={hasCredit}
+                  error={errors.credit_balance?.message}
+                  registration={register("credit_balance")}
                 />
+                {hasCredit && (
+                  <div
+                    className="flex items-start gap-2 mt-2 px-3 py-2 rounded-lg text-xs"
+                    style={{
+                      background: "hsl(36 88% 52% / 0.08)",
+                      border: "1px solid hsl(36 88% 52% / 0.2)",
+                      color: "hsl(28 75% 38%)",
+                    }}
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <span>Ce client a un solde crédit non réglé. Vérifiez avant validation.</span>
+                  </div>
+                )}
               </div>
 
               {/* Notes */}
-              <div className="space-y-1.5 mt-6">
-                <Label htmlFor="notes" className="text-sm font-medium mb-1.5">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">
                   Notes
-                </Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Informations complémentaires sur le client..."
-                  className="resize-none rounded-lg focus-visible:ring-primary/50 min-h-[120px]"
-                  rows={5}
-                  {...register("notes")}
-                />
+                </label>
+                <div className="relative">
+                  <Textarea
+                    id="notes"
+                    placeholder="Informations complémentaires sur le client..."
+                    className="resize-none rounded-xl min-h-[100px] text-sm"
+                    style={{ border: "1.5px solid hsl(var(--border))" }}
+                    rows={4}
+                    {...register("notes")}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ── Actions ─────────────────────────────────────────────────── */}
+          {/* ── Actions ──────────────────────────────────────────────── */}
           <div className="flex items-center gap-3 justify-end pt-6 border-t border-border mt-6">
-            <Button
+            <button
               type="button"
-              variant="outline"
-              className="h-10 rounded-lg"
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-sm font-semibold border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50"
               onClick={() => navigate("/clients")}
               disabled={isSubmitting}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4" />
               Annuler
-            </Button>
-            <Button
+            </button>
+
+            <button
               type="submit"
-              className="h-10 rounded-lg bg-gradient-primary shadow-md shadow-primary/20 border-0 hover:-translate-y-px transition-transform"
               disabled={isSubmitting}
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 hover:brightness-110 active:scale-95"
+              style={{
+                background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})`,
+                boxShadow: `0 4px 14px hsl(22 72% 48% / 0.35)`,
+              }}
             >
               {isSubmitting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="w-4 h-4" />
               )}
               {isEdit ? "Enregistrer les modifications" : "Créer le client"}
-            </Button>
+            </button>
           </div>
         </form>
       </div>
+    </>
+  );
+}
+
+// ─── Credit input with focus state ───────────────────────────────────────────
+
+interface CreditInputProps {
+  hasCredit: boolean;
+  error?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registration: any;
+}
+
+function CreditInput({ hasCredit, error, registration }: CreditInputProps) {
+  const [focused, setFocused] = useState(false);
+  const borderColor = error
+    ? "hsl(4 72% 52%)"
+    : focused
+    ? "hsl(22 72% 48%)"
+    : hasCredit
+    ? "hsl(36 88% 52%)"
+    : "hsl(var(--border))";
+
+  const shadow = focused
+    ? "0 0 0 3px hsl(22 72% 48% / 0.12)"
+    : "none";
+
+  return (
+    <>
+      <input
+        type="number"
+        min={0}
+        step={100}
+        className="w-full h-10 px-3.5 rounded-xl text-sm outline-none transition-all bg-card"
+        style={{
+          border: `1.5px solid ${borderColor}`,
+          boxShadow: shadow,
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        {...registration}
+      />
+      {error && (
+        <p className="text-xs mt-1" style={{ color: "hsl(4 72% 52%)" }}>{error}</p>
+      )}
     </>
   );
 }

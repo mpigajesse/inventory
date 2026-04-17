@@ -55,10 +55,17 @@ function SkeletonRow() {
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-card border border-border rounded-lg shadow-lg px-3 py-2 text-xs">
-      <p className="font-semibold text-foreground mb-1 truncate max-w-[160px]">{label}</p>
+    <div
+      className="rounded-xl px-3 py-2.5 text-xs"
+      style={{
+        background: "hsl(20 25% 10%)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+      }}
+    >
+      <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "11px", marginBottom: "4px" }} className="truncate max-w-[160px]">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="text-muted-foreground">
+        <p key={i} style={{ color: "white", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif", fontSize: "13px" }}>
           {formatFcfa(p.value)}
         </p>
       ))}

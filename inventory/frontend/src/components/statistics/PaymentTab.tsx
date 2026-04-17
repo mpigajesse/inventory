@@ -20,21 +20,21 @@ function formatFcfa(amount: number): string {
   return amount.toLocaleString("fr-FR") + " FCFA";
 }
 
-// Couleurs distinctes pour les méthodes de paiement
+// Couleurs premium pour les méthodes de paiement
 const METHOD_COLORS: Record<string, string> = {
-  cash: "hsl(var(--success))",
-  mobile_money: "hsl(var(--primary))",
-  card: "hsl(var(--warning))",
-  credit: "hsl(var(--destructive))",
+  cash:         "hsl(152, 38%, 38%)",  // vert forêt
+  mobile_money: "hsl(22, 72%, 48%)",   // cuivre/terracotta
+  card:         "hsl(210, 70%, 52%)",  // bleu
+  credit:       "hsl(4, 72%, 52%)",    // rouge
 };
 
 const METHOD_FALLBACK_COLORS = [
-  "hsl(152 52% 38%)",
-  "hsl(22 72% 48%)",
-  "hsl(36 88% 52%)",
-  "hsl(4 72% 52%)",
-  "hsl(210 72% 52%)",
-  "hsl(280 55% 52%)",
+  "hsl(152, 38%, 38%)",
+  "hsl(22, 72%, 48%)",
+  "hsl(210, 70%, 52%)",
+  "hsl(4, 72%, 52%)",
+  "hsl(280, 55%, 52%)",
+  "hsl(36, 88%, 52%)",
 ];
 
 function getMethodColor(method: string, index: number): string {
@@ -70,26 +70,26 @@ function CustomPieTooltip({ active, payload }: CustomTooltipProps) {
   const total = stat.total;
   return (
     <div
-      className="rounded-lg px-3 py-2.5 text-xs shadow-lg min-w-[160px]"
+      className="rounded-xl px-4 py-3 text-xs min-w-[160px]"
       style={{
-        background: "hsl(var(--popover))",
-        border: "1px solid hsl(var(--border))",
-        color: "hsl(var(--popover-foreground))",
+        background: "hsl(20 25% 10%)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
       }}
     >
-      <p className="font-semibold mb-2">{stat.label}</p>
-      <div className="space-y-1">
+      <p style={{ color: "white", fontWeight: "700", fontSize: "13px", marginBottom: "8px" }}>{stat.label}</p>
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">Montant</span>
-          <span className="font-semibold">{formatFcfa(total)}</span>
+          <span style={{ color: "rgba(255,255,255,0.45)" }}>Montant</span>
+          <span style={{ color: "white", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif" }}>{formatFcfa(total)}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">Part</span>
-          <span className="font-semibold">{stat.pct.toFixed(1)} %</span>
+          <span style={{ color: "rgba(255,255,255,0.45)" }}>Part</span>
+          <span style={{ color: "white", fontWeight: "600" }}>{stat.pct.toFixed(1)} %</span>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">Transactions</span>
-          <span className="font-semibold">{stat.count}</span>
+          <span style={{ color: "rgba(255,255,255,0.45)" }}>Transactions</span>
+          <span style={{ color: "white", fontWeight: "600" }}>{stat.count}</span>
         </div>
       </div>
     </div>
@@ -198,7 +198,7 @@ export function PaymentTab({ period }: PaymentTabProps) {
                   nameKey="label"
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" strokeWidth={0} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomPieTooltip />} />

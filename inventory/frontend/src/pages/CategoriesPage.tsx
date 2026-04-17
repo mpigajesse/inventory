@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Loader2, Tag } from "lucide-react";
+import { Plus, Loader2, Tag, Edit2, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productService } from "@/services/productService";
@@ -68,7 +68,6 @@ function CategoryFormModal({ open, category, onClose, onSaved }: CategoryFormMod
     },
   });
 
-  // Reset form values whenever the modal opens or the target category changes
   useEffect(() => {
     if (open) {
       reset({
@@ -171,6 +170,122 @@ function CategoryFormModal({ open, category, onClose, onSaved }: CategoryFormMod
   );
 }
 
+// ─── Color palette for category cards ────────────────────────────────────────
+
+const CARD_COLORS = [
+  { bg: 'hsl(22 72% 48%)', light: 'hsl(22 72% 48% / 0.1)', border: 'hsl(22 72% 48% / 0.2)' },
+  { bg: 'hsl(152 38% 38%)', light: 'hsl(152 38% 38% / 0.1)', border: 'hsl(152 38% 38% / 0.2)' },
+  { bg: 'hsl(210 70% 52%)', light: 'hsl(210 70% 52% / 0.1)', border: 'hsl(210 70% 52% / 0.2)' },
+  { bg: 'hsl(280 60% 52%)', light: 'hsl(280 60% 52% / 0.1)', border: 'hsl(280 60% 52% / 0.2)' },
+  { bg: 'hsl(340 65% 48%)', light: 'hsl(340 65% 48% / 0.1)', border: 'hsl(340 65% 48% / 0.2)' },
+  { bg: 'hsl(45 80% 45%)', light: 'hsl(45 80% 45% / 0.1)', border: 'hsl(45 80% 45% / 0.2)' },
+];
+
+// ─── Category card ────────────────────────────────────────────────────────────
+
+interface CategoryCardProps {
+  category: Category;
+  colorIndex: number;
+  canManage: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function CategoryCard({ category, colorIndex, canManage, onEdit, onDelete }: CategoryCardProps) {
+  const color = CARD_COLORS[colorIndex % CARD_COLORS.length];
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="group relative rounded-2xl p-5 transition-all duration-200"
+      style={{
+        background: 'hsl(var(--card))',
+        border: `1px solid ${hovered ? color.bg.replace(')', ' / 0.3)') : 'hsl(var(--border))'}`,
+        boxShadow: hovered
+          ? '0 10px 28px hsl(22 30% 15% / 0.1)'
+          : '0 2px 8px hsl(22 30% 15% / 0.06)',
+        transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Icône catégorie */}
+      <div
+        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+        style={{ background: color.light, border: `1px solid ${color.border}` }}
+      >
+        <Tag className="w-6 h-6" style={{ color: color.bg }} />
+      </div>
+
+      <h3 className="font-bold text-foreground mb-1 truncate pr-14">{category.name}</h3>
+
+      {category.description ? (
+        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{category.description}</p>
+      ) : (
+        <p className="text-xs text-muted-foreground italic mb-2">Aucune description</p>
+      )}
+
+      <p className="text-sm font-medium" style={{ color: color.bg }}>
+        {category.product_count ?? 0} produit{(category.product_count ?? 0) !== 1 ? 's' : ''}
+      </p>
+
+      {/* Actions hover */}
+      {canManage && (
+        <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-muted"
+            title="Modifier"
+            onClick={onEdit}
+          >
+            <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+          <button
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-destructive/10"
+            title="Supprimer"
+            onClick={onDelete}
+          >
+            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── New category card ────────────────────────────────────────────────────────
+
+interface NewCategoryCardProps {
+  onClick: () => void;
+}
+
+function NewCategoryCard({ onClick }: NewCategoryCardProps) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="rounded-2xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 border-2 border-dashed"
+      style={{
+        borderColor: hovered ? 'hsl(22 72% 48% / 0.5)' : 'hsl(22 72% 48% / 0.3)',
+        background: hovered ? 'hsl(22 72% 48% / 0.06)' : 'hsl(22 72% 48% / 0.02)',
+        minHeight: '140px',
+      }}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center"
+        style={{ background: 'hsl(22 72% 48% / 0.1)' }}
+      >
+        <Plus className="w-5 h-5" style={{ color: 'hsl(22 72% 48%)' }} />
+      </div>
+      <p className="text-sm font-semibold" style={{ color: 'hsl(22 72% 48%)' }}>
+        Nouvelle catégorie
+      </p>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 type ModalState =
@@ -220,6 +335,11 @@ export default function CategoriesPage() {
       )
     : categories;
 
+  const totalProducts = categories.reduce(
+    (sum, c) => sum + (c.product_count ?? 0),
+    0
+  );
+
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   function handleDelete() {
@@ -229,6 +349,10 @@ export default function CategoriesPage() {
 
   function handleSaved() {
     queryClient.invalidateQueries({ queryKey: ["categories"] });
+  }
+
+  function openCreateModal() {
+    setModal({ type: "form", category: null });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -242,31 +366,38 @@ export default function CategoriesPage() {
       />
       <div className="page-container animate-slide-in">
 
-        {/* Header de page premium */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-          <div className="border-l-4 border-primary pl-3">
-            <h2 className="text-lg sm:text-xl font-semibold tracking-tight">
-              Catégories
-            </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
+        {/* ── Page header premium ──────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div
+                className="w-1 h-6 rounded-full shrink-0"
+                style={{ background: 'linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+              />
+              <h1
+                className="text-2xl font-extrabold text-foreground"
+                style={{ letterSpacing: '-0.025em' }}
+              >
+                Catégories
+              </h1>
+            </div>
+            <p className="text-sm text-muted-foreground ml-3">
               {isLoading ? (
                 <span className="opacity-60">Chargement…</span>
               ) : (
                 <>
-                  <span className="font-medium text-foreground">
-                    {categories.length}
-                  </span>{" "}
-                  catégorie{categories.length !== 1 ? "s" : ""} · organisez votre
-                  catalogue
+                  <span className="font-medium text-foreground">{categories.length}</span> catégorie{categories.length !== 1 ? 's' : ''}{' '}
+                  · <span className="font-medium text-foreground">{totalProducts}</span> produit{totalProducts !== 1 ? 's' : ''}
                 </>
               )}
             </p>
           </div>
+
           {can('manage_products') && (
             <Button
               size="sm"
               className="shrink-0 rounded-lg shadow-sm shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
-              onClick={() => setModal({ type: "form", category: null })}
+              onClick={openCreateModal}
             >
               <Plus className="w-4 h-4 mr-2" />
               Nouvelle catégorie
@@ -274,8 +405,8 @@ export default function CategoriesPage() {
           )}
         </div>
 
-        {/* Toolbar — search seul */}
-        <div className="bg-card border rounded-xl shadow-sm p-2.5 sm:p-3 mb-4">
+        {/* ── Search bar ──────────────────────────────────────────────────── */}
+        <div className="bg-card border rounded-xl shadow-sm p-2.5 sm:p-3 mb-6">
           <SearchInput
             placeholder="Rechercher une catégorie…"
             value={search}
@@ -283,158 +414,73 @@ export default function CategoriesPage() {
           />
         </div>
 
-        {/* Mobile cards — grid 2 cols — md:hidden */}
-        <div className="md:hidden grid grid-cols-2 gap-3">
-          {isLoading && (
-            <div className="col-span-2 flex items-center justify-center py-10">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            </div>
-          )}
-          {!isLoading && filtered.length === 0 && (
-            <div className="col-span-2 bg-card border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
-              <Tag className="w-8 h-8 opacity-40" />
-              <p className="text-sm">Aucune catégorie trouvée.</p>
-            </div>
-          )}
-          {!isLoading &&
-            filtered.map((category) => (
-              <div
-                key={category.id}
-                className="group relative bg-card border rounded-xl p-3 flex flex-col gap-2 hover:shadow-md hover:border-primary/30 transition-all"
-              >
-                {/* Header : icône + badge count */}
-                <div className="flex items-start justify-between gap-2">
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15 shrink-0">
-                    <Tag className="w-5 h-5" />
-                  </span>
-                  <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
-                    {category.product_count}
-                  </span>
-                </div>
-
-                {/* Nom + description */}
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm truncate">{category.name}</p>
-                  {category.description ? (
-                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
-                      {category.description}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] italic opacity-50 mt-0.5">
-                      Aucune description
-                    </p>
-                  )}
-                </div>
-
-                {/* Actions visibles */}
-                {can('manage_products') && (
-                  <div className="flex items-center gap-1 pt-1.5 border-t mt-auto">
-                    <button
-                      className="flex-1 p-1.5 rounded-md hover:bg-secondary transition-colors flex items-center justify-center gap-1 text-[11px] text-muted-foreground font-medium"
-                      title="Modifier"
-                      onClick={() => setModal({ type: "form", category })}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Modifier
-                    </button>
-                    <button
-                      className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
-                      title="Supprimer"
-                      onClick={() => setModal({ type: "delete", category })}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-        </div>
-
-        {/* Desktop table — hidden md:block */}
-        <div className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead className="bg-muted/60">
-                <tr>
-                  <th>Nom</th>
-                  <th>Description</th>
-                  <th className="text-center w-32">Produits</th>
-                  <th className="w-28 text-right pr-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading && (
-                  <tr>
-                    <td colSpan={4} className="text-center py-10">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                    </td>
-                  </tr>
-                )}
-
-                {!isLoading && filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="text-center py-12">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <Tag className="w-8 h-8 opacity-40" />
-                        <p className="text-sm">Aucune catégorie trouvée.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-
-                {!isLoading &&
-                  filtered.map((category) => (
-                    <tr key={category.id}>
-                      <td>
-                        <div className="flex items-center gap-2.5">
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15 shrink-0">
-                            <Tag className="w-4 h-4" />
-                          </span>
-                          <span className="font-medium">{category.name}</span>
-                        </div>
-                      </td>
-                      <td className="text-muted-foreground text-sm">
-                        {category.description || <span className="italic opacity-50">—</span>}
-                      </td>
-                      <td className="text-center">
-                        <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                          {category.product_count}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex items-center justify-end gap-1 pr-2">
-                          {can('manage_products') && (
-                            <button
-                              className="p-2 rounded-md hover:bg-secondary transition-colors"
-                              title="Modifier"
-                              onClick={() => setModal({ type: "form", category })}
-                            >
-                              <Pencil className="w-4 h-4 text-muted-foreground" />
-                            </button>
-                          )}
-                          {can('manage_products') && (
-                            <button
-                              className="p-2 rounded-md hover:bg-destructive/10 transition-colors"
-                              title="Supprimer"
-                              onClick={() => setModal({ type: "delete", category })}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+        {/* ── Loading ──────────────────────────────────────────────────────── */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
           </div>
-        </div>
+        )}
 
-        {/* Summary */}
+        {/* ── Empty state ──────────────────────────────────────────────────── */}
+        {!isLoading && filtered.length === 0 && !search && (
+          <div
+            className="rounded-2xl p-12 flex flex-col items-center gap-4 text-center"
+            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+          >
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ background: 'hsl(22 72% 48% / 0.1)' }}
+            >
+              <Tag className="w-8 h-8" style={{ color: 'hsl(22 72% 48%)' }} />
+            </div>
+            <div>
+              <p className="font-bold text-foreground mb-1">Aucune catégorie</p>
+              <p className="text-sm text-muted-foreground">Commencez par créer votre première catégorie.</p>
+            </div>
+            {can('manage_products') && (
+              <Button size="sm" onClick={openCreateModal}
+                className="rounded-lg bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/20">
+                <Plus className="w-4 h-4 mr-2" />
+                Créer une catégorie
+              </Button>
+            )}
+          </div>
+        )}
+
+        {!isLoading && filtered.length === 0 && search && (
+          <div className="rounded-2xl p-10 flex flex-col items-center gap-2 text-muted-foreground"
+               style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
+            <Tag className="w-8 h-8 opacity-40" />
+            <p className="text-sm">Aucune catégorie correspond à « {search} ».</p>
+          </div>
+        )}
+
+        {/* ── Category grid ─────────────────────────────────────────────────── */}
+        {!isLoading && filtered.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filtered.map((category, idx) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                colorIndex={idx}
+                canManage={can('manage_products')}
+                onEdit={() => setModal({ type: "form", category })}
+                onDelete={() => setModal({ type: "delete", category })}
+              />
+            ))}
+
+            {/* Add new category card — only shown when not searching */}
+            {!search && can('manage_products') && (
+              <NewCategoryCard onClick={openCreateModal} />
+            )}
+          </div>
+        )}
+
+        {/* ── Summary ──────────────────────────────────────────────────────── */}
         {!isLoading && categories.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-3">
-            {filtered.length} catégorie{filtered.length !== 1 ? "s" : ""}
-            {search ? ` sur ${categories.length}` : ""}
+          <p className="text-xs text-muted-foreground mt-4">
+            {filtered.length} catégorie{filtered.length !== 1 ? 's' : ''}
+            {search ? ` sur ${categories.length}` : ''}
           </p>
         )}
       </div>

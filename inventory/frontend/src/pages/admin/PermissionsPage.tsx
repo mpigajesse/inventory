@@ -13,10 +13,12 @@ import {
   Settings,
   UserCog,
   Save,
-  ChevronDown,
   Shield,
   Search,
   Loader2,
+  Info,
+  Check,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -30,10 +32,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Topbar } from "@/components/layout/Topbar";
 import { userService, type UserListItem } from "@/services/userService";
@@ -106,52 +106,78 @@ interface UserRowProps {
   user: UserListItem;
   draft: Set<Permission>;
   isModified: boolean;
-  onToggle: (userId: number, perm: Permission, checked: boolean) => void;
+  rowIndex: number;
+  onToggle: (userId: number, perm: Permission) => void;
   onApplyPreset: (userId: number, preset: Permission[]) => void;
 }
 
-function UserRow({ user, draft, isModified, onToggle, onApplyPreset }: UserRowProps) {
+function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }: UserRowProps) {
   const isAdmin = user.profile.role === "admin";
   const displayName = user.full_name || user.username;
   const initials = getInitials(displayName);
+  const isEven = rowIndex % 2 === 0;
 
   return (
     <tr
-      className={cn(
-        "group transition-colors",
-        isModified && "bg-primary/[0.03]"
-      )}
+      className="transition-colors group"
+      style={{ background: isEven ? "transparent" : "hsl(22 72% 48% / 0.015)" }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "hsl(22 72% 48% / 0.04)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = isEven
+          ? "transparent"
+          : "hsl(22 72% 48% / 0.015)";
+      }}
     >
-      {/* User cell */}
-      <td className="sticky left-0 z-10 bg-card group-hover:bg-secondary/50 transition-colors border-r border-border">
-        <div className="flex items-center gap-3 px-4 py-3 min-w-[200px]">
+      {/* User info — sticky */}
+      <td
+        className="sticky left-0 z-10 px-4 py-3"
+        style={{
+          background: "hsl(var(--card))",
+          borderBottom: "1px solid hsl(var(--border) / 0.6)",
+          borderRight: "1px solid hsl(var(--border) / 0.4)",
+          minWidth: "220px",
+        }}
+      >
+        <div className="flex items-center gap-2.5">
           {/* Avatar */}
-          <span
-            className="flex items-center justify-center w-9 h-9 rounded-full text-[11px] font-bold text-white shrink-0"
-            style={{ background: isAdmin ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.5)" }}
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            style={{
+              background: isAdmin
+                ? "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))"
+                : "linear-gradient(135deg, hsl(210 70% 52%), hsl(220 80% 60%))",
+            }}
             aria-hidden="true"
           >
             {initials}
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0">
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
               <p className="text-[13px] font-semibold text-foreground truncate">{displayName}</p>
               {isModified && (
                 <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ background: "hsl(var(--primary))" }}
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: "hsl(22 72% 48%)" }}
                   title="Modifications non sauvegardées"
                 />
               )}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span
-                className={cn(
-                  "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                style={
                   isAdmin
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground"
-                )}
+                    ? {
+                        background: "hsl(22 72% 48% / 0.12)",
+                        color: "hsl(22 72% 40%)",
+                      }
+                    : {
+                        background: "hsl(var(--muted))",
+                        color: "hsl(var(--muted-foreground))",
+                      }
+                }
               >
                 {isAdmin ? "Admin" : "Vendeur"}
               </span>
@@ -160,42 +186,65 @@ function UserRow({ user, draft, isModified, onToggle, onApplyPreset }: UserRowPr
         </div>
       </td>
 
-      {/* Permission checkboxes */}
+      {/* Permission toggles */}
       {PERMISSIONS.map((perm) => {
-        const checked = isAdmin || draft.has(perm.key);
+        const isChecked = isAdmin || draft.has(perm.key);
         return (
-          <td key={perm.key} className="text-center px-2 py-3">
-            {isAdmin ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex items-center justify-center">
-                    <Checkbox
-                      checked={true}
-                      disabled
-                      className="opacity-40 cursor-not-allowed"
+          <td
+            key={perm.key}
+            className="text-center px-2 py-3"
+            style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}
+          >
+            <div className="flex justify-center">
+              {isAdmin ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className="w-5 h-5 rounded-md flex items-center justify-center cursor-not-allowed"
+                      style={{
+                        background: "hsl(22 72% 48% / 0.35)",
+                        border: "1px solid hsl(22 72% 48% / 0.35)",
+                      }}
                       aria-label={`${perm.label} — admin`}
-                    />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  Les admins ont tous les accès
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Checkbox
-                checked={checked}
-                onCheckedChange={(val) => onToggle(user.id, perm.key, !!val)}
-                aria-label={perm.label}
-              />
-            )}
+                    >
+                      <Check className="w-3 h-3 text-white opacity-60" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Les admins ont tous les accès
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <button
+                  onClick={() => onToggle(user.id, perm.key)}
+                  className="w-5 h-5 rounded-md flex items-center justify-center transition-all focus:outline-none focus-visible:ring-2"
+                  style={{
+                    background: isChecked ? "hsl(22 72% 48%)" : "hsl(var(--muted))",
+                    border: isChecked
+                      ? "1px solid hsl(22 72% 48%)"
+                      : "1px solid hsl(var(--border))",
+                    boxShadow: isChecked
+                      ? "0 2px 6px hsl(22 72% 48% / 0.3)"
+                      : "none",
+                  }}
+                  aria-label={perm.label}
+                  aria-pressed={isChecked}
+                >
+                  {isChecked && <Check className="w-3 h-3 text-white" />}
+                </button>
+              )}
+            </div>
           </td>
         );
       })}
 
-      {/* Preset actions */}
-      <td className="px-3 py-3 text-right">
+      {/* Preset dropdown */}
+      <td
+        className="px-3 py-3 text-right"
+        style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}
+      >
         {isAdmin ? (
-          <span className="text-[11px] text-muted-foreground/50 pr-1">—</span>
+          <span className="text-[11px] text-muted-foreground/40 pr-1">—</span>
         ) : (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -208,7 +257,7 @@ function UserRow({ user, draft, isModified, onToggle, onApplyPreset }: UserRowPr
                 <ChevronDown className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="end" className="w-48">
               {PRESETS.map((preset) => (
                 <DropdownMenuItem
                   key={preset.label}
@@ -233,21 +282,35 @@ function TableSkeleton() {
     <>
       {[1, 2, 3].map((i) => (
         <tr key={i}>
-          <td className="sticky left-0 z-10 bg-card border-r border-border px-4 py-3">
-            <div className="flex items-center gap-3">
-              <Skeleton className="w-9 h-9 rounded-full" />
+          <td
+            className="sticky left-0 z-10 px-4 py-3"
+            style={{
+              background: "hsl(var(--card))",
+              borderBottom: "1px solid hsl(var(--border) / 0.6)",
+              borderRight: "1px solid hsl(var(--border) / 0.4)",
+            }}
+          >
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
               <div className="space-y-1.5">
                 <Skeleton className="h-3.5 w-28" />
-                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-14" />
               </div>
             </div>
           </td>
           {PERMISSIONS.map((p) => (
-            <td key={p.key} className="text-center px-2 py-3">
-              <Skeleton className="w-4 h-4 rounded mx-auto" />
+            <td
+              key={p.key}
+              className="text-center px-2 py-3"
+              style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}
+            >
+              <Skeleton className="w-5 h-5 rounded-md mx-auto" />
             </td>
           ))}
-          <td className="px-3 py-3">
+          <td
+            className="px-3 py-3"
+            style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}
+          >
             <Skeleton className="h-7 w-16 ml-auto" />
           </td>
         </tr>
@@ -315,13 +378,13 @@ export default function PermissionsPage() {
   // ── Handlers — declared before any conditional return (Rules of Hooks) ────
 
   const handleToggle = useCallback(
-    (userId: number, perm: Permission, checked: boolean) => {
+    (userId: number, perm: Permission) => {
       setDraft((prev) => {
         const current = new Set(prev[userId] ?? []);
-        if (checked) {
-          current.add(perm);
-        } else {
+        if (current.has(perm)) {
           current.delete(perm);
+        } else {
+          current.add(perm);
         }
         return { ...prev, [userId]: current };
       });
@@ -420,48 +483,58 @@ export default function PermissionsPage() {
         onMenuClick={onMenuClick}
       />
 
-      <div className="page-container animate-slide-in space-y-6">
+      <div className="page-container animate-slide-in space-y-5">
 
-        {/* ── Page header ────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground font-heading tracking-tight">
-              Permissions
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Matrice des accès par utilisateur — modifications sauvegardées automatiquement
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {pendingCount > 0 && (
-              <Badge
-                variant="outline"
-                className="text-xs font-medium border-primary/40 text-primary bg-primary/5"
-              >
-                {pendingCount} modification{pendingCount > 1 ? "s" : ""} non sauvegardée{pendingCount > 1 ? "s" : ""}
-              </Badge>
-            )}
-            <Button
-              onClick={handleSaveAll}
-              disabled={pendingCount === 0 || saveBulkMutation.isPending}
-              size="sm"
-              className="gap-1.5"
+        {/* ── Page header ─────────────────────────────────────────────── */}
+        <div className="mb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <div
+              className="w-1 h-6 rounded-full flex-shrink-0"
+              style={{
+                background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
+              }}
+            />
+            <h1
+              className="text-2xl font-extrabold font-heading"
+              style={{ letterSpacing: "-0.025em" }}
             >
-              {saveBulkMutation.isPending ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Save className="w-3.5 h-3.5" />
-              )}
-              Enregistrer tout
-            </Button>
+              Matrice des permissions
+            </h1>
           </div>
+          <p className="text-sm text-muted-foreground ml-3">
+            Gérez les droits d&apos;accès de chaque vendeur individuellement
+          </p>
         </div>
 
-        {/* ── Filters ────────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Role filter */}
-          <div className="flex items-center gap-1 p-1 rounded-lg border bg-muted/40">
+        {/* ── Info card ───────────────────────────────────────────────── */}
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl"
+          style={{
+            background: "hsl(210 70% 52% / 0.06)",
+            border: "1px solid hsl(210 70% 52% / 0.2)",
+          }}
+        >
+          <Info
+            className="w-4 h-4 mt-0.5 flex-shrink-0"
+            style={{ color: "hsl(210 70% 52%)" }}
+          />
+          <p className="text-sm text-foreground leading-relaxed">
+            Les <strong>admins</strong> ont tous les droits par défaut. Seuls les{" "}
+            <strong>vendeurs</strong> apparaissent dans cette matrice.
+            Les modifications sont enregistrées automatiquement après 500 ms.
+          </p>
+        </div>
+
+        {/* ── Filters ─────────────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          {/* Role filter pills */}
+          <div
+            className="flex items-center gap-1 p-1 rounded-lg"
+            style={{
+              background: "hsl(var(--muted) / 0.5)",
+              border: "1px solid hsl(var(--border))",
+            }}
+          >
             {(["all", "vendeur"] as const).map((val) => (
               <button
                 key={val}
@@ -470,9 +543,14 @@ export default function PermissionsPage() {
                 className={cn(
                   "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                   roleFilter === val
-                    ? "bg-card shadow-sm text-foreground border border-border"
+                    ? "bg-card shadow-sm text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 )}
+                style={
+                  roleFilter === val
+                    ? { border: "1px solid hsl(var(--border))" }
+                    : { border: "1px solid transparent" }
+                }
               >
                 {val === "all" ? "Tous les rôles" : "Vendeurs uniquement"}
               </button>
@@ -481,9 +559,7 @@ export default function PermissionsPage() {
 
           {/* Search */}
           <div className="relative flex-1 max-w-xs">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none"
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Rechercher un utilisateur…"
               value={search}
@@ -491,122 +567,210 @@ export default function PermissionsPage() {
               className="pl-8 h-9 text-sm"
             />
           </div>
-        </div>
 
-        {/* ── Matrix table ────────────────────────────────────────────── */}
-        <div
-          className="rounded-lg border bg-card overflow-hidden"
-          style={{ boxShadow: "var(--shadow-sm, 0 1px 3px hsl(var(--shadow-color-warm, 0 0% 0%) / 0.08))" }}
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max border-collapse text-sm">
-              {/* Header */}
-              <thead>
-                <tr
-                  style={{
-                    background: "hsl(var(--muted) / 0.6)",
-                    borderBottom: "1px solid hsl(var(--border))",
-                  }}
-                >
-                  {/* User column header */}
-                  <th className="sticky left-0 z-20 bg-muted/60 border-r border-border px-4 py-3 text-left">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      <Users className="w-3.5 h-3.5" />
-                      Utilisateur
-                    </div>
-                  </th>
-
-                  {/* Permission columns */}
-                  {PERMISSIONS.map((perm) => {
-                    const Icon = perm.icon;
-                    return (
-                      <th key={perm.key} className="px-2 py-3 text-center min-w-[72px]">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex flex-col items-center gap-1 cursor-default">
-                              <div
-                                className="w-7 h-7 rounded-md flex items-center justify-center"
-                                style={{ background: "hsl(var(--primary) / 0.1)" }}
-                              >
-                                <Icon
-                                  className="w-3.5 h-3.5"
-                                  style={{ color: "hsl(var(--primary))" }}
-                                />
-                              </div>
-                              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide leading-none max-w-[64px] text-center">
-                                {perm.shortLabel}
-                              </span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="text-xs">
-                            {perm.label}
-                          </TooltipContent>
-                        </Tooltip>
-                      </th>
-                    );
-                  })}
-
-                  {/* Actions column */}
-                  <th className="px-3 py-3 text-right min-w-[100px]">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      Présets
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-border">
-                {isLoading ? (
-                  <TableSkeleton />
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={PERMISSIONS.length + 2}
-                      className="text-center py-12 text-muted-foreground text-sm"
-                    >
-                      <Shield className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                      Aucun utilisateur trouvé
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <UserRow
-                      key={user.id}
-                      user={user}
-                      draft={draft[user.id] ?? new Set()}
-                      isModified={modifiedIds.has(user.id)}
-                      onToggle={handleToggle}
-                      onApplyPreset={handleApplyPreset}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Legend */}
-          {!isLoading && filteredUsers.length > 0 && (
-            <div
-              className="flex flex-wrap items-center gap-4 px-4 py-3 text-[11px] text-muted-foreground"
-              style={{ borderTop: "1px solid hsl(var(--border))", background: "hsl(var(--muted) / 0.3)" }}
-            >
-              <div className="flex items-center gap-1.5">
-                <Checkbox checked disabled className="opacity-40 w-3.5 h-3.5" />
-                <span>Case grisée = admin (accès immuable)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: "hsl(var(--primary))" }}
-                />
-                <span>Point bleu = modification non sauvegardée</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span>Sauvegarde automatique après 500 ms d&apos;inactivité ou via &laquo; Enregistrer tout &raquo;</span>
-              </div>
+          {/* Pending badge — pushed right */}
+          {pendingCount > 0 && (
+            <div className="sm:ml-auto flex items-center gap-2">
+              <span
+                className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                style={{
+                  background: "hsl(22 72% 48% / 0.1)",
+                  color: "hsl(22 72% 40%)",
+                  border: "1px solid hsl(22 72% 48% / 0.25)",
+                }}
+              >
+                {pendingCount} modification{pendingCount > 1 ? "s" : ""} en attente
+              </span>
             </div>
           )}
         </div>
+
+        {/* ── Matrix table ─────────────────────────────────────────────── */}
+        <div
+          className="overflow-x-auto rounded-2xl"
+          style={{
+            background: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
+            boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+          }}
+        >
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+
+            {/* Header */}
+            <thead>
+              <tr>
+                {/* User column */}
+                <th
+                  className="sticky left-0 z-20 px-4 py-3 text-left"
+                  style={{
+                    background: "hsl(var(--muted))",
+                    borderBottom: "1px solid hsl(var(--border))",
+                    borderRight: "1px solid hsl(var(--border) / 0.4)",
+                    minWidth: "220px",
+                  }}
+                >
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <Users className="w-3.5 h-3.5" />
+                    Utilisateur
+                  </div>
+                </th>
+
+                {/* Permission columns */}
+                {PERMISSIONS.map((perm) => {
+                  const Icon = perm.icon;
+                  return (
+                    <th
+                      key={perm.key}
+                      className="px-2 py-3 text-center"
+                      style={{
+                        background: "hsl(var(--muted))",
+                        borderBottom: "1px solid hsl(var(--border))",
+                        minWidth: "76px",
+                      }}
+                    >
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1.5 cursor-default">
+                            <div
+                              className="w-6 h-6 rounded-md flex items-center justify-center"
+                              style={{ background: "hsl(22 72% 48% / 0.1)" }}
+                            >
+                              <Icon
+                                className="w-3.5 h-3.5"
+                                style={{ color: "hsl(22 72% 48%)" }}
+                              />
+                            </div>
+                            <span
+                              className="text-[10px] font-semibold text-muted-foreground leading-tight text-center"
+                              style={{ maxWidth: "68px" }}
+                            >
+                              {perm.shortLabel}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          {perm.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    </th>
+                  );
+                })}
+
+                {/* Presets column */}
+                <th
+                  className="px-3 py-3 text-right"
+                  style={{
+                    background: "hsl(var(--muted))",
+                    borderBottom: "1px solid hsl(var(--border))",
+                    minWidth: "110px",
+                  }}
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Présets
+                  </span>
+                </th>
+              </tr>
+            </thead>
+
+            {/* Body */}
+            <tbody>
+              {isLoading ? (
+                <TableSkeleton />
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={PERMISSIONS.length + 2}
+                    className="text-center py-14 text-muted-foreground text-sm"
+                  >
+                    <Shield className="w-9 h-9 mx-auto mb-3 opacity-15" />
+                    Aucun utilisateur trouvé
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user, idx) => (
+                  <UserRow
+                    key={user.id}
+                    user={user}
+                    draft={draft[user.id] ?? new Set()}
+                    isModified={modifiedIds.has(user.id)}
+                    rowIndex={idx}
+                    onToggle={handleToggle}
+                    onApplyPreset={handleApplyPreset}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Legend ──────────────────────────────────────────────────── */}
+        {!isLoading && filteredUsers.length > 0 && (
+          <div
+            className="flex flex-wrap items-center gap-4 px-4 py-3 rounded-xl text-[11px] text-muted-foreground"
+            style={{
+              background: "hsl(var(--muted) / 0.4)",
+              border: "1px solid hsl(var(--border) / 0.5)",
+            }}
+          >
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-4 h-4 rounded-sm flex items-center justify-center"
+                style={{
+                  background: "hsl(22 72% 48%)",
+                  boxShadow: "0 2px 6px hsl(22 72% 48% / 0.3)",
+                }}
+              >
+                <Check className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span>Case cuivre = permission activée</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-4 h-4 rounded-sm"
+                style={{
+                  background: "hsl(22 72% 48% / 0.35)",
+                }}
+              />
+              <span>Case atténuée = admin (accès immuable)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "hsl(22 72% 48%)" }}
+              />
+              <span>Point cuivre = modification non sauvegardée</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Bulk save button ─────────────────────────────────────────── */}
+        {pendingCount > 0 && (
+          <div className="flex justify-end">
+            <button
+              onClick={handleSaveAll}
+              disabled={saveBulkMutation.isPending}
+              className="flex items-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+                color: "white",
+                border: "none",
+                borderRadius: "10px",
+                padding: "0.625rem 1.5rem",
+                fontWeight: "600",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              {saveBulkMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              Enregistrer toutes les modifications ({pendingCount})
+            </button>
+          </div>
+        )}
 
       </div>
     </>

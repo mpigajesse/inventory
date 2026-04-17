@@ -14,7 +14,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Phone, Mail, Package, Edit, Trash2, Truck, MapPin, FileSpreadsheet, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Phone,
+  Mail,
+  Package,
+  Edit2,
+  Trash2,
+  Truck,
+  MapPin,
+  FileSpreadsheet,
+  Loader2,
+} from "lucide-react";
 import { exportSuppliers } from "@/lib/exportSuppliers";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useState } from "react";
@@ -65,7 +76,6 @@ export default function SuppliersPage() {
     deleteMutation.mutate(deletingSupplier.id);
   }
 
-  // Initiales du nom fournisseur (2 lettres max)
   function getInitials(name: string): string {
     return name
       .split(" ")
@@ -84,40 +94,57 @@ export default function SuppliersPage() {
       />
       <div className="page-container animate-slide-in">
 
-        {/* ── Premium Header ─────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
-              <Truck className="w-4 h-4 text-primary" />
+        {/* ── Page Header ─────────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div
+                className="w-1 h-6 rounded-full shrink-0"
+                style={{
+                  background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
+                }}
+              />
+              <h1
+                className="text-2xl font-extrabold"
+                style={{ letterSpacing: "-0.025em" }}
+              >
+                Fournisseurs
+              </h1>
+              <span
+                className="inline-flex items-center h-6 px-2.5 rounded-full text-xs font-bold"
+                style={{
+                  background: "hsl(22 72% 48% / 0.12)",
+                  color: "hsl(22 72% 48%)",
+                }}
+              >
+                {suppliers.length}
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold tracking-tight">Fournisseurs</h1>
-                <span className="inline-flex items-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold">
-                  {suppliers.length}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Gestion des approvisionnements
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground pl-3">
+              Gestion des approvisionnements
+            </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {can('manage_suppliers') && (
+            {can("manage_suppliers") && (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => exportSuppliers(suppliers)}
+                className="h-9 rounded-lg border-border hover:border-primary/30 hover:text-primary transition-colors"
               >
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 Exporter Excel
               </Button>
             )}
-            {can('manage_suppliers') && (
+            {can("manage_suppliers") && (
               <Button
                 size="sm"
-                className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
+                className="h-9 rounded-lg text-white font-semibold shadow-md transition-all hover:brightness-105 hover:-translate-y-px border-0"
+                style={{
+                  background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                  boxShadow: "0 4px 14px hsl(22 72% 48% / 0.3)",
+                }}
                 onClick={() => navigate("/suppliers/new")}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -127,8 +154,8 @@ export default function SuppliersPage() {
           </div>
         </div>
 
-        {/* ── Search bar ─────────────────────────────────────────── */}
-        <div className="mb-5">
+        {/* ── Search bar ──────────────────────────────────────────────── */}
+        <div className="mb-6">
           <SearchInput
             placeholder="Rechercher par nom, contact ou téléphone..."
             value={search}
@@ -136,14 +163,15 @@ export default function SuppliersPage() {
           />
         </div>
 
-        {/* Loading */}
+        {/* ── Loading ─────────────────────────────────────────────────── */}
         {isLoading && (
-          <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+          <div className="flex items-center justify-center gap-2 py-20 text-muted-foreground text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" />
             Chargement des fournisseurs…
           </div>
         )}
 
-        {/* Cards */}
+        {/* ── Empty state ─────────────────────────────────────────────── */}
         {!isLoading && suppliers.length === 0 && (
           <EmptyState
             message="Aucun fournisseur trouvé."
@@ -151,103 +179,35 @@ export default function SuppliersPage() {
           />
         )}
 
+        {/* ── Supplier Cards ──────────────────────────────────────────── */}
         {!isLoading && suppliers.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {suppliers.map((supplier) => {
               const ordersCount = supplier.orders_count ?? 0;
               const isActive = ordersCount > 0;
-              const locationLabel = [supplier.city, supplier.country].filter(Boolean).join(", ");
+              const locationLabel = [supplier.city, supplier.country]
+                .filter(Boolean)
+                .join(", ");
 
               return (
-                <div
+                <SupplierCard
                   key={supplier.id}
-                  className="group bg-card rounded-xl border p-4 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200 flex flex-col"
-                >
-                  {/* Header */}
-                  <div className="flex items-start gap-3 mb-3">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all"
-                      style={{
-                        background: "hsl(var(--primary) / 0.12)",
-                        color: "hsl(var(--primary))",
-                      }}
-                    >
-                      {getInitials(supplier.name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{supplier.name}</p>
-                      {supplier.contact_name && (
-                        <p className="text-[11px] text-muted-foreground truncate">{supplier.contact_name}</p>
-                      )}
-                    </div>
-                    <StatusBadge
-                      label={isActive ? "Actif" : "Inactif"}
-                      variant={isActive ? "success" : "default"}
-                    />
-                  </div>
-
-                  {/* Contact info */}
-                  <div className="space-y-1.5 text-xs mb-3">
-                    {supplier.phone && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="w-3.5 h-3.5 shrink-0" />
-                        <span className="font-mono tabular-nums">{supplier.phone}</span>
-                      </div>
-                    )}
-                    {supplier.email && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{supplier.email}</span>
-                      </div>
-                    )}
-                    {locationLabel && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{locationLabel}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Footer : stats + actions */}
-                  <div className="flex items-end justify-between pt-3 border-t mt-auto gap-3">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                        Commandes
-                      </p>
-                      <p className="flex items-center gap-1.5 mt-0.5">
-                        <Package className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span className="font-mono font-bold text-primary text-sm tabular-nums">
-                          {ordersCount}
-                        </span>
-                      </p>
-                    </div>
-                    {can('manage_suppliers') && (
-                      <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-                        <button
-                          className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                          title="Modifier"
-                          onClick={() => navigate(`/suppliers/${supplier.id}/edit`)}
-                        >
-                          <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
-                          title="Supprimer"
-                          onClick={() => setDeletingSupplier(supplier)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  supplier={supplier}
+                  ordersCount={ordersCount}
+                  isActive={isActive}
+                  locationLabel={locationLabel}
+                  initials={getInitials(supplier.name)}
+                  canManage={can("manage_suppliers")}
+                  onEdit={() => navigate(`/suppliers/${supplier.id}/edit`)}
+                  onDelete={() => setDeletingSupplier(supplier)}
+                />
               );
             })}
           </div>
         )}
       </div>
 
-      {/* ── AlertDialog : Supprimer fournisseur ── */}
+      {/* ── AlertDialog : Archiver fournisseur ──────────────────────────── */}
       <AlertDialog
         open={!!deletingSupplier}
         onOpenChange={(open) => {
@@ -286,5 +246,178 @@ export default function SuppliersPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+// ─── Supplier Card ────────────────────────────────────────────────────────────
+
+interface SupplierCardProps {
+  supplier: Supplier;
+  ordersCount: number;
+  isActive: boolean;
+  locationLabel: string;
+  initials: string;
+  canManage: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function SupplierCard({
+  supplier,
+  ordersCount,
+  isActive,
+  locationLabel,
+  initials,
+  canManage,
+  onEdit,
+  onDelete,
+}: SupplierCardProps) {
+  function handleMouseEnter(e: React.MouseEvent<HTMLDivElement>) {
+    e.currentTarget.style.transform = "translateY(-3px)";
+    e.currentTarget.style.boxShadow = "0 10px 28px hsl(22 30% 15% / 0.10)";
+    e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.30)";
+  }
+
+  function handleMouseLeave(e: React.MouseEvent<HTMLDivElement>) {
+    e.currentTarget.style.transform = "translateY(0)";
+    e.currentTarget.style.boxShadow = "0 2px 8px hsl(22 30% 15% / 0.06)";
+    e.currentTarget.style.borderColor = "hsl(var(--border))";
+  }
+
+  return (
+    <div
+      className="group flex flex-col rounded-2xl p-5 transition-all duration-250"
+      style={{
+        background: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))",
+        boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* ── Card header ─────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Avatar initiales */}
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
+            style={{
+              background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+            }}
+          >
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold text-foreground truncate leading-snug">{supplier.name}</p>
+            {supplier.contact_name && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {supplier.contact_name}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0 ml-2">
+          {/* Badge statut */}
+          <StatusBadge
+            label={isActive ? "Actif" : "Inactif"}
+            variant={isActive ? "success" : "default"}
+          />
+          {/* Actions (visibles au hover si gestionnaire) */}
+          {canManage && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ml-1">
+              <button
+                className="p-1.5 rounded-lg transition-colors"
+                style={{}}
+                title="Modifier"
+                onClick={onEdit}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "hsl(22 72% 48% / 0.10)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "hsl(22 72% 48%)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "";
+                  (e.currentTarget as HTMLButtonElement).style.color = "";
+                }}
+              >
+                <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              <button
+                className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                title="Archiver"
+                onClick={onDelete}
+              >
+                <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Contact info ────────────────────────────────────────────── */}
+      <div className="space-y-2 mb-4 flex-1">
+        {supplier.phone && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Phone className="w-3.5 h-3.5 shrink-0" />
+            <span className="font-mono tabular-nums">{supplier.phone}</span>
+          </div>
+        )}
+        {supplier.email && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Mail className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{supplier.email}</span>
+          </div>
+        )}
+        {locationLabel && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{locationLabel}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Card footer ─────────────────────────────────────────────── */}
+      <div
+        className="flex items-center justify-between pt-3"
+        style={{ borderTop: "1px solid hsl(var(--border) / 0.6)" }}
+      >
+        <div className="flex items-center gap-1.5">
+          <Package
+            className="w-3.5 h-3.5 shrink-0"
+            style={{ color: "hsl(22 72% 48%)" }}
+          />
+          <span className="text-xs text-muted-foreground">
+            <span
+              className="font-bold tabular-nums"
+              style={{
+                fontFamily: "Fraunces, serif",
+                color: "hsl(22 72% 48%)",
+              }}
+            >
+              {ordersCount}
+            </span>{" "}
+            commande{ordersCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Balance si disponible */}
+        {supplier.balance !== undefined && supplier.balance !== 0 && (
+          <span
+            className="text-xs font-bold tabular-nums"
+            style={{
+              fontFamily: "Fraunces, serif",
+              color:
+                supplier.balance > 0
+                  ? "hsl(152 38% 38%)"
+                  : "hsl(4 72% 52%)",
+            }}
+          >
+            {supplier.balance > 0 ? "+" : ""}
+            {supplier.balance.toLocaleString("fr-FR")} FCFA
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

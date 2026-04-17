@@ -11,6 +11,9 @@ import {
   ShoppingCart,
   Loader2,
   BellOff,
+  AlertCircle,
+  Info,
+  ShoppingBag,
 } from "lucide-react";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/ui/StatCard";
@@ -25,7 +28,6 @@ import { useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-// UI-side display categories (mapped from backend NotificationType)
 type NotifDisplay = "stock_critical" | "stock_low" | "new_sale" | "new_client" | "system";
 type TabKey = "toutes" | "non_lues" | "stock" | "ventes" | "systeme";
 
@@ -39,28 +41,29 @@ const TAB_LABELS: Record<TabKey, string> = {
   systeme: "Système",
 };
 
-const TYPE_ICON: Record<NotifDisplay, React.ComponentType<{ className?: string }>> = {
+const TYPE_ICON: Record<NotifDisplay, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   stock_critical: AlertTriangle,
-  stock_low: Package,
-  new_sale: ShoppingCart,
-  new_client: UserCog,
-  system: Settings,
+  stock_low:      AlertCircle,
+  new_sale:       ShoppingBag,
+  new_client:     UserCog,
+  system:         Info,
 };
 
-const TYPE_COLOR: Record<NotifDisplay, string> = {
-  stock_critical: "text-destructive bg-destructive/10",
-  stock_low: "text-warning bg-warning/10",
-  new_sale: "text-success bg-success/10",
-  new_client: "text-purple-500 bg-purple-500/10",
-  system: "text-muted-foreground bg-muted",
+// Raw HSL values for inline style usage (no Tailwind opacity tricks)
+const TYPE_HEX: Record<NotifDisplay, string> = {
+  stock_critical: "hsl(4 72% 52%)",
+  stock_low:      "hsl(36 88% 52%)",
+  new_sale:       "hsl(152 38% 38%)",
+  new_client:     "hsl(262 52% 52%)",
+  system:         "hsl(210 70% 52%)",
 };
 
 const ACTION_URL_MAP: Record<NotifDisplay, string> = {
   stock_critical: "/stock",
-  stock_low: "/stock",
-  new_sale: "/invoices",
-  new_client: "/clients",
-  system: "",
+  stock_low:      "/stock",
+  new_sale:       "/invoices",
+  new_client:     "/clients",
+  system:         "",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -162,7 +165,7 @@ export default function NotificationsPage() {
   ).length;
 
   const tabCounts: Record<TabKey, number> = {
-    toutes: notifications.length,
+    toutes:   notifications.length,
     non_lues: unreadCount,
     stock: notifications.filter(
       (n) => n.notification_type === "stock_critical" || n.notification_type === "stock_low"
@@ -216,33 +219,53 @@ export default function NotificationsPage() {
       <div className="page-container animate-slide-in">
 
         {/* ── Page header premium ── */}
-        <div className="page-header-premium flex-row items-center justify-between gap-4 flex flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Bell className="w-5 h-5 text-primary" />
-            </div>
+        <div className="mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="page-header-eyebrow">Centre de notifications</p>
-              <h1 className="page-header-title">Notifications</h1>
-              <p className="page-header-subtitle">
+              <div className="flex items-center gap-2 mb-1">
+                <div
+                  className="w-1 h-6 rounded-full flex-shrink-0"
+                  style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+                />
+                <h1
+                  className="text-2xl font-extrabold font-heading"
+                  style={{ letterSpacing: "-0.025em" }}
+                >
+                  Notifications
+                </h1>
+                {unreadCount > 0 && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
+                    style={{ background: "hsl(22 72% 48%)" }}
+                  >
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground ml-3">
                 Alertes stock, ventes et activité système en temps réel
               </p>
             </div>
+
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                disabled={markAllReadMutation.isPending}
+                className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all"
+                style={{
+                  background: "hsl(var(--muted))",
+                  color: "hsl(var(--foreground))",
+                }}
+              >
+                {markAllReadMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <CheckCheck className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+                )}
+                Tout marquer comme lu
+              </button>
+            )}
           </div>
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllRead}
-              disabled={markAllReadMutation.isPending}
-              className="btn-secondary flex items-center gap-2 text-sm"
-            >
-              {markAllReadMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CheckCheck className="w-4 h-4 text-primary" />
-              )}
-              Tout marquer comme lu
-            </button>
-          )}
         </div>
 
         {/* ── KPIs ── */}
@@ -288,8 +311,14 @@ export default function NotificationsPage() {
         </div>
 
         {/* ── Panneau principal ── */}
-        <div className="card-premium">
-
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
+            boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+          }}
+        >
           {/* Tabs + badge non-lues */}
           <div className="flex items-center justify-between px-1 pt-1 border-b overflow-x-auto gap-2">
             <div className="flex gap-0.5">
@@ -348,48 +377,62 @@ export default function NotificationsPage() {
 
           {/* Liste */}
           {!isLoading && !isError && (
-            <div className="divide-y divide-border">
+            <div>
               {displayed.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
-                  <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
-                    <BellOff className="w-6 h-6 opacity-40" />
+                <div className="py-16 flex flex-col items-center gap-3">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                    style={{ background: "hsl(var(--muted))" }}
+                  >
+                    <BellOff className="w-7 h-7 text-muted-foreground/50" />
                   </div>
-                  <p className="text-sm font-medium">Aucune notification dans cette catégorie</p>
-                  <p className="text-xs opacity-60">Les nouvelles alertes apparaîtront ici</p>
+                  <p className="text-muted-foreground text-sm font-medium">
+                    Aucune notification dans cette catégorie
+                  </p>
+                  <p className="text-xs text-muted-foreground/60">
+                    Les nouvelles alertes apparaîtront ici
+                  </p>
                 </div>
               ) : (
                 displayed.map((notif, index) => {
                   const resolvedType = resolveType(notif.notification_type);
-                  const Icon = TYPE_ICON[resolvedType] ?? Settings;
-                  const colorClass = TYPE_COLOR[resolvedType] ?? TYPE_COLOR["systeme"];
+                  const TypeIcon = TYPE_ICON[resolvedType] ?? Settings;
+                  const typeColor = TYPE_HEX[resolvedType] ?? "hsl(22 72% 48%)";
 
                   return (
                     <div
                       key={notif.id}
                       onClick={() => handleNotifClick(notif)}
-                      style={{ animationDelay: `${index * 30}ms` }}
+                      style={{
+                        animationDelay: `${index * 30}ms`,
+                        background: !notif.is_read ? `color-mix(in srgb, ${typeColor} 5%, transparent)` : "transparent",
+                        borderLeft: `3px solid ${!notif.is_read ? typeColor : "transparent"}`,
+                        cursor: "pointer",
+                      }}
                       className={cn(
-                        "group relative flex items-start gap-4 px-5 py-4 cursor-pointer",
-                        "transition-all duration-200 overflow-hidden animate-fade-scale",
-                        notif.is_read
-                          ? "opacity-70 hover:opacity-100 hover:bg-muted/30"
-                          : "border-l-4 border-primary bg-primary/[0.04] hover:bg-primary/[0.07]",
-                        removingId === notif.id && "opacity-0 scale-95 max-h-0 py-0"
+                        "group relative flex items-start gap-4 px-5 py-4 border-b border-border/50 last:border-0 animate-fade-scale",
+                        "transition-colors duration-200 overflow-hidden",
+                        removingId === notif.id && "opacity-0 scale-95",
+                        notif.is_read ? "opacity-80 hover:opacity-100" : ""
                       )}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "hsl(22 72% 48% / 0.04)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = !notif.is_read
+                          ? `color-mix(in srgb, ${typeColor} 5%, transparent)`
+                          : "transparent";
+                      }}
                     >
-                      {/* Unread pulse dot */}
-                      {!notif.is_read && (
-                        <span className="absolute right-4 top-4 w-2 h-2 rounded-full bg-primary animate-pulse-soft" />
-                      )}
-
-                      {/* Icon pill */}
+                      {/* Icône type avec couleur */}
                       <div
-                        className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
-                          colorClass
-                        )}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{
+                          background: `color-mix(in srgb, ${typeColor} 12%, transparent)`,
+                          border: `1px solid color-mix(in srgb, ${typeColor} 20%, transparent)`,
+                        }}
                       >
-                        <Icon className="w-4 h-4" />
+                        <TypeIcon className="w-4 h-4" style={{ color: typeColor }} />
                       </div>
 
                       {/* Content */}
@@ -404,13 +447,21 @@ export default function NotificationsPage() {
                         >
                           {notif.title}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 font-body leading-relaxed">
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 font-body leading-relaxed">
                           {notif.message}
                         </p>
                         <span className="mt-1.5 inline-block font-mono text-[10px] text-muted-foreground/70 tracking-tight">
                           {relativeTime(notif.created_at)}
                         </span>
                       </div>
+
+                      {/* Dot non lu */}
+                      {!notif.is_read && (
+                        <div
+                          className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 animate-pulse-soft"
+                          style={{ background: typeColor }}
+                        />
+                      )}
 
                       {/* Dismiss button */}
                       <button

@@ -50,8 +50,16 @@ function CashierRow({ stat, isTop, revenuePct, rank }: CashierRowProps) {
       {/* Nom + badge Top */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <Users className="w-3.5 h-3.5 text-primary" />
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+            style={{
+              background: isTop
+                ? "linear-gradient(135deg, hsl(36, 88%, 48%), hsl(22, 72%, 52%))"
+                : "linear-gradient(135deg, hsl(22, 72%, 48%), hsl(36, 88%, 52%))",
+              boxShadow: isTop ? "0 2px 8px hsl(36 88% 48% / 0.3)" : "0 2px 8px hsl(22 72% 48% / 0.25)",
+            }}
+          >
+            <Users className="w-3.5 h-3.5 text-white" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold font-heading truncate">
@@ -78,17 +86,24 @@ function CashierRow({ stat, isTop, revenuePct, rank }: CashierRowProps) {
       {/* Revenus + barre */}
       <td className="px-4 py-3 min-w-[180px]">
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-right font-editorial amount-editorial">
+          <span
+            className="text-sm font-semibold text-right"
+            style={{
+              fontFamily: "Fraunces, Georgia, serif",
+              color: "hsl(22 72% 48%)",
+              letterSpacing: "-0.01em",
+            }}
+          >
             {formatFcfa(stat.total_revenue)}
           </span>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div className="h-1 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
                 width: `${revenuePct}%`,
                 background: isTop
-                  ? "hsl(var(--warning))"
-                  : "var(--gradient-primary)",
+                  ? "linear-gradient(90deg, hsl(36, 88%, 52%), hsl(22, 72%, 48%))"
+                  : "linear-gradient(90deg, hsl(22, 72%, 48%), hsl(36, 88%, 52%))",
               }}
             />
           </div>

@@ -2,7 +2,6 @@ import { useOutletContext } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/ui/StatCard";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,11 +53,50 @@ import {
   type AdjustmentPayload,
 } from "@/services/stockService";
 
+// ─── Color palette ────────────────────────────────────────────────────────────
+
+const COLOR = {
+  normal:   "hsl(152 38% 38%)",
+  normalBg: "hsl(152 38% 38% / 0.10)",
+  normalText: "hsl(152 38% 38%)",
+  low:      "hsl(36 88% 52%)",
+  lowBg:    "hsl(36 88% 52% / 0.12)",
+  lowText:  "hsl(36 62% 35%)",
+  critical: "hsl(4 72% 52%)",
+  criticalBg: "hsl(4 72% 52% / 0.10)",
+  criticalText: "hsl(4 72% 52%)",
+  copper:   "hsl(22 72% 48%)",
+} as const;
+
+function statusColor(status: "normal" | "bas" | "critique"): string {
+  if (status === "critique") return COLOR.critical;
+  if (status === "bas") return COLOR.low;
+  return COLOR.normal;
+}
+
+function statusBg(status: "normal" | "bas" | "critique"): string {
+  if (status === "critique") return COLOR.criticalBg;
+  if (status === "bas") return COLOR.lowBg;
+  return COLOR.normalBg;
+}
+
+function statusTextColor(status: "normal" | "bas" | "critique"): string {
+  if (status === "critique") return COLOR.criticalText;
+  if (status === "bas") return COLOR.lowText;
+  return COLOR.normalText;
+}
+
+function statusLabel(status: "normal" | "bas" | "critique"): string {
+  if (status === "critique") return "Critique";
+  if (status === "bas") return "Bas";
+  return "Normal";
+}
+
 // ─── Local display type ───────────────────────────────────────────────────────
 
 interface StockItem {
   id: number;
-  stockId: number; // API stock record id (used for adjust endpoint)
+  stockId: number;
   name: string;
   category: string;
   imageUrl: string | null;
@@ -121,19 +159,13 @@ type ThresholdFormValues = z.infer<typeof thresholdSchema>;
 
 // ─── Filter options ────────────────────────────────────────────────────────────
 
-const LEVEL_FILTER_OPTIONS = [
-  { value: "critique", label: "Critique" },
-  { value: "bas", label: "Bas" },
-  { value: "normal", label: "Normal" },
-];
-
 type StockLevelFilter = "" | "normal" | "bas" | "critique";
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
 
 function TableSkeleton() {
   return (
-    <div className="bg-card rounded-lg border overflow-hidden">
+    <div className="bg-card rounded-xl border overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="data-table">
           <thead>
@@ -157,6 +189,54 @@ function TableSkeleton() {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Status pill ──────────────────────────────────────────────────────────────
+
+function StatusPill({ status }: { status: StockItem["status"] }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+      style={{
+        background: statusBg(status),
+        color: statusTextColor(status),
+      }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: "currentColor" }} />
+      {statusLabel(status)}
+    </span>
+  );
+}
+
+// ─── Stock bar cell ───────────────────────────────────────────────────────────
+
+function StockBarCell({ item }: { item: StockItem }) {
+  const pct = item.max > 0 ? Math.min(100, Math.round((item.stock / item.max) * 100)) : 0;
+  return (
+    <div className="min-w-[120px]">
+      <div className="flex items-center justify-between mb-1">
+        <span
+          className="text-sm font-bold tabular-nums"
+          style={{ fontFamily: "'Fraunces', serif", color: statusColor(item.status) }}
+        >
+          {item.stock}
+        </span>
+        <span className="text-[10px] text-muted-foreground">/ {item.max}</span>
+      </div>
+      <div
+        className="h-1.5 rounded-full overflow-hidden"
+        style={{ background: "hsl(var(--muted))" }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${pct}%`,
+            background: statusColor(item.status),
+          }}
+        />
       </div>
     </div>
   );
@@ -204,9 +284,17 @@ function AdjustStockForm({ item, onSubmit, onCancel, isSubmitting }: AdjustStock
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="grid gap-4 py-4">
         {/* Résumé stock actuel */}
-        <div className="rounded-lg bg-muted px-4 py-3 flex items-center justify-between text-sm">
+        <div
+          className="rounded-xl px-4 py-3 flex items-center justify-between text-sm"
+          style={{ background: "hsl(var(--muted))" }}
+        >
           <span className="text-muted-foreground">Stock actuel</span>
-          <span className="font-semibold text-lg">{item.stock}</span>
+          <span
+            className="font-bold text-lg tabular-nums"
+            style={{ fontFamily: "'Fraunces', serif", color: COLOR.copper }}
+          >
+            {item.stock}
+          </span>
         </div>
 
         {/* Type */}
@@ -219,7 +307,10 @@ function AdjustStockForm({ item, onSubmit, onCancel, isSubmitting }: AdjustStock
             control={control}
             render={({ field }) => (
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger className="mt-1 w-full">
+                <SelectTrigger
+                  className="mt-1 w-full focus:ring-2"
+                  style={{ "--tw-ring-color": COLOR.copper } as React.CSSProperties}
+                >
                   <SelectValue placeholder="Sélectionner le type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -262,23 +353,31 @@ function AdjustStockForm({ item, onSubmit, onCancel, isSubmitting }: AdjustStock
         {/* Aperçu nouveau stock */}
         {newStock !== null && (
           <div
-            className={`rounded-lg border px-4 py-3 flex items-center justify-between text-sm transition-colors ${
-              isSortieBlocked
-                ? "border-destructive bg-destructive/5"
+            className="rounded-xl border px-4 py-3 flex items-center justify-between text-sm transition-colors"
+            style={{
+              borderColor: isSortieBlocked
+                ? COLOR.critical
                 : newStock < item.min
-                ? "border-warning bg-warning/5"
-                : "border-success bg-success/5"
-            }`}
+                ? COLOR.low
+                : COLOR.normal,
+              background: isSortieBlocked
+                ? COLOR.criticalBg
+                : newStock < item.min
+                ? COLOR.lowBg
+                : COLOR.normalBg,
+            }}
           >
             <span className="text-muted-foreground">Nouveau stock prévu</span>
             <span
-              className={`font-semibold text-lg ${
-                isSortieBlocked
-                  ? "text-destructive"
+              className="font-bold text-lg tabular-nums"
+              style={{
+                fontFamily: "'Fraunces', serif",
+                color: isSortieBlocked
+                  ? COLOR.critical
                   : newStock < item.min
-                  ? "text-warning"
-                  : "text-success"
-              }`}
+                  ? COLOR.low
+                  : COLOR.normal,
+              }}
             >
               {isSortieBlocked ? "—" : newStock}
             </span>
@@ -304,7 +403,15 @@ function AdjustStockForm({ item, onSubmit, onCancel, isSubmitting }: AdjustStock
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Annuler
         </Button>
-        <Button type="submit" disabled={isSortieBlocked || isSubmitting}>
+        <Button
+          type="submit"
+          disabled={isSortieBlocked || isSubmitting}
+          style={{
+            background: `linear-gradient(135deg, ${COLOR.copper}, hsl(36 88% 52%))`,
+            border: "none",
+            color: "white",
+          }}
+        >
           {isSubmitting ? "Enregistrement…" : "Confirmer"}
         </Button>
       </DialogFooter>
@@ -334,8 +441,14 @@ function ThresholdForm({ item, onSubmit, onCancel, isSubmitting }: ThresholdForm
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="grid gap-4 py-4">
-        <div className="rounded-lg bg-muted px-4 py-2 text-sm text-muted-foreground">
-          Stock actuel : <strong className="text-foreground">{item.stock}</strong>
+        <div
+          className="rounded-xl px-4 py-2 text-sm text-muted-foreground"
+          style={{ background: "hsl(var(--muted))" }}
+        >
+          Stock actuel :{" "}
+          <strong style={{ fontFamily: "'Fraunces', serif", color: COLOR.copper }}>
+            {item.stock}
+          </strong>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -376,11 +489,194 @@ function ThresholdForm({ item, onSubmit, onCancel, isSubmitting }: ThresholdForm
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Annuler
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          style={{
+            background: `linear-gradient(135deg, ${COLOR.copper}, hsl(36 88% 52%))`,
+            border: "none",
+            color: "white",
+          }}
+        >
           {isSubmitting ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </DialogFooter>
     </form>
+  );
+}
+
+// ─── Global health banner ─────────────────────────────────────────────────────
+
+interface HealthBannerProps {
+  totalProducts: number;
+  totalValue: number;
+  normalCount: number;
+  lowCount: number;
+  criticalCount: number;
+}
+
+function HealthBanner({
+  totalProducts,
+  totalValue,
+  normalCount,
+  lowCount,
+  criticalCount,
+}: HealthBannerProps) {
+  const total = normalCount + lowCount + criticalCount || 1;
+  const normalPct = Math.round((normalCount / total) * 100);
+  const lowPct = Math.round((lowCount / total) * 100);
+  const criticalPct = 100 - normalPct - lowPct;
+
+  return (
+    <div
+      className="mb-6 p-5 rounded-2xl"
+      style={{
+        background: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))",
+        boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+      }}
+    >
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div>
+          <h3
+            className="font-bold text-foreground"
+            style={{ fontFamily: "var(--font-heading, inherit)" }}
+          >
+            Santé globale du stock
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {totalProducts} produit{totalProducts !== 1 ? "s" : ""} · Valeur totale :{" "}
+            <span
+              className="font-semibold"
+              style={{ fontFamily: "'Fraunces', serif", color: COLOR.copper }}
+            >
+              {totalValue.toLocaleString("fr-FR")} FCFA
+            </span>
+          </p>
+        </div>
+        {criticalCount > 0 && (
+          <span
+            className="text-xs font-bold px-3 py-1.5 rounded-full animate-pulse"
+            style={{
+              background: COLOR.criticalBg,
+              color: COLOR.critical,
+            }}
+          >
+            ⚠ {criticalCount} critique{criticalCount > 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
+      {/* Barre tricolore */}
+      <div className="flex rounded-full overflow-hidden h-3 mb-3 gap-0.5">
+        {normalPct > 0 && (
+          <div
+            className="h-full transition-all"
+            style={{
+              width: `${normalPct}%`,
+              background: COLOR.normal,
+              borderRadius: lowPct === 0 && criticalPct <= 0 ? "999px" : "999px 0 0 999px",
+            }}
+          />
+        )}
+        {lowPct > 0 && (
+          <div
+            className="h-full transition-all"
+            style={{ width: `${lowPct}%`, background: COLOR.low }}
+          />
+        )}
+        {criticalPct > 0 && (
+          <div
+            className="h-full transition-all"
+            style={{
+              width: `${criticalPct}%`,
+              background: COLOR.critical,
+              borderRadius: "0 999px 999px 0",
+            }}
+          />
+        )}
+      </div>
+
+      <div className="flex items-center gap-6 flex-wrap text-xs">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR.normal }} />
+          <span className="text-muted-foreground">Normal ({normalCount})</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR.low }} />
+          <span className="text-muted-foreground">Bas ({lowCount})</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR.critical }} />
+          <span className="text-muted-foreground">Critique ({criticalCount})</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Level filter pills ───────────────────────────────────────────────────────
+
+interface LevelFilterPillsProps {
+  filter: StockLevelFilter;
+  onChange: (v: StockLevelFilter) => void;
+  total: number;
+  normalCount: number;
+  lowCount: number;
+  criticalCount: number;
+}
+
+function LevelFilterPills({
+  filter,
+  onChange,
+  total,
+  normalCount,
+  lowCount,
+  criticalCount,
+}: LevelFilterPillsProps) {
+  const tabs: { key: StockLevelFilter; label: string; count: number; color?: string }[] = [
+    { key: "", label: "Tous", count: total },
+    { key: "critique", label: "Critiques", count: criticalCount, color: COLOR.critical },
+    { key: "bas", label: "Stock bas", count: lowCount, color: COLOR.low },
+    { key: "normal", label: "Normal", count: normalCount, color: COLOR.normal },
+  ];
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {tabs.map((tab) => {
+        const isActive = filter === tab.key;
+        const activeGradient = tab.color
+          ? `linear-gradient(135deg, ${tab.color}, ${tab.color}cc)`
+          : `linear-gradient(135deg, ${COLOR.copper}, hsl(36 88% 52%))`;
+        return (
+          <button
+            key={tab.key}
+            onClick={() => onChange(tab.key)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+            style={
+              isActive
+                ? {
+                    background: activeGradient,
+                    color: "white",
+                    boxShadow: `0 2px 8px ${tab.color || COLOR.copper}55`,
+                  }
+                : {
+                    background: "hsl(var(--muted))",
+                    color: "hsl(var(--muted-foreground))",
+                  }
+            }
+          >
+            {tab.label}
+            <span
+              className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+              style={{ background: "rgba(255,255,255,0.2)" }}
+            >
+              {tab.count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -591,22 +887,6 @@ export default function StockPage() {
     });
   }
 
-  // ── Status badge helper ────────────────────────────────────────────────────
-
-  function renderStatusBadge(status: StockItem["status"]) {
-    if (status === "critique") return <StatusBadge label="Critique" variant="danger" />;
-    if (status === "bas") return <StatusBadge label="Bas" variant="warning" />;
-    return <StatusBadge label="Normal" variant="success" />;
-  }
-
-  // ── Progress bar color helper ──────────────────────────────────────────────
-
-  function progressColor(status: StockItem["status"]): string {
-    if (status === "critique") return "hsl(var(--destructive))";
-    if (status === "bas") return "hsl(var(--warning))";
-    return "hsl(var(--success))";
-  }
-
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
@@ -617,35 +897,19 @@ export default function StockPage() {
         onMenuClick={onMenuClick}
       />
       <div className="page-container animate-slide-in">
-        {/* Header de page premium avec badge d'alerte */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-          <div className="border-l-4 border-primary pl-3">
-            <h2 className="text-lg sm:text-xl font-semibold tracking-tight flex items-center gap-2 flex-wrap">
-              Gestion du stock
-              {!isLoading && criticalCount > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 px-2.5 py-0.5 text-xs font-semibold animate-pulse">
-                  <AlertTriangle className="w-3 h-3" />
-                  {criticalCount} article{criticalCount > 1 ? "s" : ""} en rupture
-                </span>
-              )}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {isLoading ? (
-                <span className="opacity-60">Chargement…</span>
-              ) : (
-                <>
-                  <span className="font-medium text-foreground">
-                    {stockItems.length}
-                  </span>{" "}
-                  produit{stockItems.length !== 1 ? "s" : ""} suivi
-                  {stockItems.length !== 1 ? "s" : ""}
-                </>
-              )}
-            </p>
-          </div>
-        </div>
 
-        {/* Stat cards */}
+        {/* ── Barre santé globale ────────────────────────────────────────────── */}
+        {!isLoading && (
+          <HealthBanner
+            totalProducts={stockItems.length}
+            totalValue={totalStockValue}
+            normalCount={normalCount}
+            lowCount={lowCount}
+            criticalCount={criticalCount}
+          />
+        )}
+
+        {/* ── KPI stat cards ─────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
           <StatCard
             label="Total produits"
@@ -675,19 +939,38 @@ export default function StockPage() {
           />
         </div>
 
-        {/* Valeur totale du stock */}
+        {/* ── Valeur totale — inline pill ────────────────────────────────────── */}
         {!isLoading && totalStockValue > 0 && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm w-fit">
+          <div className="mb-5 flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm w-fit shadow-sm">
             <Wallet className="w-4 h-4 text-muted-foreground shrink-0" />
             <span className="text-muted-foreground">Valeur totale du stock :</span>
-            <span className="font-semibold">
+            <span
+              className="font-bold"
+              style={{ fontFamily: "'Fraunces', serif", color: COLOR.copper }}
+            >
               {totalStockValue.toLocaleString("fr-FR")} FCFA
             </span>
           </div>
         )}
 
-        {/* Barre de filtres — card horizontale */}
-        <div className="bg-card border rounded-xl shadow-sm p-2.5 sm:p-3 mb-3 flex flex-col sm:flex-row sm:items-center gap-3">
+        {/* ── Level filter pills ─────────────────────────────────────────────── */}
+        {!isLoading && (
+          <div className="mb-4">
+            <LevelFilterPills
+              filter={levelFilter}
+              onChange={(v) => { setLevelFilter(v); clearSelection(); }}
+              total={stockItems.length}
+              normalCount={normalCount}
+              lowCount={lowCount}
+              criticalCount={criticalCount}
+            />
+          </div>
+        )}
+
+        {/* ── Search + view toggle ───────────────────────────────────────────── */}
+        <div
+          className="bg-card border rounded-xl shadow-sm p-2.5 sm:p-3 mb-3 flex flex-col sm:flex-row sm:items-center gap-3"
+        >
           <div className="flex-1 min-w-0">
             <SearchInput
               placeholder="Rechercher un produit ou catégorie..."
@@ -724,7 +1007,7 @@ export default function StockPage() {
           </div>
         </div>
 
-        {/* Barre d'outils tableau */}
+        {/* ── Table toolbar (category filter + bulk actions + export) ───────── */}
         <TableToolbar
           showCheckbox
           isAllSelected={isAllSelected(allPageIds)}
@@ -732,7 +1015,7 @@ export default function StockPage() {
           onToggleAll={() => toggleAll(allPageIds)}
           selectedCount={selectedIds.size}
           bulkActions={
-            can('manage_stock') ? (
+            can("manage_stock") ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -750,37 +1033,20 @@ export default function StockPage() {
             setCategoryFilter(val);
             clearSelection();
           }}
-          extraActions={
-            <select
-              value={levelFilter}
-              onChange={(e) => {
-                setLevelFilter(e.target.value as StockLevelFilter);
-                clearSelection();
-              }}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 cursor-pointer min-w-[120px]"
-            >
-              <option value="">Tous les niveaux</option>
-              {LEVEL_FILTER_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          }
           showExport
           onExport={handleExport}
           exportLabel="Exporter Excel"
           ExportIcon={FileSpreadsheet}
         />
 
-        {/* Error state */}
+        {/* ── Error state ────────────────────────────────────────────────────── */}
         {isError && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive mb-4">
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive mb-4">
             Impossible de charger les données de stock. Veuillez réessayer.
           </div>
         )}
 
-        {/* ── Vue grille stock ────────────────────────────────────────────────── */}
+        {/* ── Vue grille ─────────────────────────────────────────────────────── */}
         {viewMode === "grid" && !isLoading && (
           <div>
             {typedPaginated.length === 0 && (
@@ -798,7 +1064,21 @@ export default function StockPage() {
                 return (
                   <div
                     key={item.id}
-                    className="group rounded-xl border bg-card hover:border-primary/50 hover:shadow-sm transition-all p-3 flex flex-col gap-2"
+                    className="group rounded-xl bg-card hover:shadow-md transition-all p-3 flex flex-col gap-2"
+                    style={{
+                      border:
+                        item.status === "critique"
+                          ? `1px solid ${COLOR.critical}55`
+                          : item.status === "bas"
+                          ? `1px solid ${COLOR.low}55`
+                          : "1px solid hsl(var(--border))",
+                      borderLeft:
+                        item.status === "critique"
+                          ? `3px solid ${COLOR.critical}`
+                          : item.status === "bas"
+                          ? `3px solid ${COLOR.low}`
+                          : "3px solid transparent",
+                    }}
                   >
                     {/* Icône + Nom + catégorie */}
                     <div className="flex items-start gap-2">
@@ -821,25 +1101,22 @@ export default function StockPage() {
 
                     {/* Quantité en grand */}
                     <p
-                      className={cn(
-                        "text-2xl font-black tabular-nums",
-                        item.status === "critique"
-                          ? "text-destructive"
-                          : item.status === "bas"
-                            ? "text-warning"
-                            : "text-success"
-                      )}
+                      className="text-2xl font-black tabular-nums"
+                      style={{
+                        fontFamily: "'Fraunces', serif",
+                        color: statusColor(item.status),
+                      }}
                     >
                       {item.stock}
                     </p>
 
                     {/* Barre de progression */}
-                    <div className="h-1.5 bg-muted rounded-full">
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all duration-300"
+                        className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${pct}%`,
-                          background: progressColor(item.status),
+                          background: statusColor(item.status),
                         }}
                       />
                     </div>
@@ -849,16 +1126,20 @@ export default function StockPage() {
                       <span className="text-[10px] text-muted-foreground tabular-nums">
                         {item.min} – {item.max}
                       </span>
-                      {renderStatusBadge(item.status)}
+                      <StatusPill status={item.status} />
                     </div>
 
                     {/* Bouton Ajuster */}
-                    {can('manage_stock') && (
+                    {can("manage_stock") && (
                       <div className="mt-auto pt-1 border-t opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full h-7 text-xs border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                          className="w-full h-7 text-xs"
+                          style={{
+                            borderColor: `${COLOR.copper}50`,
+                            color: COLOR.copper,
+                          }}
                           onClick={() => setModal({ type: "adjust", item })}
                         >
                           <ArrowUpDown className="w-3 h-3 mr-1" />
@@ -874,7 +1155,7 @@ export default function StockPage() {
         )}
         {viewMode === "grid" && isLoading && <TableSkeleton />}
 
-        {/* Desktop : tableau normal */}
+        {/* ── Vue liste — Desktop ────────────────────────────────────────────── */}
         {viewMode === "list" && isLoading ? (
           <TableSkeleton />
         ) : viewMode === "list" ? (
@@ -904,20 +1185,29 @@ export default function StockPage() {
                       </td>
                     </tr>
                   )}
-                  {typedPaginated.map((item, idx) => {
+                  {typedPaginated.map((item) => {
                     const pct = item.max > 0
                       ? Math.min(100, Math.round((item.stock / item.max) * 100))
                       : 0;
                     return (
                       <tr
                         key={item.id}
-                        className={
-                          isSelected(item.id)
-                            ? "bg-primary/5"
-                            : idx % 2 === 1
-                              ? "bg-muted/20"
-                              : undefined
-                        }
+                        className="group transition-colors"
+                        style={{
+                          background: isSelected(item.id)
+                            ? "hsl(var(--primary) / 0.05)"
+                            : item.status === "critique"
+                            ? COLOR.criticalBg.replace("0.10", "0.03")
+                            : item.status === "bas"
+                            ? COLOR.lowBg.replace("0.12", "0.03")
+                            : "transparent",
+                          borderLeft:
+                            item.status === "critique"
+                              ? `3px solid ${COLOR.critical}`
+                              : item.status === "bas"
+                              ? `3px solid ${COLOR.low}`
+                              : "3px solid transparent",
+                        }}
                       >
                         <td className="w-10">
                           <input
@@ -930,21 +1220,16 @@ export default function StockPage() {
                         </td>
                         <td className="font-medium">{item.name}</td>
                         <td className="text-muted-foreground">{item.category}</td>
-                        <td>
-                          <span
-                            className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold tabular-nums ${
-                              item.status === "critique"
-                                ? "bg-destructive/10 text-destructive border-destructive/20"
-                                : item.status === "bas"
-                                  ? "bg-warning/10 text-warning border-warning/20"
-                                  : "bg-success/10 text-success border-success/20"
-                            }`}
-                          >
-                            {item.stock}
-                          </span>
+
+                        {/* Colonne Stock avec barre visuelle */}
+                        <td className="px-4 py-3">
+                          <StockBarCell item={item} />
                         </td>
+
                         <td className="tabular-nums text-muted-foreground">{item.min}</td>
                         <td className="tabular-nums text-muted-foreground">{item.max}</td>
+
+                        {/* Colonne niveau — barre + % */}
                         <td>
                           <div className="flex items-center gap-2">
                             <div className="w-16 sm:w-24 h-2 bg-muted rounded-full overflow-hidden">
@@ -952,7 +1237,7 @@ export default function StockPage() {
                                 className="h-full rounded-full transition-all duration-300"
                                 style={{
                                   width: `${pct}%`,
-                                  background: progressColor(item.status),
+                                  background: statusColor(item.status),
                                 }}
                               />
                             </div>
@@ -961,21 +1246,30 @@ export default function StockPage() {
                             </span>
                           </div>
                         </td>
-                        <td>{renderStatusBadge(item.status)}</td>
+
+                        {/* Statut pill */}
+                        <td>
+                          <StatusPill status={item.status} />
+                        </td>
+
                         <td>
                           <div className="flex items-center justify-end gap-1.5 pr-2">
-                            {can('manage_stock') && (
+                            {can("manage_stock") && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-8 px-2.5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                                className="h-8 px-2.5"
+                                style={{
+                                  borderColor: `${COLOR.copper}50`,
+                                  color: COLOR.copper,
+                                }}
                                 onClick={() => setModal({ type: "adjust", item })}
                               >
                                 <ArrowUpDown className="w-3.5 h-3.5 lg:mr-1" />
                                 <span className="hidden lg:inline">Ajuster</span>
                               </Button>
                             )}
-                            {can('manage_stock') && (
+                            {can("manage_stock") && (
                               <button
                                 className="p-2 rounded-md hover:bg-secondary flex items-center gap-1 text-xs text-muted-foreground transition-colors"
                                 title="Définir les seuils"
@@ -996,7 +1290,7 @@ export default function StockPage() {
           </div>
         ) : null}
 
-        {/* Mobile : card list — md:hidden */}
+        {/* ── Mobile : card list ─────────────────────────────────────────────── */}
         {!isLoading && (
           <div className="md:hidden space-y-2">
             {typedPaginated.length === 0 && (
@@ -1008,18 +1302,27 @@ export default function StockPage() {
               const pct = item.max > 0
                 ? Math.min(100, Math.round((item.stock / item.max) * 100))
                 : 0;
-              const stockBadgeClasses =
-                item.status === "critique"
-                  ? "bg-destructive/10 text-destructive border-destructive/20"
-                  : item.status === "bas"
-                    ? "bg-warning/10 text-warning border-warning/20"
-                    : "bg-success/10 text-success border-success/20";
               return (
                 <div
                   key={item.id}
-                  className={`bg-card border rounded-xl p-4 flex flex-col gap-3 ${
-                    isSelected(item.id) ? "border-primary/50 bg-primary/5" : ""
-                  }`}
+                  className="bg-card rounded-xl p-4 flex flex-col gap-3"
+                  style={{
+                    border:
+                      item.status === "critique"
+                        ? `1px solid ${COLOR.critical}40`
+                        : item.status === "bas"
+                        ? `1px solid ${COLOR.low}40`
+                        : "1px solid hsl(var(--border))",
+                    borderLeft:
+                      item.status === "critique"
+                        ? `3px solid ${COLOR.critical}`
+                        : item.status === "bas"
+                        ? `3px solid ${COLOR.low}`
+                        : "3px solid transparent",
+                    background: isSelected(item.id)
+                      ? "hsl(var(--primary) / 0.04)"
+                      : undefined,
+                  }}
                 >
                   {/* Header row : nom produit + badge statut */}
                   <div className="flex items-start justify-between gap-3">
@@ -1038,13 +1341,19 @@ export default function StockPage() {
                         </p>
                       </div>
                     </div>
-                    {renderStatusBadge(item.status)}
+                    <StatusPill status={item.status} />
                   </div>
 
-                  {/* Stock badge + seuils */}
+                  {/* Stock quantité + seuils */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold ${stockBadgeClasses}`}
+                      className="inline-flex items-center rounded-lg border px-2 py-0.5 text-sm font-bold tabular-nums"
+                      style={{
+                        background: statusBg(item.status),
+                        color: statusTextColor(item.status),
+                        borderColor: `${statusColor(item.status)}33`,
+                        fontFamily: "'Fraunces', serif",
+                      }}
                     >
                       Stock : {item.stock}
                     </span>
@@ -1058,16 +1367,16 @@ export default function StockPage() {
                   {/* Progress bar */}
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full transition-all"
+                      className="h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${pct}%`,
-                        background: progressColor(item.status),
+                        background: statusColor(item.status),
                       }}
                     />
                   </div>
 
                   {/* Actions */}
-                  {can('manage_stock') && (
+                  {can("manage_stock") && (
                     <div className="flex items-center justify-end gap-2 pt-2 border-t">
                       <button
                         className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors flex items-center gap-1.5 text-xs text-muted-foreground font-medium"
@@ -1079,7 +1388,12 @@ export default function StockPage() {
                       </button>
                       <Button
                         size="sm"
-                        className="h-8 rounded-md bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/20"
+                        className="h-8 rounded-md text-white"
+                        style={{
+                          background: `linear-gradient(135deg, ${COLOR.copper}, hsl(36 88% 52%))`,
+                          boxShadow: `0 2px 8px ${COLOR.copper}44`,
+                          border: "none",
+                        }}
                         onClick={() => setModal({ type: "adjust", item })}
                       >
                         <ArrowUpDown className="w-3.5 h-3.5 mr-1.5" />
@@ -1093,7 +1407,7 @@ export default function StockPage() {
           </div>
         )}
 
-        {/* Pagination */}
+        {/* ── Pagination ─────────────────────────────────────────────────────── */}
         <TablePagination
           page={page}
           totalPages={totalPages}
@@ -1112,9 +1426,11 @@ export default function StockPage() {
           open
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle
+                style={{ fontFamily: "var(--font-heading, inherit)", color: COLOR.copper }}
+              >
                 Ajuster le stock — {modal.item.name}
               </DialogTitle>
             </DialogHeader>
@@ -1134,9 +1450,11 @@ export default function StockPage() {
           open
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle
+                style={{ fontFamily: "var(--font-heading, inherit)", color: COLOR.copper }}
+              >
                 Ajuster la sélection — {modal.ids.size} produit{modal.ids.size > 1 ? "s" : ""}
               </DialogTitle>
             </DialogHeader>
@@ -1156,9 +1474,11 @@ export default function StockPage() {
           open
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
-          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle
+                style={{ fontFamily: "var(--font-heading, inherit)", color: COLOR.copper }}
+              >
                 Définir les seuils — {modal.item.name}
               </DialogTitle>
             </DialogHeader>

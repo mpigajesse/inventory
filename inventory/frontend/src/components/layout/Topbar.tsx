@@ -4,6 +4,7 @@ import {
   Search,
   Menu,
   ChevronRight,
+  ChevronDown,
   Home,
   LogOut,
   Settings,
@@ -246,12 +247,27 @@ export function Topbar({
     <header
       className="shrink-0 sticky top-0 z-20"
       style={{
-        background: "hsl(var(--topbar-bg))",
-        borderBottom: "1px solid hsl(var(--topbar-border))",
-        boxShadow: "0 1px 2px hsl(var(--shadow-color-warm) / 0.04)",
+        background: "hsl(var(--card))",
+        borderBottom: "1px solid hsl(var(--border))",
+        boxShadow: "0 1px 3px hsl(22 30% 15% / 0.08)",
+        position: "relative",
       }}
     >
-      {/* Main topbar row */}
+      {/* Ligne gradient top */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "2px",
+          background:
+            "linear-gradient(90deg, hsl(22 72% 48%), hsl(36 88% 52%), hsl(152 38% 38%))",
+          zIndex: 1,
+        }}
+      />
+
+      {/* Main topbar row — 64px */}
       <div className="h-16 flex items-center justify-between px-3 md:px-6 gap-3">
         {/* Left: hamburger + title */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -260,8 +276,8 @@ export function Topbar({
               type="button"
               onClick={onMenuClick}
               className={cn(
-                "md:hidden shrink-0 flex items-center justify-center w-11 h-11 -ml-1 rounded-md",
-                "hover:bg-secondary transition-colors",
+                "md:hidden shrink-0 flex items-center justify-center w-10 h-10 -ml-1 rounded-xl",
+                "hover:bg-muted transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               )}
               aria-label="Ouvrir le menu"
@@ -272,8 +288,13 @@ export function Topbar({
 
           <div className="min-w-0">
             <h1
-              className="text-[17px] md:text-[18px] font-semibold text-foreground leading-tight truncate"
-              style={{ letterSpacing: "-0.015em" }}
+              className="text-foreground leading-tight truncate"
+              style={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontSize: "1.125rem",
+                fontWeight: 800,
+                letterSpacing: "-0.02em",
+              }}
             >
               {title}
             </h1>
@@ -285,16 +306,16 @@ export function Topbar({
           </div>
         </div>
 
-        {/* Right: search, notifications, user menu */}
-        <div className="flex items-center gap-1.5">
+        {/* Right: search, notifications, user chip */}
+        <div className="flex items-center gap-2">
           {/* Search trigger — pill on desktop, icon-only on mobile */}
           <button
             type="button"
             onClick={onSearchClick}
             className={cn(
-              "hidden sm:inline-flex items-center gap-2 h-9 px-3 rounded-md",
+              "hidden sm:inline-flex items-center gap-2 h-9 px-3 rounded-xl",
               "text-[12px] text-muted-foreground border border-[hsl(var(--border))]",
-              "bg-[hsl(var(--muted)/0.5)] hover:bg-[hsl(var(--muted))] hover:text-foreground",
+              "bg-muted/50 hover:bg-muted hover:text-foreground",
               "transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
             )}
@@ -319,7 +340,7 @@ export function Topbar({
           <button
             type="button"
             onClick={onSearchClick}
-            className="sm:hidden flex items-center justify-center w-11 h-11 rounded-md hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            className="sm:hidden flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
             aria-label="Recherche"
           >
             <Search className="w-5 h-5 text-muted-foreground" />
@@ -331,12 +352,14 @@ export function Topbar({
               type="button"
               onClick={() => navigate("/pos")}
               className={cn(
-                "hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md",
-                "text-[12px] font-medium",
-                "bg-primary/10 text-primary hover:bg-primary/20",
-                "transition-colors",
+                "hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-xl",
+                "text-[12px] font-semibold transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               )}
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                color: "#fff",
+              }}
               title="Aller à la Caisse"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
@@ -349,7 +372,7 @@ export function Topbar({
             <button
               type="button"
               onClick={() => setNotifOpen((v) => !v)}
-              className="relative flex items-center justify-center w-11 h-11 rounded-md hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              className="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               aria-label={`Notifications (${unreadCount} non lues)`}
               aria-expanded={notifOpen}
               aria-haspopup="dialog"
@@ -357,12 +380,11 @@ export function Topbar({
               <Bell className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
               {unreadCount > 0 && (
                 <span
-                  className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center ring-2"
+                  className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
                   style={{
-                    background: "hsl(var(--destructive))",
-                    color: "hsl(var(--destructive-foreground))",
-                    ringColor: "hsl(var(--topbar-bg))",
-                    boxShadow: "0 0 0 2px hsl(var(--topbar-bg))",
+                    background: "hsl(22 72% 48%)",
+                    color: "#fff",
+                    boxShadow: "0 0 0 2px hsl(var(--card))",
                   }}
                 >
                   {unreadCount > 9 ? "9+" : unreadCount}
@@ -512,55 +534,55 @@ export function Topbar({
 
           {/* Vertical divider */}
           <span
-            className="hidden sm:block w-px h-6 mx-1"
+            className="hidden sm:block w-px h-6"
             style={{ background: "hsl(var(--border))" }}
             aria-hidden="true"
           />
 
-          {/* User dropdown */}
+          {/* User chip dropdown */}
           <div className="relative" ref={menuRef}>
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
               className={cn(
-                "flex items-center gap-2 h-10 pl-1 pr-2 rounded-full",
-                "hover:bg-secondary transition-colors",
+                "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all",
+                "hover:-translate-y-0.5 hover:shadow-md",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               )}
+              style={{
+                background: "hsl(22 72% 48% / 0.08)",
+                border: "1px solid hsl(22 72% 48% / 0.2)",
+              }}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               aria-label="Menu utilisateur"
             >
+              {/* Avatar avec initiales */}
               <span
-                className="flex items-center justify-center w-8 h-8 rounded-full text-[11px] font-bold text-white shrink-0"
+                className="flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold text-white shrink-0"
                 style={{
-                  background: "var(--gradient-primary)",
-                  boxShadow:
-                    "0 1px 2px hsl(var(--primary) / 0.3), inset 0 1px 0 hsl(0 0% 100% / 0.2)",
+                  background:
+                    "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                 }}
                 aria-hidden="true"
               >
                 {initials}
               </span>
-              <span className="hidden md:flex flex-col items-start leading-tight pr-1">
-                <span className="text-[12px] font-semibold text-foreground max-w-[120px] truncate">
-                  {currentUser?.name ?? "Utilisateur"}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  {roleLabel}
-                </span>
+              <span className="hidden md:block text-sm font-semibold text-foreground max-w-[100px] truncate">
+                {currentUser?.name?.split(" ")[0] ?? "Utilisateur"}
               </span>
+              <ChevronDown className="hidden md:block w-3.5 h-3.5 text-muted-foreground shrink-0" />
             </button>
 
             {menuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 top-full mt-2 w-64 rounded-lg overflow-hidden z-30"
+                className="absolute right-0 top-full mt-2 w-64 rounded-xl overflow-hidden z-30"
                 style={{
                   background: "hsl(var(--popover))",
                   color: "hsl(var(--popover-foreground))",
                   border: "1px solid hsl(var(--border))",
-                  boxShadow: "var(--shadow-lg)",
+                  boxShadow: "0 8px 24px hsl(22 30% 15% / 0.12)",
                 }}
               >
                 {/* Header */}
@@ -568,12 +590,16 @@ export function Topbar({
                   className="px-4 py-3 flex items-center gap-3"
                   style={{
                     borderBottom: "1px solid hsl(var(--border))",
-                    background: "hsl(var(--muted) / 0.4)",
+                    background: "hsl(22 72% 48% / 0.06)",
                   }}
                 >
                   <span
                     className="flex items-center justify-center w-10 h-10 rounded-full text-[13px] font-bold text-white shrink-0"
-                    style={{ background: "var(--gradient-primary)" }}
+                    style={{
+                      background:
+                        "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                      boxShadow: "0 2px 8px hsl(22 72% 48% / 0.3)",
+                    }}
                     aria-hidden="true"
                   >
                     {initials}

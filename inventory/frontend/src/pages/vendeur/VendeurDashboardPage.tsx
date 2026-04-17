@@ -9,9 +9,8 @@ import {
   Minus,
   Receipt,
   UserCheck,
-  Sparkles,
-  Calendar,
   ShoppingBag,
+  Zap,
 } from "lucide-react";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -52,26 +51,29 @@ function getGreeting(date: Date): string {
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
-type VendeurKpiTint = "primary" | "accent" | "info";
+type VendeurKpiTint = "copper" | "green" | "blue";
 
-const tintMap: Record<VendeurKpiTint, { bg: string; fg: string; ring: string; gradient: string }> = {
-  primary: {
-    bg: "bg-primary/12",
-    fg: "text-primary",
-    ring: "ring-primary/20",
-    gradient: "from-primary/[0.07] via-transparent",
+const tintStyles: Record<
+  VendeurKpiTint,
+  { iconBg: string; iconColor: string; gradientFrom: string; valueColor: string }
+> = {
+  copper: {
+    iconBg: "hsl(22 72% 48% / 0.15)",
+    iconColor: "hsl(22 72% 62%)",
+    gradientFrom: "hsl(22 72% 48% / 0.07)",
+    valueColor: "hsl(var(--foreground))",
   },
-  accent: {
-    bg: "bg-accent/14",
-    fg: "text-accent",
-    ring: "ring-accent/20",
-    gradient: "from-accent/[0.07] via-transparent",
+  green: {
+    iconBg: "hsl(var(--success) / 0.15)",
+    iconColor: "hsl(var(--success))",
+    gradientFrom: "hsl(var(--success) / 0.06)",
+    valueColor: "hsl(var(--foreground))",
   },
-  info: {
-    bg: "bg-[hsl(var(--badge-blue))]/14",
-    fg: "text-[hsl(var(--badge-blue))]",
-    ring: "ring-[hsl(var(--badge-blue))]/20",
-    gradient: "from-[hsl(var(--badge-blue))]/[0.07] via-transparent",
+  blue: {
+    iconBg: "hsl(var(--badge-blue) / 0.14)",
+    iconColor: "hsl(var(--badge-blue))",
+    gradientFrom: "hsl(var(--badge-blue) / 0.06)",
+    valueColor: "hsl(var(--foreground))",
   },
 };
 
@@ -82,28 +84,28 @@ const vendeurKpis: Array<{
   duration: number;
   change: string;
   trendDir: "up" | "down" | "neutral";
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   tint: VendeurKpiTint;
 }> = [
   {
-    label: "Mes ventes aujourd'hui",
+    label: "Mes ventes du jour",
     numericEnd: 87500,
-    suffix: " FCFA",
+    suffix: " F",
     duration: 1200,
     change: "+12%",
     trendDir: "up",
     icon: TrendingUp,
-    tint: "accent",
+    tint: "copper",
   },
   {
     label: "Transactions",
     numericEnd: 9,
     suffix: "",
     duration: 800,
-    change: "+2",
+    change: "+2 vs hier",
     trendDir: "up",
     icon: Receipt,
-    tint: "primary",
+    tint: "green",
   },
   {
     label: "Clients servis",
@@ -113,13 +115,26 @@ const vendeurKpis: Array<{
     change: "Aujourd'hui",
     trendDir: "neutral",
     icon: UserCheck,
-    tint: "info",
+    tint: "blue",
   },
 ];
 
-function VendeurKpiValue({ end, suffix, duration }: { end: number; suffix: string; duration: number }) {
+function KpiValue({
+  end,
+  suffix,
+  duration,
+}: {
+  end: number;
+  suffix: string;
+  duration: number;
+}) {
   const counted = useCountUp({ end, duration });
-  return <>{counted}{suffix}</>;
+  return (
+    <>
+      {counted.toLocaleString("fr-FR")}
+      {suffix}
+    </>
+  );
 }
 
 const mesDerniereVentes = [
@@ -153,107 +168,121 @@ export default function VendeurDashboardPage() {
 
       <div className="page-container animate-slide-in">
 
-        {/* ── Hero header vendeur ── */}
-        <div
-          className="relative overflow-hidden rounded-2xl border bg-card p-5 md:p-6 mb-6"
-          style={{
-            boxShadow: "0 2px 16px hsl(22 72% 48% / 0.06)",
-          }}
-        >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.08] via-transparent to-accent/[0.06]"
-          />
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div
-                className="relative w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0"
-                style={{ boxShadow: "0 6px 20px hsl(22 72% 48% / 0.30)" }}
-              >
-                {initials}
-                <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-success border-2 border-card" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                    <Sparkles className="w-3 h-3 text-primary" />
-                    {greeting}
-                  </span>
-                </div>
-                <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">
-                  {firstName}
-                </h1>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <StatusBadge label="Vendeur" variant="info" />
-                  <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
-                    <Calendar className="w-3 h-3" />
-                    <span className="capitalize">{formatLongDate(today)}</span>
-                  </span>
-                </div>
-              </div>
+        {/* ── Salutation personnalisée ── */}
+        <div className="mb-7">
+          <div className="flex items-center gap-4">
+            {/* Avatar */}
+            <div
+              className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg shrink-0"
+              style={{
+                background: "var(--gradient-primary)",
+                boxShadow: "0 6px 20px hsl(22 72% 48% / 0.32)",
+              }}
+            >
+              {initials}
+              <span
+                className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2"
+                style={{
+                  background: "hsl(var(--success))",
+                  borderColor: "hsl(var(--background))",
+                }}
+              />
             </div>
 
-            <button
-              onClick={() => navigate("/vendeur/pos")}
-              className="group inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-3 rounded-xl font-semibold text-sm hover:bg-primary/90 active:scale-[0.97] transition-all w-full md:w-auto justify-center"
-              style={{ boxShadow: "0 8px 24px hsl(22 72% 48% / 0.26)" }}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              Ouvrir la caisse
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </button>
+            {/* Text */}
+            <div className="min-w-0">
+              <p
+                className="text-[11px] font-bold uppercase tracking-[0.14em] mb-0.5"
+                style={{ color: "hsl(var(--primary))" }}
+              >
+                {greeting} 👋
+              </p>
+              <h1
+                className="text-xl md:text-2xl font-extrabold font-heading tracking-tight truncate"
+              >
+                {firstName}
+              </h1>
+              <p className="text-[12px] text-muted-foreground mt-0.5 capitalize">
+                {formatLongDate(today)} · Bonne journée de ventes !
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* ── KPIs ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {/* ── KPI cards ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
           {vendeurKpis.map((kpi, index) => {
             const Icon = kpi.icon;
-            const t = tintMap[kpi.tint];
+            const t = tintStyles[kpi.tint];
             return (
               <div
                 key={kpi.label}
-                className={cn(
-                  "group relative overflow-hidden rounded-2xl border bg-card p-5",
-                  "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
-                )}
+                className="relative overflow-hidden rounded-2xl border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                 style={{
                   animation: "fadeScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
-                  animationDelay: `${index * 50}ms`,
-                  boxShadow: "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
+                  animationDelay: `${index * 60}ms`,
+                  boxShadow:
+                    "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
                 }}
               >
+                {/* Gradient overlay */}
                 <div
                   aria-hidden
-                  className={cn(
-                    "pointer-events-none absolute inset-0 bg-gradient-to-br to-transparent opacity-80",
-                    t.gradient,
-                  )}
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${t.gradientFrom}, transparent)`,
+                  }}
                 />
+
                 <div className="relative">
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                       {kpi.label}
                     </span>
-                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", t.bg)}>
-                      <Icon className={cn("w-5 h-5", t.fg)} />
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: t.iconBg }}
+                    >
+                      <Icon
+                        className="w-5 h-5"
+                        strokeWidth={2.1}
+                        style={{ color: t.iconColor }}
+                      />
                     </div>
                   </div>
-                  <div className="text-[1.65rem] md:text-[1.9rem] font-bold leading-none tracking-tight tabular-nums">
-                    <VendeurKpiValue end={kpi.numericEnd} suffix={kpi.suffix} duration={kpi.duration} />
+
+                  <div
+                    className="text-[1.7rem] md:text-[1.95rem] font-bold leading-none tracking-tight tabular-nums"
+                    style={{ color: t.valueColor }}
+                  >
+                    <KpiValue
+                      end={kpi.numericEnd}
+                      suffix={kpi.suffix}
+                      duration={kpi.duration}
+                    />
                   </div>
+
                   <div className="mt-3 flex items-center">
                     <span
                       className={cn(
                         "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full",
-                        kpi.trendDir === "up" && "bg-success/12 text-success",
-                        kpi.trendDir === "down" && "bg-destructive/12 text-destructive",
-                        kpi.trendDir === "neutral" && "bg-muted text-muted-foreground",
+                        kpi.trendDir === "up" &&
+                          "bg-success/12 text-success",
+                        kpi.trendDir === "down" &&
+                          "bg-destructive/12 text-destructive",
+                        kpi.trendDir === "neutral" &&
+                          "bg-muted text-muted-foreground",
                       )}
                     >
-                      {kpi.trendDir === "up" && <TrendingUp className="w-3 h-3" />}
-                      {kpi.trendDir === "down" && <TrendingDown className="w-3 h-3" />}
-                      {kpi.trendDir === "neutral" && <Minus className="w-3 h-3" />}
+                      {kpi.trendDir === "up" && (
+                        <TrendingUp className="w-3 h-3" />
+                      )}
+                      {kpi.trendDir === "down" && (
+                        <TrendingDown className="w-3 h-3" />
+                      )}
+                      {kpi.trendDir === "neutral" && (
+                        <Minus className="w-3 h-3" />
+                      )}
                       {kpi.change}
                     </span>
                   </div>
@@ -261,6 +290,83 @@ export default function VendeurDashboardPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* ── CTA Caisse ── */}
+        <div
+          className="relative overflow-hidden rounded-2xl p-6 md:p-8 mb-7"
+          style={{
+            background:
+              "linear-gradient(135deg, hsl(20 30% 8%), hsl(22 26% 13%))",
+            boxShadow: "0 4px 24px hsl(0 0% 0% / 0.18)",
+          }}
+        >
+          {/* Decorative glow */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-20"
+            style={{
+              background:
+                "radial-gradient(circle, hsl(22 72% 48%), transparent 70%)",
+            }}
+          />
+
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-5">
+              {/* Icon */}
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                  boxShadow: "0 8px 24px hsl(22 72% 48% / 0.45)",
+                }}
+              >
+                <ShoppingCart className="w-8 h-8 text-white" strokeWidth={2} />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap
+                    className="w-3.5 h-3.5"
+                    style={{ color: "hsl(36 88% 60%)" }}
+                  />
+                  <span
+                    className="text-[11px] font-bold uppercase tracking-[0.18em]"
+                    style={{ color: "hsl(36 88% 60%)" }}
+                  >
+                    Action rapide
+                  </span>
+                </div>
+                <h2
+                  className="font-extrabold text-xl font-heading mb-1"
+                  style={{ color: "white" }}
+                >
+                  Accéder à la caisse
+                </h2>
+                <p
+                  className="text-sm"
+                  style={{ color: "hsl(0 0% 100% / 0.5)" }}
+                >
+                  Scanner les produits et enregistrer les ventes
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate("/vendeur/pos")}
+              className="group inline-flex items-center justify-center gap-2 shrink-0 font-bold text-[15px] text-white rounded-xl px-6 py-3.5 transition-all active:scale-[0.97]"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                boxShadow: "0 4px 20px hsl(22 72% 48% / 0.45)",
+              }}
+            >
+              <ShoppingCart className="w-4.5 h-4.5" strokeWidth={2.2} />
+              Ouvrir la caisse
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </div>
         </div>
 
         {/* ── Mes dernières ventes ── */}
@@ -277,20 +383,25 @@ export default function VendeurDashboardPage() {
             <StatusBadge label="Aujourd'hui" variant="info" />
           </div>
 
-          <div className="bg-card rounded-2xl border overflow-hidden" style={{ boxShadow: "0 2px 12px hsl(22 72% 48% / 0.05)" }}>
+          <div
+            className="bg-card rounded-2xl border overflow-hidden"
+            style={{ boxShadow: "0 2px 12px hsl(22 72% 48% / 0.05)" }}
+          >
             {mesDerniereVentes.length === 0 ? (
               <div className="p-10 text-center">
                 <div className="inline-flex w-12 h-12 rounded-full bg-muted items-center justify-center mb-3">
                   <ShoppingBag className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-semibold">Aucune vente pour le moment</p>
+                <p className="text-sm font-semibold">
+                  Aucune vente pour le moment
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Vos ventes de la journée apparaîtront ici.
                 </p>
               </div>
             ) : (
               <>
-                {/* Mobile cards — md:hidden */}
+                {/* Mobile cards */}
                 <div className="md:hidden divide-y">
                   {mesDerniereVentes.map((vente) => (
                     <div
@@ -303,18 +414,25 @@ export default function VendeurDashboardPage() {
                           <ShoppingBag className="w-4 h-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">{vente.id}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                            {vente.heure} · {vente.articles} article{vente.articles !== 1 ? "s" : ""}
+                          <p className="font-semibold text-sm truncate">
+                            {vente.id}
                           </p>
-                          <p className="text-sm font-bold mt-1 tabular-nums">{vente.total}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                            {vente.heure} ·{" "}
+                            {vente.articles} article
+                            {vente.articles !== 1 ? "s" : ""}
+                          </p>
+                          <p className="text-sm font-bold mt-1 tabular-nums">
+                            {vente.total}
+                          </p>
                         </div>
                       </div>
                       <StatusBadge label="Terminée" variant="success" />
                     </div>
                   ))}
                 </div>
-                {/* Desktop table — hidden md:block */}
+
+                {/* Desktop table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="data-table">
                     <thead>
@@ -339,9 +457,13 @@ export default function VendeurDashboardPage() {
                               <span className="font-semibold">{vente.id}</span>
                             </div>
                           </td>
-                          <td className="text-muted-foreground tabular-nums">{vente.heure}</td>
+                          <td className="text-muted-foreground tabular-nums">
+                            {vente.heure}
+                          </td>
                           <td className="tabular-nums">{vente.articles}</td>
-                          <td className="font-semibold tabular-nums text-right">{vente.total}</td>
+                          <td className="font-semibold tabular-nums text-right">
+                            {vente.total}
+                          </td>
                           <td>
                             <StatusBadge label="Terminée" variant="success" />
                           </td>
@@ -352,6 +474,7 @@ export default function VendeurDashboardPage() {
                 </div>
               </>
             )}
+
             <div className="px-5 py-3 border-t bg-secondary/30">
               <button
                 onClick={() => navigate("/invoices")}

@@ -213,10 +213,11 @@ export default function AdminOverviewPage() {
         {/* ── Hero header : statut système ────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-foreground font-heading tracking-tight">
-              Vue d'ensemble
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-1 h-6 rounded-full" style={{ background: 'linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))' }} />
+              <h1 className="text-2xl font-extrabold font-heading" style={{ letterSpacing: '-0.025em' }}>Vue d'ensemble Admin</h1>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5 pl-3">
               Supervision et gestion de l'application NAOSERVICES INVENTORY
             </p>
           </div>
@@ -230,13 +231,19 @@ export default function AdminOverviewPage() {
             {HEALTH_ITEMS.map(({ icon: Icon, label, status, variant }) => (
               <div
                 key={label}
-                className="card-premium p-4 flex flex-col gap-3"
+                className="card-premium p-4 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5"
+                style={{ boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px hsl(22 30% 15% / 0.12)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)'; }}
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon className="w-3.5 h-3.5 text-primary" />
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+                  >
+                    <Icon className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <span className="text-xs text-muted-foreground leading-tight">{label}</span>
+                  <span className="text-xs text-muted-foreground leading-tight font-medium">{label}</span>
                 </div>
                 <StatusBadge label={status} variant={variant} />
               </div>
@@ -265,16 +272,25 @@ export default function AdminOverviewPage() {
                 value: statsLoading ? "—" : String(stats?.month.sales_count ?? 0),
               },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="card-premium p-5 flex flex-col gap-2">
+              <div
+                key={label}
+                className="card-premium p-5 flex flex-col gap-2 transition-all duration-200 hover:-translate-y-0.5"
+                style={{ boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px hsl(22 30% 15% / 0.12)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)'; }}
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     {label}
                   </span>
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon className="w-4 h-4 text-primary" />
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+                  >
+                    <Icon className="w-4 h-4 text-white" />
                   </div>
                 </div>
-                <span className="text-2xl font-black tabular-nums text-foreground">{value}</span>
+                <span className="text-2xl font-black tabular-nums text-foreground font-heading" style={{ letterSpacing: '-0.02em' }}>{value}</span>
               </div>
             ))}
           </div>

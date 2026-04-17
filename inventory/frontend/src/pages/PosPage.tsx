@@ -19,6 +19,8 @@ import {
   ScanLine,
   Sparkles,
   ChevronRight,
+  ShoppingBag,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductIcon } from "@/components/ui/ProductIcon";
@@ -237,6 +239,7 @@ export default function PosPage() {
   const receiptRef = useRef<HTMLDivElement>(null);
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const subtotal = total;
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
   const change = Math.max(0, Number(amountGiven) - total);
 
@@ -430,7 +433,7 @@ export default function PosPage() {
     saleMutation.mutate(payload);
   };
 
-  const resetSale = () => {
+  function resetSale() {
     setCart([]);
     setShowPayment(false);
     setAmountGiven("");
@@ -438,7 +441,7 @@ export default function PosPage() {
     setSearch("");
     setMobileTab("catalog");
     saleMutation.reset();
-  };
+  }
 
   const quickAmounts = [500, 1000, 2000, 5000, 10000, 25000, 50000];
 
@@ -546,90 +549,100 @@ export default function PosPage() {
     <>
       <Topbar title="Point de vente" subtitle="Scan code-barres ou recherche rapide" onMenuClick={onMenuClick} />
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-gradient-to-br from-[hsl(var(--background))] to-[hsl(var(--muted))]/30">
-
-        {/* ── Mobile tabs ── */}
-        <div className="flex md:hidden border-b shrink-0 bg-card/80 backdrop-blur-sm">
-          <button
-            onClick={() => setMobileTab("catalog")}
-            className={cn(
-              "flex-1 py-3.5 text-sm font-semibold transition-all min-h-[48px] relative",
-              mobileTab === "catalog"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Catalogue
-            {mobileTab === "catalog" && (
-              <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-t-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setMobileTab("cart")}
-            className={cn(
-              "flex-1 py-3.5 text-sm font-semibold transition-all relative min-h-[48px]",
-              mobileTab === "cart"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <span className="inline-flex items-center gap-2">
-              Panier
-              {totalItems > 0 && (
-                <span className="inline-flex min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] items-center justify-center font-bold tabular-nums">
-                  {totalItems}
-                </span>
-              )}
-            </span>
-            {mobileTab === "cart" && (
-              <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-t-full" />
-            )}
-          </button>
-        </div>
-
-        {/* ── Catalog panel ── */}
-        <div
+      {/* ── Mobile tabs ── */}
+      <div className="flex md:hidden border-b shrink-0 bg-card/80 backdrop-blur-sm">
+        <button
+          onClick={() => setMobileTab("catalog")}
           className={cn(
-            "flex flex-col min-w-0 md:flex-1 md:border-r border-[hsl(var(--border))]",
-            mobileTab === "catalog" ? "flex flex-1 overflow-hidden" : "hidden md:flex"
+            "flex-1 py-3.5 text-sm font-semibold transition-all min-h-[48px] relative",
+            mobileTab === "catalog"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
-          {/* Premium search header */}
-          <div className="p-4 md:p-5 border-b bg-card/60 backdrop-blur-sm shrink-0">
-            <div className="relative group">
-              {/* Subtle glow on focus */}
-              <div className="absolute inset-0 rounded-xl bg-primary/10 blur-md opacity-0 group-focus-within:opacity-100 transition-opacity" />
-              <div className="relative flex items-center bg-card border-2 border-[hsl(var(--border))] rounded-xl focus-within:border-primary/60 focus-within:shadow-md focus-within:shadow-primary/5 transition-all">
-                <div className="flex items-center justify-center w-12 h-12 shrink-0">
-                  <Search className="w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                </div>
-                <Input
-                  ref={searchRef}
-                  placeholder="Rechercher un produit ou scanner…"
-                  className="flex-1 h-12 border-0 bg-transparent text-[15px] font-medium placeholder:text-muted-foreground/70 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  autoFocus
-                />
-                <div className="hidden sm:flex items-center gap-1.5 mr-2 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-[11px] font-semibold animate-pulse-soft">
-                  <ScanLine className="w-3.5 h-3.5" />
-                  <span className="tracking-wide">Scanner actif</span>
-                </div>
+          Catalogue
+          {mobileTab === "catalog" && (
+            <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-t-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setMobileTab("cart")}
+          className={cn(
+            "flex-1 py-3.5 text-sm font-semibold transition-all relative min-h-[48px]",
+            mobileTab === "cart"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <span className="inline-flex items-center gap-2">
+            Panier
+            {totalItems > 0 && (
+              <span className="inline-flex min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] items-center justify-center font-bold tabular-nums">
+                {totalItems}
+              </span>
+            )}
+          </span>
+          {mobileTab === "cart" && (
+            <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-t-full" />
+          )}
+        </button>
+      </div>
+
+      {/* ── Main split layout ── */}
+      <div className="flex h-[calc(100vh-var(--topbar-h,64px)-var(--mobiletab-h,0px))] md:h-[calc(100vh-64px)] overflow-hidden">
+
+        {/* ── LEFT — Catalogue ── */}
+        <div
+          className={cn(
+            "flex-1 flex flex-col overflow-hidden border-r border-border bg-background",
+            mobileTab === "catalog" ? "flex" : "hidden md:flex"
+          )}
+        >
+          {/* Search bar */}
+          <div className="p-4 border-b shrink-0" style={{ background: "hsl(var(--card))" }}>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+              <input
+                ref={searchRef}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                autoFocus
+                placeholder="Rechercher un produit ou scanner un code-barres..."
+                className="w-full pl-10 pr-24 py-3 rounded-xl text-sm font-medium outline-none transition-all bg-background text-foreground placeholder:text-muted-foreground/60"
+                style={{
+                  border: "1.5px solid hsl(var(--border))",
+                  fontFamily: "Inter, sans-serif",
+                }}
+                onFocus={e => {
+                  e.currentTarget.style.borderColor = "hsl(22 72% 48%)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.15)";
+                }}
+                onBlur={e => {
+                  e.currentTarget.style.borderColor = "hsl(var(--border))";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md"
+                   style={{ background: "hsl(22 72% 48% / 0.1)" }}>
+                <ScanLine className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+                <span className="text-[10px] font-semibold tracking-wide" style={{ color: "hsl(22 72% 48%)" }}>
+                  Scanner actif
+                </span>
               </div>
             </div>
 
-            {/* Catalog meta */}
-            <div className="hidden md:flex items-center justify-between mt-3 px-1 text-xs text-muted-foreground">
+            {/* Meta */}
+            <div className="hidden md:flex items-center justify-between mt-2.5 px-0.5 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-primary/70" />
-                <span>{catalog.length} produit{catalog.length > 1 ? "s" : ""} disponible{catalog.length > 1 ? "s" : ""}</span>
+                <Sparkles className="w-3 h-3" style={{ color: "hsl(22 72% 48% / 0.7)" }} />
+                <span>{catalog.length} produit{catalog.length !== 1 ? "s" : ""} disponible{catalog.length !== 1 ? "s" : ""}</span>
               </div>
-              <span className="font-mono tracking-wider opacity-70">CAISSE 01</span>
+              <span className="font-mono tracking-wider opacity-60">CAISSE 01</span>
             </div>
           </div>
 
-          {/* Catalog grid */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-5">
+          {/* Product grid */}
+          <div className="flex-1 overflow-y-auto p-4">
             {catalog.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16">
                 <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
@@ -641,7 +654,7 @@ export default function PosPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {catalog.map(product => {
                   const isOut = product.stock_quantity === 0;
                   const isLow = product.stock_quantity > 0 && product.stock_quantity <= 5;
@@ -649,17 +662,31 @@ export default function PosPage() {
                     <button
                       key={product.id}
                       onClick={() => addToCart(product)}
-                      className={cn(
-                        "group relative bg-card rounded-xl border border-[hsl(var(--border))] p-3 text-left",
-                        "transition-all duration-200 ease-out",
-                        "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5",
-                        "active:scale-[0.97] active:translate-y-0",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                        "min-h-[44px] cursor-pointer",
-                        isOut && "opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-none hover:border-[hsl(var(--border))]"
-                      )}
                       disabled={isOut}
                       title={isOut ? "Rupture de stock" : product.name}
+                      className={cn(
+                        "group relative rounded-xl p-3 text-left cursor-pointer transition-all duration-200",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]",
+                        isOut
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      )}
+                      style={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        boxShadow: "0 1px 3px hsl(22 30% 15% / 0.06)",
+                      }}
+                      onMouseEnter={e => {
+                        if (isOut) return;
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.45)";
+                        e.currentTarget.style.boxShadow = "0 8px 24px hsl(22 30% 15% / 0.1)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.borderColor = "hsl(var(--border))";
+                        e.currentTarget.style.boxShadow = "0 1px 3px hsl(22 30% 15% / 0.06)";
+                      }}
                     >
                       {/* Stock badge */}
                       {(isLow || isOut) && (
@@ -675,30 +702,59 @@ export default function PosPage() {
                         </span>
                       )}
 
-                      {/* Icon / image placeholder */}
-                      <div className="aspect-square rounded-lg bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-2.5 overflow-hidden group-hover:from-primary/10 group-hover:to-accent/5 transition-colors">
-                        <div className="group-hover:scale-110 transition-transform duration-200">
-                          <ProductIcon name={product.name} category={product.category_name} size="md" imageUrl={product.image_url} />
-                        </div>
+                      {/* Image / icon */}
+                      <div
+                        className="w-full aspect-square rounded-lg mb-2.5 overflow-hidden flex items-center justify-center transition-colors"
+                        style={{ background: "hsl(var(--muted))" }}
+                      >
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        ) : (
+                          <div className="group-hover:scale-110 transition-transform duration-200">
+                            <ProductIcon name={product.name} category={product.category_name} size="md" imageUrl={product.image_url} />
+                          </div>
+                        )}
                       </div>
 
                       {/* Name */}
-                      <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground mb-1.5 min-h-[32px]">
+                      <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground mb-1 min-h-[32px]">
                         {product.name}
                       </p>
 
-                      {/* Price row */}
+                      {/* Stock count */}
+                      {!isOut && !isLow && (
+                        <p className="text-[10px] text-muted-foreground mb-1.5">
+                          Stock : {product.stock_quantity}
+                        </p>
+                      )}
+
+                      {/* Price */}
                       <div className="flex items-baseline justify-between">
-                        <span className="text-[15px] font-black text-primary tabular-nums leading-none">
-                          {product.selling_price.toLocaleString()}
+                        <span
+                          className="text-[15px] font-black tabular-nums leading-none"
+                          style={{ fontFamily: "Fraunces, Georgia, serif", color: "hsl(22 72% 48%)" }}
+                        >
+                          {product.selling_price.toLocaleString("fr-FR")}
                         </span>
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                           FCFA
                         </span>
                       </div>
 
-                      {/* Hover ring highlight */}
-                      <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-primary/0 group-hover:ring-primary/20 transition-all" />
+                      {/* Add overlay on hover */}
+                      {!isOut && (
+                        <div
+                          className="absolute inset-0 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ background: "hsl(22 72% 48% / 0.06)" }}
+                        >
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center shadow-lg"
+                            style={{ background: "hsl(22 72% 48%)", color: "white" }}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </div>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -707,52 +763,74 @@ export default function PosPage() {
           </div>
         </div>
 
-        {/* ── Cart panel ── */}
+        {/* ── RIGHT — Ticket / Cart ── */}
         <div
           className={cn(
-            "flex flex-col bg-card md:w-[420px] md:shrink-0 md:shadow-[-8px_0_24px_-12px_rgba(0,0,0,0.08)]",
-            mobileTab === "cart" ? "flex-1 overflow-hidden" : "hidden md:flex"
+            "flex flex-col md:w-[380px] md:shrink-0",
+            mobileTab === "cart" ? "flex-1" : "hidden md:flex"
           )}
+          style={{ background: "hsl(20 25% 8%)" }}
         >
-          {/* Cart header */}
-          <div className="px-4 md:px-5 py-4 border-b flex items-center justify-between shrink-0 bg-gradient-to-r from-[hsl(var(--sidebar-bg))] to-[hsl(var(--sidebar-bg))]/95 text-[hsl(var(--sidebar-fg-active))]">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/20 text-primary flex items-center justify-center ring-1 ring-primary/30">
-                <ShoppingCart className="w-4 h-4" strokeWidth={2.2} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-bold tracking-tight">Caisse</span>
-                  {totalItems > 0 && (
-                    <span className="inline-flex min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] items-center justify-center font-bold tabular-nums">
-                      {totalItems}
-                    </span>
-                  )}
+          {/* Ticket header */}
+          <div
+            className="p-5 shrink-0"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ background: "hsl(22 72% 48% / 0.2)", border: "1px solid hsl(22 72% 48% / 0.3)" }}
+                >
+                  <ShoppingCart className="w-4 h-4" style={{ color: "hsl(22 72% 65%)" }} />
                 </div>
-                <p className="text-[11px] opacity-70 leading-tight tracking-wide">
-                  {totalItems === 0 ? "Panier vide" : `${totalItems} article${totalItems > 1 ? "s" : ""}`}
-                </p>
+                <div>
+                  <h2 className="text-white font-bold text-base leading-tight">Ticket en cours</h2>
+                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    {totalItems === 0 ? "Panier vide" : `${totalItems} article${totalItems > 1 ? "s" : ""}`}
+                  </p>
+                </div>
               </div>
+
+              {cart.length > 0 && (
+                <button
+                  onClick={() => setCart([])}
+                  className="text-xs font-semibold uppercase tracking-wider transition-all px-3 py-1.5 rounded-lg"
+                  style={{
+                    color: "rgba(255,255,255,0.35)",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.color = "rgba(239,68,68,0.9)";
+                    e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
+                    e.currentTarget.style.background = "rgba(239,68,68,0.08)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.color = "rgba(255,255,255,0.35)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                  }}
+                >
+                  Vider
+                </button>
+              )}
             </div>
-            {cart.length > 0 && (
-              <button
-                onClick={() => setCart([])}
-                className="text-[11px] font-semibold uppercase tracking-wider opacity-70 hover:opacity-100 hover:text-destructive transition-all px-3 py-2 rounded-md hover:bg-white/5 min-h-[36px]"
-              >
-                Vider
-              </button>
-            )}
           </div>
 
-          {/* Stock warnings banner */}
+          {/* Stock warnings */}
           {stockWarnings.length > 0 && (
-            <div className="mx-3 md:mx-4 mt-3 rounded-lg border border-warning/40 bg-gradient-to-br from-warning/15 to-warning/5 px-3 py-2.5 flex items-start gap-2.5 text-[12px] text-[hsl(var(--warning-foreground))] shrink-0">
-              <div className="w-7 h-7 rounded-md bg-warning/25 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-3.5 h-3.5 text-warning" strokeWidth={2.4} />
-              </div>
-              <div className="leading-snug pt-0.5">
+            <div
+              className="mx-4 mt-3 rounded-xl px-3 py-2.5 flex items-start gap-2.5 shrink-0"
+              style={{
+                background: "hsl(38 92% 50% / 0.12)",
+                border: "1px solid hsl(38 92% 50% / 0.3)",
+              }}
+            >
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "hsl(38 92% 60%)" }} />
+              <div className="text-[11px] leading-snug" style={{ color: "hsl(38 92% 70%)" }}>
                 <p className="font-semibold mb-0.5">Stock insuffisant</p>
-                <p className="opacity-80 text-[11px]">
+                <p style={{ color: "hsl(38 92% 60% / 0.8)" }}>
                   {stockWarnings.map(i => `${i.name} (${i.stock})`).join(" · ")}
                 </p>
               </div>
@@ -762,27 +840,22 @@ export default function PosPage() {
           {/* Cart items */}
           <div className="flex-1 overflow-y-auto">
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16 px-6 text-center">
-                <div className="relative mb-5">
-                  {/* Outer decorative rings */}
-                  <div className="absolute inset-0 rounded-full bg-primary/5 scale-[1.5] opacity-60" />
-                  <div className="absolute inset-0 rounded-full bg-primary/8 scale-[1.25] opacity-40" />
-                  {/* Main circle */}
-                  <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary/12 to-accent/8 ring-2 ring-primary/15 flex items-center justify-center shadow-warm-sm">
-                    <ShoppingCart className="w-10 h-10 text-primary/50" strokeWidth={1.5} />
-                    {/* Small sparkle accent */}
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-card border border-primary/20 flex items-center justify-center">
-                      <Sparkles className="w-2.5 h-2.5 text-primary/60" />
-                    </span>
-                  </div>
+              <div className="flex flex-col items-center justify-center h-full px-6 text-center py-16">
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <Package className="w-9 h-9" style={{ color: "rgba(255,255,255,0.2)" }} />
                 </div>
-                <p className="text-sm font-bold text-foreground mb-1.5 tracking-tight">Panier vide</p>
-                <p className="text-xs leading-relaxed max-w-[210px]">
-                  Scannez ou cherchez un produit pour démarrer la vente
+                <p className="text-sm font-semibold mb-1" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  Ticket vide
+                </p>
+                <p className="text-xs leading-relaxed max-w-[200px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                  Scannez ou sélectionnez un produit pour démarrer
                 </p>
               </div>
             ) : (
-              <div className="p-1.5 md:p-2 space-y-1">
+              <div className="p-3 space-y-2">
                 {cart.map(item => {
                   const lineTotal = item.price * item.qty;
                   const hasWarning = item.qty > item.stock;
@@ -790,75 +863,91 @@ export default function PosPage() {
                     <div
                       key={item.id}
                       className={cn(
-                        "group rounded-lg border bg-card px-2.5 py-1.5 transition-all duration-200",
-                        flashItem === item.id
-                          ? "border-primary/60 bg-primary/5 shadow-sm shadow-primary/10 scale-[1.005]"
-                          : "border-[hsl(var(--border))] hover:border-[hsl(var(--border))]/80",
-                        hasWarning && "border-warning/40 bg-warning/5"
+                        "group flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
+                        flashItem === item.id && "scale-[1.01]"
                       )}
+                      style={{
+                        background: flashItem === item.id
+                          ? "hsl(22 72% 48% / 0.15)"
+                          : hasWarning
+                          ? "rgba(234,179,8,0.08)"
+                          : "rgba(255,255,255,0.05)",
+                        border: flashItem === item.id
+                          ? "1px solid hsl(22 72% 48% / 0.4)"
+                          : hasWarning
+                          ? "1px solid rgba(234,179,8,0.25)"
+                          : "1px solid rgba(255,255,255,0.07)",
+                      }}
                     >
-                      {/* Single compact row */}
-                      <div className="flex items-center gap-2">
-                        {/* Icon 32px */}
-                        <div className="w-8 h-8 rounded-md bg-muted shrink-0 flex items-center justify-center overflow-hidden">
-                          <ProductIcon name={item.name} category={item.category} size="sm" imageUrl={item.imageUrl} />
-                        </div>
+                      {/* Icon */}
+                      <div
+                        className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center overflow-hidden"
+                        style={{ background: "rgba(255,255,255,0.08)" }}
+                      >
+                        <ProductIcon name={item.name} category={item.category} size="sm" imageUrl={item.imageUrl} />
+                      </div>
 
-                        {/* Name + unit price */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[12px] font-semibold leading-tight truncate">
-                            {item.name}
-                          </p>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-muted-foreground tabular-nums">
-                              {item.price.toLocaleString()} F
-                            </span>
-                            {hasWarning && (
-                              <span className="text-[10px] text-warning flex items-center gap-0.5 font-medium">
-                                <AlertTriangle className="w-2.5 h-2.5 shrink-0" strokeWidth={2.4} />
-                                max {item.stock}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Stepper — 28px buttons on desktop */}
-                        <div className="inline-flex items-center rounded-md border border-[hsl(var(--border))] bg-background overflow-hidden shrink-0">
-                          <button
-                            onClick={() => updateQty(item.id, -1)}
-                            className="w-7 h-7 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-r border-[hsl(var(--border))] touch-manipulation"
-                            aria-label="Diminuer la quantité"
-                          >
-                            <Minus className="w-3 h-3" strokeWidth={2.4} />
-                          </button>
-                          <span className="min-w-[28px] h-7 flex items-center justify-center text-[12px] font-bold tabular-nums">
-                            {item.qty}
+                      {/* Name + price */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold truncate leading-tight" style={{ color: "rgba(255,255,255,0.9)" }}>
+                          {item.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[10px] tabular-nums" style={{ color: "rgba(255,255,255,0.35)" }}>
+                            {item.price.toLocaleString("fr-FR")} F
                           </span>
-                          <button
-                            onClick={() => updateQty(item.id, 1)}
-                            className="w-7 h-7 flex items-center justify-center hover:bg-muted active:bg-muted/70 transition-colors border-l border-[hsl(var(--border))] touch-manipulation"
-                            aria-label="Augmenter la quantité"
-                          >
-                            <Plus className="w-3 h-3" strokeWidth={2.4} />
-                          </button>
+                          {hasWarning && (
+                            <span className="text-[10px] flex items-center gap-0.5 font-medium" style={{ color: "hsl(38 92% 60%)" }}>
+                              <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
+                              max {item.stock}
+                            </span>
+                          )}
                         </div>
+                      </div>
 
-                        {/* Line total */}
-                        <div className="text-right shrink-0 min-w-[56px]">
-                          <p className="text-[13px] font-black tabular-nums text-foreground leading-tight">
-                            {lineTotal.toLocaleString()} <span className="text-[9px] font-bold text-muted-foreground">F</span>
-                          </p>
-                        </div>
-
-                        {/* Trash */}
+                      {/* Quantity stepper */}
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
-                          onClick={() => removeItem(item.id)}
-                          className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                          aria-label={`Retirer ${item.name}`}
+                          onClick={() => updateQty(item.id, -1)}
+                          className="w-6 h-6 rounded-md flex items-center justify-center transition-all touch-manipulation"
+                          style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "white"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs font-bold w-5 text-center tabular-nums" style={{ color: "white" }}>
+                          {item.qty}
+                        </span>
+                        <button
+                          onClick={() => updateQty(item.id, 1)}
+                          className="w-6 h-6 rounded-md flex items-center justify-center transition-all touch-manipulation"
+                          style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "white"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+                        >
+                          <Plus className="w-3 h-3" />
                         </button>
                       </div>
+
+                      {/* Line total */}
+                      <p
+                        className="text-xs font-bold w-16 text-right shrink-0 tabular-nums"
+                        style={{ fontFamily: "Fraunces, Georgia, serif", color: "rgba(255,255,255,0.85)" }}
+                      >
+                        {lineTotal.toLocaleString("fr-FR")}
+                      </p>
+
+                      {/* Remove */}
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+                        style={{ color: "rgba(239,68,68,0.6)" }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "rgba(239,68,68,1)"; e.currentTarget.style.background = "rgba(239,68,68,0.12)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "rgba(239,68,68,0.6)"; e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
                   );
                 })}
@@ -866,52 +955,102 @@ export default function PosPage() {
             )}
           </div>
 
-          {/* Cart footer */}
+          {/* Footer — total + payment */}
           {cart.length > 0 && (
-            <div className="border-t bg-card p-4 md:p-5 shrink-0 space-y-3.5">
+            <div
+              className="p-5 shrink-0"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
+            >
               {!showPayment ? (
                 <>
-                  {/* Totals block */}
-                  <div className="rounded-xl bg-gradient-to-br from-muted/70 to-muted/30 p-4 border border-[hsl(var(--border))]">
-                    <div className="flex items-center justify-between text-[12px] text-muted-foreground mb-1">
-                      <span>{totalItems} article{totalItems > 1 ? "s" : ""}</span>
-                      <span className="tabular-nums">{total.toLocaleString()} F</span>
-                    </div>
-                    <div className="h-px bg-[hsl(var(--border))] my-2" />
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Total</span>
-                      <span className="text-[28px] font-black text-primary tabular-nums leading-none">
-                        {total.toLocaleString()} <span className="text-sm">F</span>
-                      </span>
-                    </div>
+                  {/* Sous-total */}
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span style={{ color: "rgba(255,255,255,0.4)" }}>Sous-total</span>
+                    <span
+                      className="font-medium tabular-nums"
+                      style={{ fontFamily: "Fraunces, Georgia, serif", color: "rgba(255,255,255,0.6)" }}
+                    >
+                      {subtotal.toLocaleString("fr-FR")} FCFA
+                    </span>
                   </div>
 
-                  <Button
-                    className={cn(
-                      "w-full h-14 text-[15px] font-bold rounded-xl",
-                      "bg-gradient-to-br from-primary to-primary/85 hover:from-primary/95 hover:to-primary/75",
-                      "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
-                      "active:scale-[0.98] transition-all"
-                    )}
+                  {/* Divider */}
+                  <div className="my-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }} />
+
+                  {/* Total */}
+                  <div className="flex justify-between items-center mb-5">
+                    <span className="text-white font-bold text-lg">Total</span>
+                    <span
+                      className="font-black text-3xl tabular-nums leading-none"
+                      style={{
+                        fontFamily: "Fraunces, Georgia, serif",
+                        background: "linear-gradient(135deg, hsl(22 72% 65%), hsl(36 88% 72%))",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}
+                    >
+                      {total.toLocaleString("fr-FR")} <span style={{ fontSize: "1.1rem" }}>FCFA</span>
+                    </span>
+                  </div>
+
+                  {/* Valider button */}
+                  <button
                     onClick={() => setShowPayment(true)}
+                    className="w-full transition-all active:scale-[0.98]"
+                    style={{
+                      background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                      boxShadow: "0 4px 20px hsl(22 72% 48% / 0.4)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "14px",
+                      padding: "1rem",
+                      fontSize: "1rem",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                      letterSpacing: "-0.01em",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.5rem",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 28px hsl(22 72% 48% / 0.55)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px hsl(22 72% 48% / 0.4)"; e.currentTarget.style.transform = "translateY(0)"; }}
                   >
-                    <Banknote className="w-5 h-5 mr-2" strokeWidth={2.2} />
-                    Encaisser · {total.toLocaleString()} F
-                  </Button>
+                    <Banknote className="w-5 h-5" />
+                    Encaisser · {total.toLocaleString("fr-FR")} F
+                  </button>
                 </>
               ) : (
-                <div className="animate-slide-in-right space-y-3.5">
-                  {/* Total */}
-                  <div className="rounded-xl bg-gradient-to-br from-primary/10 to-accent/5 p-4 border border-primary/20">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80 mb-1">À payer</p>
-                    <p key={total} className="text-[32px] font-black text-primary tabular-nums leading-none animate-count-up">
-                      {total.toLocaleString()} <span className="text-lg">FCFA</span>
+                <div className="space-y-3.5 animate-slide-in">
+                  {/* À payer */}
+                  <div
+                    className="rounded-xl p-4"
+                    style={{
+                      background: "hsl(22 72% 48% / 0.12)",
+                      border: "1px solid hsl(22 72% 48% / 0.25)",
+                    }}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] mb-1" style={{ color: "hsl(22 72% 65% / 0.8)" }}>
+                      À payer
+                    </p>
+                    <p
+                      className="text-[32px] font-black tabular-nums leading-none"
+                      style={{
+                        fontFamily: "Fraunces, Georgia, serif",
+                        background: "linear-gradient(135deg, hsl(22 72% 65%), hsl(36 88% 72%))",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}
+                    >
+                      {total.toLocaleString("fr-FR")} <span style={{ fontSize: "1.25rem" }}>FCFA</span>
                     </p>
                   </div>
 
-                  {/* Amount received */}
+                  {/* Montant reçu */}
                   <div>
-                    <label className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    <label className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: "rgba(255,255,255,0.4)" }}>
                       Montant reçu
                     </label>
                     <Input
@@ -920,14 +1059,14 @@ export default function PosPage() {
                       placeholder="0"
                       value={amountGiven}
                       onChange={e => setAmountGiven(e.target.value)}
-                      className="mt-1.5 text-xl font-black h-14 tabular-nums tracking-tight border-2 focus-visible:border-primary/60 rounded-xl"
+                      className="mt-1.5 text-xl font-black h-14 tabular-nums tracking-tight border-2 rounded-xl bg-white/10 text-white border-white/20 focus-visible:border-[hsl(22_72%_48%)] focus-visible:ring-0"
                       autoFocus
                     />
                   </div>
 
-                  {/* Quick amounts */}
+                  {/* Montants rapides */}
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
                       Montant rapide
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -935,67 +1074,99 @@ export default function PosPage() {
                         <button
                           key={amt}
                           onClick={() => setAmountGiven(String(amt))}
-                          className="min-h-[36px] px-3 py-1.5 text-[12px] rounded-lg border-2 border-[hsl(var(--border))] hover:border-primary/40 hover:bg-primary/5 active:scale-95 transition-all font-bold tabular-nums"
+                          className="min-h-[34px] px-2.5 py-1 text-[11px] rounded-lg transition-all font-bold tabular-nums active:scale-95"
+                          style={{
+                            color: "rgba(255,255,255,0.6)",
+                            background: "rgba(255,255,255,0.07)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.color = "white";
+                            e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.5)";
+                            e.currentTarget.style.background = "hsl(22 72% 48% / 0.15)";
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.color = "rgba(255,255,255,0.6)";
+                            e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                            e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+                          }}
                         >
-                          {amt.toLocaleString()}
+                          {amt.toLocaleString("fr-FR")}
                         </button>
                       ))}
                       <button
                         onClick={() => setAmountGiven(String(total))}
-                        className="min-h-[36px] px-3 py-1.5 text-[12px] rounded-lg bg-primary/10 text-primary hover:bg-primary/20 border-2 border-primary/20 active:scale-95 transition-all font-bold"
+                        className="min-h-[34px] px-2.5 py-1 text-[11px] rounded-lg transition-all font-bold active:scale-95"
+                        style={{
+                          color: "hsl(22 72% 65%)",
+                          background: "hsl(22 72% 48% / 0.15)",
+                          border: "1px solid hsl(22 72% 48% / 0.35)",
+                        }}
                       >
                         Exact
                       </button>
                     </div>
                   </div>
 
-                  {/* Change */}
+                  {/* Monnaie à rendre */}
                   {Number(amountGiven) >= total && (
-                    <div className="rounded-xl bg-gradient-to-br from-success/15 to-success/5 border border-success/30 p-3.5 text-center animate-fade-scale">
-                      <p className="text-[10px] font-bold text-success/80 uppercase tracking-[0.2em] mb-0.5">
+                    <div
+                      className="rounded-xl p-3.5 text-center"
+                      style={{
+                        background: "hsl(152 38% 38% / 0.15)",
+                        border: "1px solid hsl(152 38% 38% / 0.3)",
+                      }}
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-0.5" style={{ color: "hsl(152 38% 60% / 0.8)" }}>
                         Monnaie à rendre
                       </p>
-                      <p key={change} className="text-2xl font-black text-success tabular-nums leading-tight animate-count-up">
-                        {change.toLocaleString()} <span className="text-base">FCFA</span>
+                      <p
+                        className="text-2xl font-black tabular-nums leading-tight"
+                        style={{ fontFamily: "Fraunces, Georgia, serif", color: "hsl(152 38% 65%)" }}
+                      >
+                        {change.toLocaleString("fr-FR")} <span style={{ fontSize: "1rem" }}>FCFA</span>
                       </p>
                     </div>
                   )}
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-1">
-                    <Button
-                      variant="outline"
+                    <button
                       onClick={() => setShowPayment(false)}
-                      className="flex-1 h-12 border-2 font-semibold"
                       disabled={saleMutation.isPending}
+                      className="flex-1 h-12 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      style={{
+                        color: "rgba(255,255,255,0.6)",
+                        background: "rgba(255,255,255,0.07)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                      }}
                     >
-                      <X className="w-4 h-4 mr-1" />
+                      <X className="w-4 h-4" />
                       Retour
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       onClick={handlePayment}
                       disabled={Number(amountGiven) < total || saleMutation.isPending || stockWarnings.length > 0}
-                      className={cn(
-                        "flex-[2] h-14 font-bold text-[15px] rounded-xl",
-                        "bg-gradient-to-br from-accent to-accent/85 hover:from-accent/95 hover:to-accent/75",
-                        "text-accent-foreground",
-                        "shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30",
-                        "active:scale-[0.98] transition-all",
-                        "disabled:from-muted disabled:to-muted disabled:text-muted-foreground disabled:shadow-none"
-                      )}
+                      className="flex-[2] h-14 rounded-xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: "linear-gradient(135deg, hsl(152 38% 38%), hsl(152 38% 32%))",
+                        color: "white",
+                        border: "none",
+                        boxShadow: Number(amountGiven) >= total ? "0 4px 20px hsl(152 38% 38% / 0.45)" : "none",
+                      }}
                     >
                       {saleMutation.isPending ? (
-                        <span className="flex items-center gap-2">
+                        <>
                           <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
                           Enregistrement…
-                        </span>
+                        </>
                       ) : (
                         <>
-                          <CheckCircle className="w-5 h-5 mr-2" strokeWidth={2.2} />
+                          <ShoppingBag className="w-5 h-5" />
                           Valider la vente
                         </>
                       )}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}

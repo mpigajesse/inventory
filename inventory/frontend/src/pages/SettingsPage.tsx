@@ -8,7 +8,17 @@ import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Printer, Save, Palette, Check, Sun, Moon, Monitor, X, Loader2 } from "lucide-react";
+import {
+  Printer,
+  Save,
+  Palette,
+  Check,
+  Sun,
+  Moon,
+  Monitor,
+  X,
+  Loader2,
+} from "lucide-react";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Theme, DisplayMode } from "@/contexts/ThemeContext";
@@ -104,21 +114,9 @@ interface DisplayModeOption {
 }
 
 const DISPLAY_MODE_OPTIONS: DisplayModeOption[] = [
-  {
-    id: "light",
-    label: "Clair",
-    icon: <Sun className="w-4 h-4" />,
-  },
-  {
-    id: "dark",
-    label: "Sombre",
-    icon: <Moon className="w-4 h-4" />,
-  },
-  {
-    id: "system",
-    label: "Système",
-    icon: <Monitor className="w-4 h-4" />,
-  },
+  { id: "light", label: "Clair", icon: <Sun className="w-4 h-4" /> },
+  { id: "dark", label: "Sombre", icon: <Moon className="w-4 h-4" /> },
+  { id: "system", label: "Système", icon: <Monitor className="w-4 h-4" /> },
 ];
 
 // ─── POS settings schema ──────────────────────────────────────────────────────
@@ -132,7 +130,7 @@ const posSettingsSchema = z.object({
 
 type PosSettingsFormValues = z.infer<typeof posSettingsSchema>;
 
-// ─── Section wrapper ─────────────────────────────────────────────────────────
+// ─── Premium section card ─────────────────────────────────────────────────────
 
 interface SettingsSectionProps {
   icon: React.ReactNode;
@@ -142,32 +140,55 @@ interface SettingsSectionProps {
   animationDelay?: string;
 }
 
-function SettingsSection({ icon, title, description, children, animationDelay }: SettingsSectionProps) {
+function SettingsSection({
+  icon,
+  title,
+  description,
+  children,
+  animationDelay,
+}: SettingsSectionProps) {
   return (
     <section
-      className="relative bg-card rounded-xl border border-border/70 shadow-[0_1px_2px_rgba(120,60,20,0.04),0_8px_24px_-12px_rgba(120,60,20,0.10)] overflow-hidden mb-6 animate-fade-scale opacity-0"
-      style={{ animationFillMode: "forwards", animationDelay: animationDelay ?? "0ms" }}
+      className="rounded-2xl overflow-hidden mb-5 animate-fade-scale opacity-0"
+      style={{
+        border: "1px solid hsl(var(--border))",
+        boxShadow: "0 2px 10px hsl(22 30% 15% / 0.07)",
+        animationFillMode: "forwards",
+        animationDelay: animationDelay ?? "0ms",
+      }}
       aria-labelledby={`section-${title}`}
     >
-      <div className="border-l-4 border-primary pl-5 pr-5 sm:pl-6 sm:pr-6 py-5 sm:py-6">
-        <header className="flex items-start gap-3 mb-5">
-          <span className="mt-0.5 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 text-primary shrink-0">
-            {icon}
-          </span>
-          <div className="min-w-0">
-            <h2
-              id={`section-${title}`}
-              className="text-base sm:text-lg font-semibold leading-tight text-foreground"
-            >
-              {title}
-            </h2>
-            {description ? (
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                {description}
-              </p>
-            ) : null}
-          </div>
-        </header>
+      {/* Header strip */}
+      <div
+        className="flex items-center gap-3 px-5 py-3.5"
+        style={{ background: "hsl(var(--muted))" }}
+      >
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{
+            background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+            boxShadow: "0 2px 8px hsl(22 72% 48% / 0.30)",
+          }}
+        >
+          <span className="text-white [&>svg]:w-4 [&>svg]:h-4">{icon}</span>
+        </div>
+        <div className="min-w-0">
+          <h2
+            id={`section-${title}`}
+            className="font-bold text-sm text-foreground leading-tight"
+          >
+            {title}
+          </h2>
+          {description && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-5 py-5" style={{ background: "hsl(var(--card))" }}>
         {children}
       </div>
     </section>
@@ -180,6 +201,9 @@ const DEFAULT_POS_SETTINGS: PosSettingsFormValues = {
   invoice_prefix: "FAC-2026-",
   ticket_footer: "Merci pour votre achat !",
 };
+
+const FIELD_LABEL_CLASSES =
+  "text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em]";
 
 export default function SettingsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
@@ -211,7 +235,7 @@ export default function SettingsPage() {
     saveMutation.mutate(values);
   }
 
-  if (!can('manage_settings')) {
+  if (!can("manage_settings")) {
     return (
       <AccessDenied message="Vous n'avez pas la permission d'accéder à ces paramètres." />
     );
@@ -226,19 +250,18 @@ export default function SettingsPage() {
       />
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="page-container animate-slide-in pb-32 sm:pb-6">
-          {/* Appearance */}
+
+          {/* ── Apparence ── */}
           <SettingsSection
-            icon={<Palette className="w-5 h-5" />}
+            icon={<Palette />}
             title="Apparence"
             description="Personnalisez les couleurs et le mode d'affichage de l'interface."
             animationDelay="80ms"
           >
             {/* Theme palette grid */}
-            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em] mb-3">
-              Thème de couleurs
-            </h3>
+            <h3 className={`${FIELD_LABEL_CLASSES} mb-3`}>Thème de couleurs</h3>
             <div
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-7"
               role="radiogroup"
               aria-label="Thème de couleurs"
             >
@@ -259,7 +282,7 @@ export default function SettingsPage() {
                         : "border-border hover:border-primary/50 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5",
                     ].join(" ")}
                   >
-                    {/* Big circular color preview */}
+                    {/* Color swatch */}
                     <div className="relative">
                       <span
                         className="block w-12 h-12 rounded-full ring-1 ring-black/10 shadow-sm"
@@ -278,7 +301,6 @@ export default function SettingsPage() {
                       )}
                     </div>
 
-                    {/* Label */}
                     <div className="text-center">
                       <span className="block text-sm font-semibold leading-tight text-foreground">
                         {option.label}
@@ -293,9 +315,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Display mode */}
-            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em] mb-3">
-              Mode d'affichage
-            </h3>
+            <h3 className={`${FIELD_LABEL_CLASSES} mb-3`}>Mode d'affichage</h3>
             <div
               className="flex flex-wrap gap-2"
               role="radiogroup"
@@ -325,19 +345,16 @@ export default function SettingsPage() {
             </div>
           </SettingsSection>
 
-          {/* POS Settings */}
+          {/* ── Configuration caisse ── */}
           <SettingsSection
-            icon={<Printer className="w-5 h-5" />}
+            icon={<Printer />}
             title="Configuration caisse"
             description="Paramètres de facturation, impression de ticket et numérotation."
             animationDelay="220ms"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-1.5">
-                <Label
-                  htmlFor="settings-currency"
-                  className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em]"
-                >
+                <Label htmlFor="settings-currency" className={FIELD_LABEL_CLASSES}>
                   Devise
                 </Label>
                 <Input
@@ -350,11 +367,9 @@ export default function SettingsPage() {
                   <p className="text-xs text-destructive">{errors.currency.message}</p>
                 )}
               </div>
+
               <div className="space-y-1.5">
-                <Label
-                  htmlFor="settings-ticket"
-                  className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em]"
-                >
+                <Label htmlFor="settings-ticket" className={FIELD_LABEL_CLASSES}>
                   Format ticket
                 </Label>
                 <Input
@@ -367,11 +382,9 @@ export default function SettingsPage() {
                   <p className="text-xs text-destructive">{errors.ticket_format.message}</p>
                 )}
               </div>
+
               <div className="space-y-1.5">
-                <Label
-                  htmlFor="settings-prefix"
-                  className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em]"
-                >
+                <Label htmlFor="settings-prefix" className={FIELD_LABEL_CLASSES}>
                   Préfixe facture
                 </Label>
                 <Input
@@ -384,11 +397,9 @@ export default function SettingsPage() {
                   <p className="text-xs text-destructive">{errors.invoice_prefix.message}</p>
                 )}
               </div>
+
               <div className="space-y-1.5">
-                <Label
-                  htmlFor="settings-footer"
-                  className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em]"
-                >
+                <Label htmlFor="settings-footer" className={FIELD_LABEL_CLASSES}>
                   Message pied de ticket
                 </Label>
                 <Input
@@ -401,24 +412,26 @@ export default function SettingsPage() {
             </div>
           </SettingsSection>
 
-          {/* Sticky save bar */}
-          <div
-            className="sticky bottom-0 -mx-4 sm:mx-0 sm:static sm:rounded-xl backdrop-blur-md bg-card/80 supports-[backdrop-filter]:bg-card/75 border-t sm:border sm:border-border/70 shadow-[0_-8px_24px_-12px_rgba(120,60,20,0.15)] sm:shadow-none px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3"
-          >
+          {/* ── Sticky save bar ── */}
+          <div className="sticky bottom-0 -mx-4 sm:mx-0 sm:static sm:rounded-2xl backdrop-blur-md bg-card/80 supports-[backdrop-filter]:bg-card/75 border-t sm:border sm:border-border/70 shadow-[0_-8px_24px_-12px_rgba(120,60,20,0.15)] sm:shadow-none px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
             <Button
               type="button"
               variant="outline"
               disabled={!isDirty || isSubmitting || saveMutation.isPending}
               onClick={() => reset()}
-              className="min-h-[44px] rounded-lg border-border/80"
+              className="min-h-[44px] rounded-xl border-border/80"
             >
               <X className="w-4 h-4 mr-2" />
               Annuler
             </Button>
-            <Button
+            <button
               type="submit"
               disabled={isSubmitting || saveMutation.isPending}
-              className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+              className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl font-semibold text-sm text-white transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+              }}
             >
               {saveMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -426,7 +439,7 @@ export default function SettingsPage() {
                 <Save className="w-4 h-4 mr-2" />
               )}
               {saveMutation.isPending ? "Enregistrement…" : "Enregistrer les modifications"}
-            </Button>
+            </button>
           </div>
         </div>
       </form>

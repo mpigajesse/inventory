@@ -73,6 +73,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        copper: {
+          50:  "#fdf6f0",
+          100: "#fae8d8",
+          200: "#f4ceab",
+          300: "#ecad72",
+          400: "#e38340",
+          500: "#c8601e",
+          600: "#a84d18",
+          700: "#8a3e14",
+          800: "#6e3211",
+          900: "#5a2a0f",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -140,6 +152,31 @@ export default {
           "60%": { filter: "blur(0)" },
           "100%": { opacity: "1", transform: "translateY(0)", filter: "blur(0)" },
         },
+        /* === Nouveaux keyframes premium === */
+        "count-up-simple": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in-up": {
+          from: { opacity: "0", transform: "translateY(16px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.96)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "glow-pulse": {
+          "0%,100%": { boxShadow: "0 0 0 0 hsl(22 72% 48% / 0.3)" },
+          "50%": { boxShadow: "0 0 0 6px hsl(22 72% 48% / 0)" },
+        },
+        "float-premium": {
+          "0%,100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        "shimmer": {
+          from: { backgroundPosition: "-200% 0" },
+          to: { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -149,6 +186,13 @@ export default {
         "slide-in-left": "slide-in-left 0.35s cubic-bezier(0.16, 1, 0.3, 1) both",
         "fade-scale": "fade-scale 0.3s cubic-bezier(0.16, 1, 0.3, 1) both",
         "count-up": "count-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both",
+        /* === Nouvelles animations premium === */
+        "count-up-simple": "count-up-simple 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "slide-in-up":     "slide-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "scale-in":        "scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+        "glow-pulse":      "glow-pulse 2.5s ease-in-out infinite",
+        "float-premium":   "float-premium 4s ease-in-out infinite",
+        "shimmer":         "shimmer 2s linear infinite",
       },
     },
   },

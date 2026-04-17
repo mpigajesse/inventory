@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
+  ChevronRight,
   Menu,
   X,
   Bell,
@@ -19,6 +20,7 @@ import {
   QrCode,
   ShieldCheck,
   Tag,
+  Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -140,7 +142,7 @@ export function AppSidebar({
   /**
    * Build filtered, runtime-resolved nav groups.
    * - Items with a permission are hidden when the current user cannot perform it.
-   * - Groups with no visible items are removed entirely (smooth transition below).
+   * - Groups with no visible items are removed entirely.
    * - The Notifications item gets the live unreadCount badge injected here.
    */
   const visibleGroups = NAV_GROUPS
@@ -157,7 +159,7 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Mobile scrim — stronger than before so drawer feels modal */}
+      {/* Mobile scrim */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/60 backdrop-blur-[2px] md:hidden"
@@ -170,48 +172,39 @@ export function AppSidebar({
         className={cn(
           "fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-[width,transform] duration-200 ease-out",
           "md:translate-x-0",
-          collapsed ? "md:w-[60px]" : "md:w-[240px]",
-          "w-[240px]",
+          collapsed ? "md:w-[64px]" : "md:w-[256px]",
+          "w-[256px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
         style={{
-          background: "hsl(var(--sidebar-bg))",
-          // Subtle inner rail on the right edge — separates sidebar from content
-          // without looking like a heavy border. Uses a copper-tinted highlight.
-          boxShadow: "inset -1px 0 0 hsl(var(--sidebar-border))",
+          background: "linear-gradient(to bottom, hsl(20 30% 9%), hsl(18 25% 6%))",
+          boxShadow: "inset -1px 0 0 hsl(20 22% 17% / 0.8), 4px 0 24px hsl(0 0% 0% / 0.18)",
         }}
         aria-label="Navigation principale"
       >
         {/* ── Brand / Header ──────────────────────────────────────────── */}
         <div
-          className="flex items-center justify-between h-16 px-3 border-b shrink-0"
-          style={{ borderColor: "hsl(var(--sidebar-border))" }}
+          className="flex items-center justify-between px-3 py-4 shrink-0"
+          style={{ borderBottom: "1px solid hsl(0 0% 100% / 0.08)" }}
         >
           <Link
             to="/dashboard"
             onClick={handleNavClick}
             className={cn(
-              "flex items-center gap-2.5 min-w-0 rounded-md transition-opacity hover:opacity-90",
+              "flex items-center gap-3 min-w-0 rounded-lg transition-opacity hover:opacity-90",
               collapsed && "md:justify-center"
             )}
-            aria-label="INVENTORY — Retour au tableau de bord"
+            aria-label="NAOSERVICES — Retour au tableau de bord"
           >
-            {/* Logo mark — copper gradient square with Package icon */}
+            {/* Logo mark — copper gradient */}
             <span
-              className="relative flex items-center justify-center w-9 h-9 shrink-0 rounded-[10px] shadow-sm"
+              className="relative flex items-center justify-center w-9 h-9 shrink-0 rounded-xl"
               style={{
-                background: "var(--gradient-primary)",
-                boxShadow:
-                  "0 2px 6px -1px hsl(var(--primary) / 0.45), inset 0 1px 0 hsl(0 0% 100% / 0.18)",
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                boxShadow: "0 2px 8px -1px hsl(22 72% 48% / 0.5), inset 0 1px 0 hsl(0 0% 100% / 0.2)",
               }}
             >
-              <Package className="w-[18px] h-[18px] text-white" strokeWidth={2.25} />
-              {/* Tiny highlight dot, gives the logo a physical feel */}
-              <span
-                className="absolute top-1 right-1 w-1 h-1 rounded-full"
-                style={{ background: "hsl(0 0% 100% / 0.65)" }}
-                aria-hidden="true"
-              />
+              <Store className="w-[18px] h-[18px] text-white" strokeWidth={2.25} />
             </span>
 
             {/* Wordmark — hidden when collapsed on desktop */}
@@ -222,66 +215,72 @@ export function AppSidebar({
               )}
             >
               <span
-                className="text-[13px] font-bold tracking-[0.22em]"
-                style={{ color: "hsl(var(--sidebar-fg-active))" }}
+                className="text-[13px] font-bold tracking-[0.18em]"
+                style={{ color: "hsl(0 0% 100%)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
-                INVENTORY
+                NAOSERVICES
               </span>
               <span
-                className="text-[9px] font-medium tracking-[0.3em] mt-1 uppercase"
-                style={{ color: "hsl(var(--sidebar-fg) / 0.55)" }}
+                className="text-[10px] font-medium tracking-[0.12em] mt-0.5"
+                style={{ color: "hsl(0 0% 100% / 0.4)" }}
               >
-                Naoservices
+                Gestion de stock
               </span>
             </span>
           </Link>
 
-          {/* Desktop collapse toggle */}
-          <button
-            type="button"
-            onClick={() => onCollapsedChange(!collapsed)}
-            className={cn(
-              "hidden md:flex items-center justify-center w-8 h-8 rounded-md transition-colors",
-              "hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
-              collapsed && "md:hidden"
-            )}
-            style={{ color: "hsl(var(--sidebar-fg))" }}
-            aria-label="Réduire la barre latérale"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+          {/* Desktop collapse toggle — visible only when expanded */}
+          {!collapsed && (
+            <button
+              type="button"
+              onClick={() => onCollapsedChange(!collapsed)}
+              className={cn(
+                "hidden md:flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-150 shrink-0",
+                "hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+              )}
+              style={{ color: "hsl(0 0% 100% / 0.45)" }}
+              aria-label="Réduire la barre latérale"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
 
-          {/* Mobile close — 44px tap target */}
+          {/* Mobile close */}
           <button
             type="button"
             onClick={() => onMobileOpenChange(false)}
-            className="md:hidden flex items-center justify-center w-11 h-11 -mr-2 rounded-md hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+            className="md:hidden flex items-center justify-center w-9 h-9 -mr-1 rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
             aria-label="Fermer le menu"
-            style={{ color: "hsl(var(--sidebar-fg))" }}
+            style={{ color: "hsl(0 0% 100% / 0.55)" }}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Collapsed-state expand button — floats below brand, only on desktop */}
+        {/* Collapsed-state expand button — floats below brand */}
         {collapsed && (
-          <div className="hidden md:flex justify-center pt-2">
+          <div className="hidden md:flex justify-center pt-3 pb-1">
             <button
               type="button"
               onClick={() => onCollapsedChange(false)}
-              className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-              style={{ color: "hsl(var(--sidebar-fg))" }}
+              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-150 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+              style={{
+                color: "hsl(22 72% 52%)",
+                background: "hsl(22 72% 48% / 0.1)",
+                border: "1px solid hsl(22 72% 48% / 0.2)",
+              }}
               aria-label="Développer la barre latérale"
               title="Développer"
             >
-              <Menu className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {/* ── Nav ────────────────────────────────────────────────────── */}
         <nav
-          className="flex-1 py-2 px-2 overflow-y-auto overflow-x-hidden"
+          className="flex-1 py-3 px-2 overflow-y-auto overflow-x-hidden"
+          style={{ scrollbarWidth: "none" }}
           aria-label="Menu"
         >
           {visibleGroups.map((group, groupIdx) => (
@@ -289,25 +288,24 @@ export function AppSidebar({
               key={group.id}
               className={cn(
                 "transition-all duration-200",
-                groupIdx > 0 && "mt-3"
+                groupIdx > 0 && "mt-2"
               )}
             >
               {/* Group label — only visible when expanded */}
-              <p
-                className={cn(
-                  "text-[10px] font-semibold uppercase tracking-[0.18em] px-3 mt-2 mb-1",
-                  collapsed && "md:hidden"
-                )}
-                style={{ color: "hsl(var(--sidebar-fg) / 0.4)" }}
-              >
-                {group.label}
-              </p>
+              {!collapsed && (
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-1.5 mt-3"
+                  style={{ color: "hsl(0 0% 100% / 0.25)" }}
+                >
+                  {group.label}
+                </p>
+              )}
 
               {/* Collapsed divider instead of label */}
               {collapsed && groupIdx > 0 && (
                 <div
                   className="hidden md:block h-px mx-3 my-2"
-                  style={{ background: "hsl(var(--sidebar-border))" }}
+                  style={{ background: "hsl(0 0% 100% / 0.08)" }}
                   aria-hidden="true"
                 />
               )}
@@ -326,36 +324,49 @@ export function AppSidebar({
                         title={collapsed ? item.label : undefined}
                         aria-current={isActive ? "page" : undefined}
                         className={cn(
-                          "group relative flex items-center gap-3 h-10 rounded-md text-[13px] font-medium",
-                          "transition-colors duration-200 ease-out",
+                          "group relative flex items-center gap-3 h-10 rounded-lg text-[13px] font-medium",
+                          "transition-all duration-150 ease-out",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
                           collapsed ? "md:justify-center md:px-0 px-3" : "px-3",
-                          isActive
-                            ? "text-white"
-                            : "hover:bg-[hsl(var(--sidebar-hover))]"
                         )}
                         style={{
                           color: isActive
-                            ? "hsl(var(--sidebar-fg-active))"
-                            : "hsl(var(--sidebar-fg))",
+                            ? "hsl(22 72% 58%)"
+                            : "hsl(28 15% 68%)",
                           background: isActive
-                            ? "hsl(var(--primary) / 0.12)"
+                            ? "linear-gradient(90deg, hsl(22 72% 48% / 0.18), transparent)"
                             : undefined,
                           borderLeft: isActive
-                            ? "2px solid hsl(var(--sidebar-accent))"
-                            : "2px solid transparent",
-                          paddingLeft: collapsed ? undefined : isActive ? "10px" : "12px",
+                            ? "3px solid hsl(22 72% 48%)"
+                            : "3px solid transparent",
+                          paddingLeft: collapsed
+                            ? undefined
+                            : isActive
+                              ? "calc(0.75rem - 3px)"
+                              : "0.75rem",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive) {
+                            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)";
+                            (e.currentTarget as HTMLElement).style.color = "hsl(0 0% 100%)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) {
+                            (e.currentTarget as HTMLElement).style.background = "";
+                            (e.currentTarget as HTMLElement).style.color = "hsl(28 15% 68%)";
+                          }
                         }}
                       >
-                        {/* Icon — brighter copper tint when active */}
+                        {/* Icon */}
                         <span className="relative shrink-0 flex items-center justify-center">
                           <item.icon
-                            className="w-[18px] h-[18px]"
+                            className={collapsed ? "w-[18px] h-[18px]" : "w-[16px] h-[16px]"}
                             strokeWidth={isActive ? 2.25 : 2}
                             style={{
                               color: isActive
-                                ? "hsl(var(--sidebar-accent))"
-                                : undefined,
+                                ? "hsl(22 72% 52%)"
+                                : "inherit",
                             }}
                           />
                           {/* Collapsed: badge dot over icon */}
@@ -367,8 +378,7 @@ export function AppSidebar({
                                 style={{
                                   background: "hsl(var(--destructive))",
                                   color: "hsl(var(--destructive-foreground))",
-                                  boxShadow:
-                                    "0 0 0 2px hsl(var(--sidebar-bg))",
+                                  boxShadow: "0 0 0 2px hsl(18 25% 6%)",
                                 }}
                               >
                                 {item.badge > 9 ? "9+" : item.badge}
@@ -409,81 +419,106 @@ export function AppSidebar({
 
         {/* ── Footer: avatar + user info + logout ─────────────────────── */}
         <div
-          className="shrink-0 border-t p-2"
-          style={{ borderColor: "hsl(var(--sidebar-border))" }}
+          className="shrink-0 pt-3 pb-2 px-2"
+          style={{ borderTop: "1px solid hsl(0 0% 100% / 0.08)" }}
         >
-          <div
-            className={cn(
-              "flex items-center gap-3 px-2 py-2 rounded-md",
-              collapsed && "md:justify-center md:px-0"
-            )}
-          >
-            {/* Avatar — copper-tinted glow ring when online */}
-            <span
-              className="relative shrink-0 flex items-center justify-center w-9 h-9 rounded-full text-[12px] font-bold text-white"
-              style={{
-                background: "var(--gradient-primary)",
-                boxShadow:
-                  "0 0 0 1px hsl(var(--sidebar-border)), 0 1px 2px hsl(0 0% 0% / 0.4)",
-              }}
-              aria-hidden="true"
-            >
-              {initials}
-              {/* Online dot */}
+          {/* User info row — expanded only */}
+          {!collapsed && (
+            <div className="flex items-center gap-3 px-2 py-2 mb-1">
               <span
-                className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+                className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-[11px] font-bold text-white"
                 style={{
-                  background: "hsl(var(--success))",
-                  boxShadow: "0 0 0 2px hsl(var(--sidebar-bg))",
+                  background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(30 82% 55%))",
+                  boxShadow: "0 0 0 1px hsl(22 72% 48% / 0.3)",
                 }}
-              />
-            </span>
-
-            <div className={cn("flex-1 min-w-0 leading-tight", collapsed && "md:hidden")}>
-              <p
-                className="text-[13px] font-semibold truncate"
-                style={{ color: "hsl(var(--sidebar-fg-active))" }}
+                aria-hidden="true"
               >
-                {displayName}
-              </p>
-              <p
-                className="text-[11px] truncate mt-0.5"
-                style={{ color: "hsl(var(--sidebar-fg) / 0.7)" }}
+                {initials}
+                {/* Online dot */}
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+                  style={{
+                    background: "hsl(var(--success))",
+                    boxShadow: "0 0 0 2px hsl(18 25% 6%)",
+                  }}
+                />
+              </span>
+              <div className="flex-1 min-w-0 leading-tight">
+                <p
+                  className="text-[13px] font-semibold truncate"
+                  style={{ color: "hsl(0 0% 100%)" }}
+                >
+                  {displayName}
+                </p>
+                <p
+                  className="text-[11px] truncate mt-0.5 capitalize"
+                  style={{ color: "hsl(0 0% 100% / 0.4)" }}
+                >
+                  {roleLabel}
+                </p>
+              </div>
+              {/* Logout button — expanded mode */}
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Déconnexion"
+                aria-label="Déconnexion"
+                className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                style={{ color: "hsl(0 0% 100% / 0.35)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "hsl(0 72% 50% / 0.15)";
+                  (e.currentTarget as HTMLElement).style.color = "hsl(0 72% 60%)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "";
+                  (e.currentTarget as HTMLElement).style.color = "hsl(0 0% 100% / 0.35)";
+                }}
               >
-                {roleLabel}
-              </p>
+                <LogOut className="w-[15px] h-[15px]" />
+              </button>
             </div>
+          )}
 
-            {/* Logout — icon-only button in expanded mode, tooltip on collapsed */}
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Déconnexion"
-              aria-label="Déconnexion"
-              className={cn(
-                "shrink-0 flex items-center justify-center w-9 h-9 rounded-md transition-colors",
-                "hover:bg-[hsl(var(--destructive)/0.15)] hover:text-[hsl(var(--destructive))]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
-                collapsed && "md:hidden"
-              )}
-              style={{ color: "hsl(var(--sidebar-fg))" }}
-            >
-              <LogOut className="w-[16px] h-[16px]" />
-            </button>
-          </div>
-
-          {/* Logout visible row when collapsed (icon-only, centered) */}
+          {/* Collapsed: avatar + logout stacked, centered */}
           {collapsed && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Déconnexion"
-              aria-label="Déconnexion"
-              className="hidden md:flex items-center justify-center w-full h-10 mt-1 rounded-md transition-colors hover:bg-[hsl(var(--destructive)/0.15)] hover:text-[hsl(var(--destructive))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-              style={{ color: "hsl(var(--sidebar-fg))" }}
-            >
-              <LogOut className="w-[16px] h-[16px]" />
-            </button>
+            <div className="hidden md:flex flex-col items-center gap-1.5">
+              <span
+                className="relative flex items-center justify-center w-8 h-8 rounded-full text-[11px] font-bold text-white"
+                style={{
+                  background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(30 82% 55%))",
+                  boxShadow: "0 0 0 1px hsl(22 72% 48% / 0.3)",
+                }}
+                aria-hidden="true"
+                title={displayName}
+              >
+                {initials}
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+                  style={{
+                    background: "hsl(var(--success))",
+                    boxShadow: "0 0 0 2px hsl(18 25% 6%)",
+                  }}
+                />
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Déconnexion"
+                aria-label="Déconnexion"
+                className="flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                style={{ color: "hsl(0 0% 100% / 0.35)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "hsl(0 72% 50% / 0.15)";
+                  (e.currentTarget as HTMLElement).style.color = "hsl(0 72% 60%)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "";
+                  (e.currentTarget as HTMLElement).style.color = "hsl(0 0% 100% / 0.35)";
+                }}
+              >
+                <LogOut className="w-[15px] h-[15px]" />
+              </button>
+            </div>
           )}
         </div>
       </aside>

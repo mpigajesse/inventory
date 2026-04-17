@@ -1,6 +1,5 @@
-import { useOutletContext, useNavigate, useParams, Link } from "react-router-dom";
+import { useOutletContext, useNavigate, useParams } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProductIcon } from "@/components/ui/ProductIcon";
-import { ArrowLeft, Save, Package, Camera, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Package, Camera, X, Loader2, Image as ImageIcon, DollarSign, Barcode } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
@@ -41,6 +40,168 @@ const productSchema = z.object({
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
+
+// ─── Section card wrapper ─────────────────────────────────────────────────────
+
+interface SectionCardProps {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}
+
+function SectionCard({ icon, title, children }: SectionCardProps) {
+  return (
+    <div
+      className="rounded-2xl p-5"
+      style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+    >
+      <h3 className="font-bold text-sm mb-5 flex items-center gap-2 text-foreground">
+        <span style={{ color: 'hsl(22 72% 48%)' }}>{icon}</span>
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+// ─── Field wrapper ────────────────────────────────────────────────────────────
+
+interface FieldProps {
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  children: React.ReactNode;
+  htmlFor?: string;
+}
+
+function Field({ label, required, error, hint, children, htmlFor }: FieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={htmlFor} className="text-sm font-medium">
+        {label}{required && <span className="text-destructive ml-0.5">*</span>}
+      </Label>
+      {children}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+// ─── Image upload zone ────────────────────────────────────────────────────────
+
+interface ImageUploadZoneProps {
+  previewUrl: string;
+  isDragging: boolean;
+  watchedName: string;
+  watchedCategoryName: string;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  onClear: () => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave: () => void;
+}
+
+function ImageUploadZone({
+  previewUrl,
+  isDragging,
+  watchedName,
+  watchedCategoryName,
+  fileInputRef,
+  onClear,
+  onDrop,
+  onDragOver,
+  onDragLeave,
+}: ImageUploadZoneProps) {
+  return (
+    <div
+      className="relative rounded-2xl overflow-hidden border-2 border-dashed transition-all duration-200 cursor-pointer"
+      style={{
+        borderColor: isDragging ? 'hsl(22 72% 48%)' : 'hsl(var(--border))',
+        background: isDragging ? 'hsl(22 72% 48% / 0.05)' : 'hsl(var(--muted) / 0.5)',
+        minHeight: '200px',
+      }}
+      onClick={() => fileInputRef.current?.click()}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      role="button"
+      tabIndex={0}
+      aria-label="Zone de dépôt d'image — cliquer ou glisser-déposer"
+      onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+    >
+      {previewUrl ? (
+        <>
+          <img
+            src={previewUrl}
+            alt="Aperçu du produit"
+            className="w-full object-cover"
+            style={{ maxHeight: '200px' }}
+          />
+          {/* Overlay on hover */}
+          <div
+            className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+            style={{ background: 'rgba(0,0,0,0.5)' }}
+          >
+            <div className="text-center">
+              <Camera className="w-8 h-8 text-white mx-auto mb-2" />
+              <p className="text-white text-sm font-medium">Changer l'image</p>
+            </div>
+          </div>
+          {/* Remove button */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onClear(); }}
+            className="absolute top-2 right-2 flex items-center justify-center w-8 h-8 rounded-full backdrop-blur-sm transition-colors"
+            style={{ background: 'rgba(0,0,0,0.5)', color: 'white' }}
+            aria-label="Supprimer l'image"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </>
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4">
+          {/* Smart icon: product icon if name/category, otherwise upload icon */}
+          {watchedName || watchedCategoryName ? (
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                 style={{ background: 'hsl(22 72% 48% / 0.1)' }}>
+              <ProductIcon
+                name={watchedName}
+                category={watchedCategoryName}
+                size="lg"
+              />
+            </div>
+          ) : (
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{ background: 'hsl(22 72% 48% / 0.1)' }}
+            >
+              <ImageIcon className="w-7 h-7" style={{ color: 'hsl(22 72% 48%)' }} />
+            </div>
+          )}
+          <div className="text-center">
+            <p className="font-semibold text-foreground text-sm">
+              {isDragging ? "Relâcher pour déposer" : "Glisser-déposer une image"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              ou cliquer pour choisir · JPG, PNG, WebP max 5 Mo
+            </p>
+          </div>
+          <span
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors pointer-events-none"
+            style={{
+              background: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
+              color: 'hsl(var(--foreground))',
+            }}
+          >
+            Parcourir les fichiers
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -193,7 +354,7 @@ export default function ProductFormPage() {
     }
   }
 
-  // ── Derive image preview source ────────────────────────────────────────────
+  // ── Derive display values ──────────────────────────────────────────────────
 
   const watchedName = watch("name");
   const watchedCategoryId = watch("category");
@@ -201,7 +362,6 @@ export default function ProductFormPage() {
     categories.find((c) => c.id === watchedCategoryId)?.name ?? "";
 
   const currentImageSrc = imagePreview || existingProduct?.image_url || "";
-  const hasImagePreview = currentImageSrc.length > 0;
 
   const isLoading = isEdit && productLoading;
 
@@ -209,6 +369,8 @@ export default function ProductFormPage() {
   const pageSubtitle = isEdit
     ? `Modification de ${existingProduct?.name ?? "produit"}`
     : "Ajouter un produit au catalogue";
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -220,28 +382,30 @@ export default function ProductFormPage() {
       <div className="page-container animate-slide-in">
 
         {/* ── Page header ───────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link
-            to="/products"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-xl hover:bg-muted transition-colors"
+            aria-label="Retour"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Retour aux produits
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-4 mb-8">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 shrink-0">
-            <Package className="w-6 h-6 text-primary" />
-          </div>
+            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+          </button>
           <div>
-            <h1 className="text-xl font-semibold text-foreground leading-tight">
-              {pageTitle}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {isEdit
-                ? "Modifiez les informations du produit ci-dessous."
-                : "Renseignez les informations du nouveau produit."}
+            <div className="flex items-center gap-2">
+              <div
+                className="w-1 h-5 rounded-full shrink-0"
+                style={{ background: 'linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+              />
+              <h1
+                className="text-xl font-extrabold text-foreground"
+                style={{ letterSpacing: '-0.025em' }}
+              >
+                {pageTitle}
+              </h1>
+            </div>
+            <p className="text-xs text-muted-foreground ml-3 mt-0.5">
+              Remplissez les informations du produit
             </p>
           </div>
         </div>
@@ -252,247 +416,195 @@ export default function ProductFormPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-              {/* ── Colonne gauche : Informations de base ─────────────────── */}
-              <div className="bg-card rounded-xl border p-6">
+            {/* ── 2-column layout ─────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
-                  Informations de base
-                </p>
+              {/* ── Left column — form (2/3) ─────────────────────────────── */}
+              <div className="lg:col-span-2 space-y-5">
 
-                {/* Nom */}
-                <div className="space-y-1.5 mt-6">
-                  <Label htmlFor="name" className="text-sm font-medium mb-1.5">
-                    Nom du produit <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    placeholder="Ex : Lait Nido 400g"
-                    className="h-11 rounded-lg focus-visible:ring-primary/50"
-                    aria-invalid={errors.name ? "true" : undefined}
-                    {...register("name")}
-                  />
-                  {errors.name && (
-                    <p className="text-xs text-destructive">{errors.name.message}</p>
-                  )}
-                </div>
+                {/* Section: informations produit */}
+                <SectionCard icon={<Package className="w-4 h-4" />} title="Informations produit">
+                  <div className="space-y-5">
+                    <Field label="Nom du produit" required htmlFor="name" error={errors.name?.message}>
+                      <Input
+                        id="name"
+                        placeholder="Ex : Samsung Galaxy A54, Câble USB-C…"
+                        className="h-11 rounded-lg focus-visible:ring-primary/50"
+                        aria-invalid={errors.name ? "true" : undefined}
+                        {...register("name")}
+                      />
+                    </Field>
 
-                {/* Catégorie */}
-                <div className="space-y-1.5 mt-6">
-                  <Label className="text-sm font-medium mb-1.5">
-                    Catégorie <span className="text-destructive">*</span>
-                  </Label>
-                  <Controller
-                    name="category"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={(val) => field.onChange(Number(val))}
-                        value={field.value ? String(field.value) : ""}
-                        disabled={categoriesLoading}
-                      >
-                        <SelectTrigger className="w-full h-11 rounded-lg focus:ring-primary/50">
-                          <SelectValue placeholder="Sélectionner une catégorie" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={String(cat.id)}>
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.category && (
-                    <p className="text-xs text-destructive">{errors.category.message}</p>
-                  )}
-                </div>
+                    <Field label="Catégorie" required error={errors.category?.message}>
+                      <Controller
+                        name="category"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            onValueChange={(val) => field.onChange(Number(val))}
+                            value={field.value ? String(field.value) : ""}
+                            disabled={categoriesLoading}
+                          >
+                            <SelectTrigger className="w-full h-11 rounded-lg focus:ring-primary/50">
+                              <SelectValue placeholder="Sélectionner une catégorie" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={String(cat.id)}>
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </Field>
 
-                {/* Prix de vente */}
-                <div className="space-y-1.5 mt-6">
-                  <Label htmlFor="selling_price" className="text-sm font-medium mb-1.5">
-                    Prix de vente (FCFA) <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="selling_price"
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    className="h-11 rounded-lg focus-visible:ring-primary/50"
-                    aria-invalid={errors.selling_price ? "true" : undefined}
-                    {...register("selling_price", { valueAsNumber: true })}
-                  />
-                  {errors.selling_price && (
-                    <p className="text-xs text-destructive">{errors.selling_price.message}</p>
-                  )}
-                </div>
+                    <Field
+                      label="Code-barres"
+                      htmlFor="barcode"
+                      hint="Scannable avec un lecteur USB ou saisie manuelle."
+                    >
+                      <div className="relative">
+                        <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="barcode"
+                          placeholder="Ex : 6001068002802"
+                          className="h-11 rounded-lg focus-visible:ring-primary/50 font-mono pl-9"
+                          {...register("barcode")}
+                        />
+                      </div>
+                    </Field>
 
-                {/* Prix d'achat */}
-                <div className="space-y-1.5 mt-6">
-                  <Label htmlFor="purchase_price" className="text-sm font-medium mb-1.5">
-                    Prix d'achat (FCFA) <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="purchase_price"
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    className="h-11 rounded-lg focus-visible:ring-primary/50"
-                    aria-invalid={errors.purchase_price ? "true" : undefined}
-                    {...register("purchase_price", { valueAsNumber: true })}
-                  />
-                  {errors.purchase_price && (
-                    <p className="text-xs text-destructive">{errors.purchase_price.message}</p>
-                  )}
-                </div>
+                    <Field label="Description" htmlFor="description">
+                      <Textarea
+                        id="description"
+                        placeholder="Informations supplémentaires sur le produit..."
+                        className="resize-none rounded-lg focus-visible:ring-primary/50 min-h-[80px]"
+                        rows={3}
+                        {...register("description")}
+                      />
+                    </Field>
+                  </div>
+                </SectionCard>
 
-                {/* Code-barres */}
-                <div className="space-y-1.5 mt-6">
-                  <Label htmlFor="barcode" className="text-sm font-medium mb-1.5">
-                    Code-barres
-                  </Label>
-                  <Input
-                    id="barcode"
-                    placeholder="Ex : 6001068002802"
-                    className="h-11 rounded-lg focus-visible:ring-primary/50 font-mono"
-                    {...register("barcode")}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Scannable avec un lecteur USB ou saisie manuelle.
-                  </p>
-                </div>
+                {/* Section: tarification */}
+                <SectionCard icon={<DollarSign className="w-4 h-4" />} title="Tarification">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <Field
+                      label="Prix de vente (FCFA)"
+                      required
+                      htmlFor="selling_price"
+                      error={errors.selling_price?.message}
+                    >
+                      <Input
+                        id="selling_price"
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        className="h-11 rounded-lg focus-visible:ring-primary/50"
+                        aria-invalid={errors.selling_price ? "true" : undefined}
+                        {...register("selling_price", { valueAsNumber: true })}
+                      />
+                    </Field>
 
-                {/* Description */}
-                <div className="space-y-1.5 mt-6">
-                  <Label htmlFor="description" className="text-sm font-medium mb-1.5">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Informations supplémentaires sur le produit..."
-                    className="resize-none rounded-lg focus-visible:ring-primary/50 min-h-[88px]"
-                    rows={3}
-                    {...register("description")}
-                  />
-                </div>
+                    <Field
+                      label="Prix d'achat (FCFA)"
+                      required
+                      htmlFor="purchase_price"
+                      error={errors.purchase_price?.message}
+                    >
+                      <Input
+                        id="purchase_price"
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        className="h-11 rounded-lg focus-visible:ring-primary/50"
+                        aria-invalid={errors.purchase_price ? "true" : undefined}
+                        {...register("purchase_price", { valueAsNumber: true })}
+                      />
+                    </Field>
+                  </div>
+                </SectionCard>
               </div>
 
-              {/* ── Colonne droite : Image ─────────────────────────────────── */}
-              <div className="space-y-6">
-                <div className="bg-card rounded-xl border p-6">
-                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-3">
-                    Image du produit
-                  </p>
+              {/* ── Right column — image (1/3) ───────────────────────────── */}
+              <div className="space-y-5">
+                <div
+                  className="rounded-2xl p-5"
+                  style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                >
+                  <h3 className="font-bold text-sm mb-5 text-foreground">Photo du produit</h3>
 
-                  <div className="mt-6">
-                    {hasImagePreview ? (
-                      /* Preview state */
-                      <div className="relative rounded-xl overflow-hidden border border-border bg-muted/40">
-                        <img
-                          src={currentImageSrc}
-                          alt="Aperçu du produit"
-                          className="w-full h-48 object-contain p-4"
-                        />
-                        <button
-                          type="button"
-                          onClick={clearImage}
-                          className="absolute top-2 right-2 flex items-center justify-center w-8 h-8 rounded-full bg-background/80 border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-colors backdrop-blur-sm"
-                          aria-label="Supprimer l'image"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        <div className="px-4 pb-3 pt-1 border-t border-border bg-muted/20">
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="text-xs text-primary hover:underline font-medium"
-                          >
-                            Changer l'image
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Empty drop zone */
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Zone de dépôt d'image — cliquer ou glisser-déposer"
-                        onClick={() => fileInputRef.current?.click()}
-                        onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        className={[
-                          "flex flex-col items-center justify-center gap-3 w-full h-48 rounded-xl cursor-pointer",
-                          "border-2 border-dashed transition-colors",
-                          isDragOver
-                            ? "border-primary/60 bg-primary/5"
-                            : "border-border hover:border-primary/50 hover:bg-primary/[0.03]",
-                        ].join(" ")}
-                      >
-                        <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-muted shrink-0">
-                          {watchedName || watchedCategoryName ? (
-                            <ProductIcon
-                              name={watchedName ?? ""}
-                              category={watchedCategoryName}
-                              size="lg"
-                            />
-                          ) : (
-                            <Camera className="w-7 h-7 text-muted-foreground" />
-                          )}
-                        </div>
-                        <div className="text-center px-4">
-                          <p className="text-sm font-medium text-foreground">
-                            {isDragOver ? "Relâcher pour déposer" : "Cliquer ou glisser une image"}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            JPG, PNG, WebP — max 2 Mo recommandé
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                  <ImageUploadZone
+                    previewUrl={currentImageSrc}
+                    isDragging={isDragOver}
+                    watchedName={watchedName ?? ""}
+                    watchedCategoryName={watchedCategoryName}
+                    fileInputRef={fileInputRef}
+                    onClear={clearImage}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                  />
 
-                    {/* Hidden file input */}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="sr-only"
-                      aria-hidden="true"
-                      tabIndex={-1}
-                      onChange={handleImageChange}
-                    />
-                  </div>
+                  {currentImageSrc && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-3 text-xs font-medium w-full text-center transition-colors"
+                      style={{ color: 'hsl(22 72% 48%)' }}
+                    >
+                      Changer l'image
+                    </button>
+                  )}
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    onChange={handleImageChange}
+                  />
                 </div>
               </div>
             </div>
 
             {/* ── Actions ─────────────────────────────────────────────────── */}
-            <div className="flex items-center gap-3 justify-end pt-6 border-t border-border mt-6">
-              <Button
+            <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-border">
+              <button
                 type="button"
-                variant="outline"
-                className="h-10 rounded-lg"
-                onClick={() => navigate("/products")}
+                onClick={() => navigate(-1)}
                 disabled={isPending}
+                className="px-4 py-2 rounded-xl text-sm font-semibold hover:bg-muted transition-colors text-muted-foreground disabled:opacity-50"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
                 Annuler
-              </Button>
-              <Button
+              </button>
+              <button
                 type="submit"
-                className="h-10 rounded-lg bg-gradient-primary shadow-md shadow-primary/20 border-0 hover:-translate-y-px transition-transform"
                 disabled={isPending}
+                style={{
+                  background: isPending ? 'hsl(22 72% 48% / 0.6)' : 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '0.5rem 1.25rem',
+                  fontWeight: '600',
+                  fontSize: '0.875rem',
+                  boxShadow: '0 4px 14px hsl(22 72% 48% / 0.3)',
+                  cursor: isPending ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                }}
               >
-                {isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                {isEdit ? "Enregistrer les modifications" : "Ajouter le produit"}
-              </Button>
+                {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isEdit ? "Enregistrer les modifications" : "Créer le produit"}
+              </button>
             </div>
           </form>
         )}
