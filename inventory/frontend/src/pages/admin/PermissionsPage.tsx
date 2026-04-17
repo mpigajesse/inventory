@@ -389,7 +389,7 @@ export default function PermissionsPage() {
     const initial: DraftState = {};
     for (const user of data.results) {
       if (user.profile.role !== "admin") {
-        initial[user.id] = new Set((user.permissions ?? []) as Permission[]);
+        initial[user.id] = new Set((user.profile.permissions ?? []) as Permission[]);
       }
     }
     setDraft(initial);
