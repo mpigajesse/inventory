@@ -361,7 +361,7 @@ export default function PosPage() {
                 position: "absolute", top: 0, left: 0, right: 0, height: "6px",
                 background: "repeating-linear-gradient(90deg, hsl(var(--card)) 0px, hsl(var(--card)) 5px, hsl(var(--muted)) 5px, hsl(var(--muted)) 10px)",
               }} />
-              <div ref={receiptRef} style={{ paddingTop: "8px" }}>
+              <div style={{ paddingTop: "8px" }}>
                 <Receipt
                   items={cart}
                   total={total}
@@ -376,6 +376,19 @@ export default function PosPage() {
                 position: "absolute", bottom: 0, left: 0, right: 0, height: "6px",
                 background: "repeating-linear-gradient(90deg, hsl(var(--card)) 0px, hsl(var(--card)) 5px, hsl(var(--muted)) 5px, hsl(var(--muted)) 10px)",
               }} />
+            </div>
+
+            {/* Cible impression — position:fixed non clippée par overflow:hidden */}
+            <div ref={receiptRef} style={{ position: "fixed", left: "-9999px", top: 0, width: "80mm", background: "#fff" }}>
+              <Receipt
+                items={cart}
+                total={total}
+                amountGiven={Number(amountGiven)}
+                change={change}
+                ticketNumber={currentTicket.number}
+                date={currentTicket.date}
+                time={currentTicket.time}
+              />
             </div>
 
             <div className="flex gap-3">
