@@ -14,6 +14,7 @@ import {
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { ArrowLeft, Save, Package, Camera, X, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -161,8 +162,16 @@ export default function ProductFormPage() {
     setIsSubmitting(true);
     // In V1 (mock data), simulate async save then navigate
     setTimeout(() => {
-      void values;
       void imagePreview;
+      if (isEdit) {
+        toast.success("Produit modifié", {
+          description: `${values.name} a été mis à jour avec succès.`,
+        });
+      } else {
+        toast.success("Produit enregistré", {
+          description: `${values.name} a été ajouté au catalogue.`,
+        });
+      }
       navigate("/products");
     }, 600);
   }

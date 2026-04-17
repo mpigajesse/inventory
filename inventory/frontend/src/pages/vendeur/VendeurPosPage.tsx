@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductIcon } from "@/components/ui/ProductIcon";
+import { toast } from "sonner";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 interface Product {
@@ -29,6 +30,7 @@ interface Product {
   barcode: string;
   price: number;
   category: string;
+  image_url?: string | null;
 }
 
 interface CartItem extends Product {
@@ -312,13 +314,18 @@ export default function VendeurPosPage() {
   const handlePayment = () => {
     if (Number(amountGiven) >= total) {
       const { date, time } = formatDateTime();
+      const ticketNumber = formatTicketNumber(ticketCounter);
       setCurrentTicket({
-        number: formatTicketNumber(ticketCounter),
+        number: ticketNumber,
         date,
         time,
       });
       setTicketCounter(prev => prev + 1);
       setSaleComplete(true);
+      toast.success(`Vente enregistrée — ${total.toLocaleString("fr-FR")} FCFA`, {
+        description: `${cart.length} article(s) · Monnaie : ${change.toLocaleString("fr-FR")} FCFA`,
+        duration: 4000,
+      });
     }
   };
 
@@ -568,7 +575,7 @@ export default function VendeurPosPage() {
                   >
                     <div className="aspect-square rounded-lg bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-2.5 overflow-hidden group-hover:from-primary/10 group-hover:to-accent/5 transition-colors">
                       <div className="group-hover:scale-110 transition-transform duration-200">
-                        <ProductIcon name={product.name} category={product.category} size="md" />
+                        <ProductIcon name={product.name} category={product.category} size="md" imageUrl={product.image_url} />
                       </div>
                     </div>
 
@@ -667,7 +674,7 @@ export default function VendeurPosPage() {
                       <div className="flex items-center gap-2.5">
                         {/* Icon 36px */}
                         <div className="w-9 h-9 rounded-lg bg-muted shrink-0 flex items-center justify-center overflow-hidden">
-                          <ProductIcon name={item.name} category={item.category} size="sm" />
+                          <ProductIcon name={item.name} category={item.category} size="sm" imageUrl={item.image_url} />
                         </div>
 
                         {/* Name + unit price */}

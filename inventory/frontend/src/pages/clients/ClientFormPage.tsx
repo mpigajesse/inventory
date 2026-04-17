@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, UserPlus, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -83,7 +84,15 @@ export default function ClientFormPage() {
     setIsSubmitting(true);
     // In V1 (mock data), simulate async save then navigate
     setTimeout(() => {
-      void values;
+      if (isEdit) {
+        toast.success("Client modifié", {
+          description: `${values.name} a été mis à jour avec succès.`,
+        });
+      } else {
+        toast.success("Client enregistré", {
+          description: `${values.name} a été ajouté avec succès.`,
+        });
+      }
       navigate("/clients");
     }, 600);
   }

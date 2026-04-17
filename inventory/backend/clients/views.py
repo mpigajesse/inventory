@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Client
 from .serializers import ClientSerializer
+from notifications.utils import notify_new_client
 
 
 class ClientViewSet(viewsets.ModelViewSet):
@@ -16,6 +17,10 @@ class ClientViewSet(viewsets.ModelViewSet):
     filterset_fields = ['city', 'is_active']
     ordering_fields = ['name', 'created_at']
     ordering = ['name']
+
+    def perform_create(self, serializer: ClientSerializer) -> None:
+        client = serializer.save()
+        notify_new_client(client)
 
     def perform_destroy(self, instance: Client) -> None:
         """Soft-delete: désactive le client sans le supprimer de la base."""

@@ -40,6 +40,7 @@ import { ProductIcon } from "@/components/ui/ProductIcon";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productService } from "@/services/productService";
 import type { Product } from "@/services/productService";
@@ -77,7 +78,7 @@ export default function ProductsPage() {
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [categoryFilter, setCategoryFilter] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
-    (localStorage.getItem("products-view") as "list" | "grid") ?? "list"
+    (localStorage.getItem("products-view") as "list" | "grid") ?? "grid"
   );
 
   function setView(mode: "list" | "grid") {
@@ -110,7 +111,13 @@ export default function ProductsPage() {
     mutationFn: (id: number) => productService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Produit supprimé");
       setModal({ type: "none" });
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression", {
+        description: "Impossible de supprimer ce produit. Réessayez.",
+      });
     },
   });
 
@@ -161,10 +168,17 @@ export default function ProductsPage() {
 
   function handleDeleteSelection() {
     const ids = Array.from(selectedIds) as number[];
-    Promise.all(ids.map((id) => productService.delete(id))).then(() => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      clearSelection();
-    });
+    Promise.all(ids.map((id) => productService.delete(id)))
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        toast.success(`${ids.length} produit(s) supprimé(s)`);
+        clearSelection();
+      })
+      .catch(() => {
+        toast.error("Erreur lors de la suppression", {
+          description: "Certains produits n'ont pas pu être supprimés.",
+        });
+      });
   }
 
   function handleExport() {

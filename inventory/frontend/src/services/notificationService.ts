@@ -9,18 +9,33 @@ export interface Notification {
   created_at: string;
 }
 
+export interface UnreadCountResponse {
+  count: number;
+  notifications: Notification[];
+}
+
+export interface NotificationListParams {
+  is_read?: boolean;
+  since?: string;
+}
+
 export const notificationService = {
-  getAll: () =>
+  getAll: (params?: NotificationListParams) =>
     api
-      .get<{ results: Notification[]; count: number }>('/notifications/')
+      .get<{ results: Notification[]; count: number }>('/notifications/', { params })
+      .then((r) => r.data),
+
+  getUnreadCount: () =>
+    api
+      .get<UnreadCountResponse>('/notifications/unread-count/')
       .then((r) => r.data),
 
   markRead: (id: number) =>
-    api.post(`/notifications/${id}/mark-read/`).then((r) => r.data),
+    api.post<void>(`/notifications/${id}/mark-read/`).then((r) => r.data),
 
   markAllRead: () =>
-    api.post('/notifications/mark-all-read/').then((r) => r.data),
+    api.post<void>('/notifications/mark-all-read/').then((r) => r.data),
 
-  getUnreadCount: () =>
-    api.get<{ count: number }>('/notifications/unread-count/').then((r) => r.data),
+  markReadBulk: (ids: number[]) =>
+    api.post<void>('/notifications/mark-read-bulk/', { ids }).then((r) => r.data),
 };

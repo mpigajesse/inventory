@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TableToolbar } from "@/components/ui/TableToolbar";
 import { exportStockToExcel } from "@/lib/exportStock";
 import { TablePagination } from "@/components/ui/TablePagination";
+import { ProductIcon } from "@/components/ui/ProductIcon";
 import { SortableHeader } from "@/components/ui/SortableHeader";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -59,6 +60,7 @@ interface StockItem {
   stockId: number; // API stock record id (used for adjust endpoint)
   name: string;
   category: string;
+  imageUrl: string | null;
   stock: number;
   min: number;
   max: number;
@@ -75,6 +77,7 @@ function toDisplayItem(api: ApiStockItem): StockItem {
     stockId: api.id,
     name: api.product_name,
     category: api.category_name,
+    imageUrl: api.product_image_url,
     stock: api.quantity,
     min: api.min_threshold,
     max: api.max_threshold,
@@ -397,7 +400,7 @@ export default function StockPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState<StockLevelFilter>("");
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
-    (localStorage.getItem("stock-view") as "list" | "grid") ?? "list"
+    (localStorage.getItem("stock-view") as "list" | "grid") ?? "grid"
   );
 
   function setView(mode: "list" | "grid") {
@@ -804,14 +807,23 @@ export default function StockPage() {
                     key={item.id}
                     className="group rounded-xl border bg-card hover:border-primary/50 hover:shadow-sm transition-all p-3 flex flex-col gap-2"
                   >
-                    {/* Nom + catégorie */}
-                    <div>
-                      <p className="font-semibold text-sm line-clamp-2 leading-snug">
-                        {item.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {item.category || "—"}
-                      </p>
+                    {/* Icône + Nom + catégorie */}
+                    <div className="flex items-start gap-2">
+                      <ProductIcon
+                        name={item.name}
+                        category={item.category}
+                        size="sm"
+                        imageUrl={item.imageUrl}
+                        className="shrink-0 mt-0.5"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm line-clamp-2 leading-snug">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {item.category || "—"}
+                        </p>
+                      </div>
                     </div>
 
                     {/* Quantité en grand */}

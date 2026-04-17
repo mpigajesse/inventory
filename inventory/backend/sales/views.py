@@ -11,6 +11,7 @@ from products.models import Product
 from stock import models as stock_models
 from stock.models import StockMovement
 from invoices.models import Invoice
+from notifications.utils import notify_sale, check_stock_alerts
 
 
 class SaleViewSet(viewsets.ReadOnlyModelViewSet):
@@ -105,6 +106,13 @@ class CreateSaleView(generics.CreateAPIView):
                 status='paid',
                 issued_by=request.user,
             )
+
+        # 5. Send notifications outside the atomic block so they never
+        #    roll back the sale if they fail.
+        notify_sale(sale)
+        for item_data in data['items']:
+            stock = locked_stocks[item_data['product_id']]
+            check_stock_alerts(stock)
 
         return Response(
             SaleSerializer(sale).data,

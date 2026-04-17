@@ -10,6 +10,12 @@ import { ProductIcon } from "@/components/ui/ProductIcon";
 import { useState, useRef, useMemo } from "react";
 import { productService } from "@/services/productService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +24,7 @@ interface ProductBarcode {
   name: string;
   category: string;
   barcode: string | null;
+  image_url: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -47,7 +54,7 @@ function BarcodeLabel({ product }: BarcodeLabelProps) {
   return (
     <div
       style={{
-        width: "70mm",
+        width: "58mm",
         minHeight: "38mm",
         background: "#fff",
         border: "1px solid #ccc",
@@ -63,7 +70,7 @@ function BarcodeLabel({ product }: BarcodeLabelProps) {
     >
       <Barcode
         value={product.barcode}
-        width={1.6}
+        width={1.2}
         height={48}
         fontSize={10}
         margin={0}
@@ -97,7 +104,14 @@ function PrintableCard({ product }: PrintableCardProps) {
     documentTitle: `Code-barres — ${product.name}`,
     pageStyle: `
       @page { size: 80mm 50mm; margin: 2mm; }
-      body { margin: 0; display: flex; align-items: center; justify-content: center; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
     `,
   });
 
@@ -177,7 +191,7 @@ function ProductBarcodeCard({
         </button>
 
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <ProductIcon name={product.name} category={product.category} size="sm" />
+          <ProductIcon name={product.name} category={product.category} size="sm" imageUrl={product.image_url} />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-sm truncate text-foreground">{product.name}</p>
             <p className="text-xs text-muted-foreground">{product.category}</p>
@@ -192,15 +206,21 @@ function ProductBarcodeCard({
       </div>
 
       {/* Barcode display or placeholder */}
-      <div className="flex items-center justify-center min-h-[76px] bg-white rounded-lg border border-border/50 overflow-hidden px-2 py-2 shadow-[var(--shadow-inner)]">
+      <div className="flex flex-col items-center justify-center min-h-[76px] bg-white rounded-lg border border-border/50 overflow-hidden px-2 py-2 shadow-[var(--shadow-inner)]">
         {product.barcode ? (
-          <Barcode
-            value={product.barcode}
-            width={1.4}
-            height={48}
-            fontSize={10}
-            margin={0}
-          />
+          <>
+            <Barcode
+              value={product.barcode}
+              width={1.2}
+              height={48}
+              fontSize={10}
+              margin={0}
+            />
+            {/* EAN digits in plain text — user can verify without printing */}
+            <span className="font-mono text-[9px] text-center text-muted-foreground leading-tight mt-0.5 select-all">
+              {product.barcode}
+            </span>
+          </>
         ) : (
           <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
             <div className="flex gap-0.5">
@@ -264,6 +284,7 @@ export default function BarcodesPage() {
       name: p.name,
       category: p.category_name,
       barcode: generatedBarcodes[p.id] ?? p.barcode,
+      image_url: p.image_url,
     }));
   }, [data, generatedBarcodes]);
 
@@ -286,6 +307,7 @@ export default function BarcodesPage() {
     documentTitle: "Codes-barres — sélection",
     pageStyle: `
       @page { size: A4; margin: 10mm; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       body { margin: 0; font-family: sans-serif; }
     `,
   });
@@ -324,7 +346,7 @@ export default function BarcodesPage() {
   const totalCount = products.length;
 
   return (
-    <>
+    <TooltipProvider>
       <Topbar
         title="Codes-barres"
         subtitle="Génération et impression des codes-barres produits"
@@ -338,9 +360,9 @@ export default function BarcodesPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 70mm)",
-                gap: "6mm",
-                padding: "4mm",
+                gridTemplateColumns: "repeat(auto-fill, 58mm)",
+                gap: "4mm",
+                padding: "0",
               }}
             >
               {selectedWithBarcode.map((product) => (
@@ -379,21 +401,33 @@ export default function BarcodesPage() {
             </div>
           </div>
 
-          {/* Bouton imprimer la sélection — gradient + shadow */}
-          <button
-            type="button"
-            disabled={selectedWithBarcode.length === 0}
-            onClick={() => handlePrintSelection()}
-            className="btn-primary shrink-0 h-10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            <PrinterCheck className="w-4 h-4" />
-            Imprimer la sélection
-            {selectedWithBarcode.length > 0 && (
-              <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[hsl(0_0%_100%/0.22)] text-[10px] font-bold px-1.5">
-                {selectedWithBarcode.length}
+          {/* Bouton imprimer la sélection — with tooltip when disabled */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* span wrapper required: Tooltip needs a focusable child even when button is disabled */}
+              <span className="shrink-0 inline-flex">
+                <button
+                  type="button"
+                  disabled={selectedWithBarcode.length === 0}
+                  onClick={() => handlePrintSelection()}
+                  className="btn-primary h-10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <PrinterCheck className="w-4 h-4" />
+                  Imprimer la sélection
+                  {selectedWithBarcode.length > 0 && (
+                    <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[hsl(0_0%_100%/0.22)] text-[10px] font-bold px-1.5">
+                      {selectedWithBarcode.length}
+                    </span>
+                  )}
+                </button>
               </span>
+            </TooltipTrigger>
+            {selectedWithBarcode.length === 0 && (
+              <TooltipContent side="bottom">
+                Sélectionnez des produits avec un code-barres
+              </TooltipContent>
             )}
-          </button>
+          </Tooltip>
         </div>
 
         {isError && (
@@ -497,6 +531,6 @@ export default function BarcodesPage() {
           </div>
         )}
       </div>
-    </>
+    </TooltipProvider>
   );
 }

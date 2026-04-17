@@ -8,12 +8,26 @@ import {
   LogOut,
   Settings,
   UserCircle,
+  AlertTriangle,
+  ShoppingCart,
+  UserPlus,
+  AlertOctagon,
+  Package,
+  FileText,
+  UserCog,
+  CheckCheck,
+  Loader2,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import {
+  notificationService,
+  type Notification,
+} from "@/services/notificationService";
 
-const UNREAD_COUNT = 5;
+// ─── Route labels ─────────────────────────────────────────────────────────────
 
 const ROUTE_LABELS: Record<string, string> = {
   "/dashboard": "Tableau de bord",
@@ -39,10 +53,6 @@ interface BreadcrumbSegment {
   path: string;
 }
 
-/**
- * Build breadcrumb segments from a pathname.
- * Unrecognised path parts are capitalised as a graceful fallback.
- */
 function buildBreadcrumbs(pathname: string): BreadcrumbSegment[] {
   const parts = pathname.split("/").filter(Boolean);
   const segments: BreadcrumbSegment[] = [];
@@ -60,9 +70,6 @@ function buildBreadcrumbs(pathname: string): BreadcrumbSegment[] {
   return segments;
 }
 
-/**
- * Generate two-letter initials from a full display name.
- */
 function getInitials(name: string | undefined): string {
   if (!name) return "U";
   const trimmed = name.trim();
@@ -72,6 +79,45 @@ function getInitials(name: string | undefined): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+// ─── Notification helpers ─────────────────────────────────────────────────────
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  if (diff < 60_000) return "À l'instant";
+  if (diff < 3_600_000) return `il y a ${Math.floor(diff / 60_000)} min`;
+  if (diff < 86_400_000) return `il y a ${Math.floor(diff / 3_600_000)}h`;
+  return `il y a ${Math.floor(diff / 86_400_000)} jour(s)`;
+}
+
+type NotifIconEntry = {
+  Icon: React.ElementType;
+  colorClass: string;
+};
+
+function resolveNotifStyle(type: string): NotifIconEntry {
+  switch (type) {
+    case "sale":
+      return { Icon: ShoppingCart, colorClass: "bg-success/10 text-success" };
+    case "low_stock":
+      return { Icon: AlertTriangle, colorClass: "bg-amber-500/10 text-amber-600" };
+    case "stock_critique":
+      return { Icon: AlertOctagon, colorClass: "bg-destructive/10 text-destructive" };
+    case "new_client":
+    case "user":
+      return { Icon: UserPlus, colorClass: "bg-primary/10 text-primary" };
+    case "invoice":
+      return { Icon: FileText, colorClass: "bg-primary/10 text-primary" };
+    case "stock":
+      return { Icon: Package, colorClass: "bg-amber-500/10 text-amber-600" };
+    case "utilisateur":
+      return { Icon: UserCog, colorClass: "text-purple-500 bg-purple-500/10" };
+    default:
+      return { Icon: Settings, colorClass: "bg-muted text-muted-foreground" };
+  }
+}
+
+// ─── TopbarProps ──────────────────────────────────────────────────────────────
+
 interface TopbarProps {
   title: string;
   subtitle?: string;
@@ -80,39 +126,84 @@ interface TopbarProps {
   notificationCount?: number;
 }
 
+// ─── Topbar ───────────────────────────────────────────────────────────────────
+
 export function Topbar({
   title,
   subtitle,
   onMenuClick,
   onSearchClick,
-  notificationCount,
 }: TopbarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const queryClient = useQueryClient();
 
   const profilePath =
     currentUser?.role === "vendeur" ? "/vendeur/profile" : "/profile";
   const settingsPath =
     currentUser?.role === "vendeur" ? "/vendeur/settings" : "/settings";
   const segments = buildBreadcrumbs(location.pathname);
-  const displayedCount = notificationCount ?? UNREAD_COUNT;
   const showBreadcrumbs = segments.length > 1;
 
+  // ── User menu state ────────────────────────────────────────────────────────
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Close dropdown on outside click / Escape
+  // ── Notification dropdown state ────────────────────────────────────────────
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement | null>(null);
+
+  // ── Unread count query (polled every 30 s) ─────────────────────────────────
+  const { data: unreadData } = useQuery({
+    queryKey: ["notifications", "unread"],
+    queryFn: () => notificationService.getUnreadCount(),
+    refetchInterval: 30_000,
+    enabled: !!currentUser,
+  });
+  const unreadCount = unreadData?.count ?? 0;
+
+  // ── Recent notifications query (for dropdown preview) ─────────────────────
+  const { data: allData, isLoading: notifsLoading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => notificationService.getAll(),
+    enabled: notifOpen && !!currentUser,
+    staleTime: 20_000,
+  });
+  const recentNotifs: Notification[] = (allData?.results ?? []).slice(0, 5);
+
+  // ── Mark-read mutation ─────────────────────────────────────────────────────
+  const markRead = useMutation({
+    mutationFn: (id: number) => notificationService.markRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  const markAllRead = useMutation({
+    mutationFn: () => notificationService.markAllRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  // ── Close on outside click / Escape ───────────────────────────────────────
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !notifOpen) return;
 
     const handleClick = (event: MouseEvent): void => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+      }
     };
     const handleKey = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") setMenuOpen(false);
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        setNotifOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClick);
@@ -121,7 +212,7 @@ export function Topbar({
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [menuOpen]);
+  }, [menuOpen, notifOpen]);
 
   const handleLogout = async (): Promise<void> => {
     setMenuOpen(false);
@@ -216,27 +307,171 @@ export function Topbar({
             <Search className="w-5 h-5 text-muted-foreground" />
           </button>
 
-          {/* Notifications */}
-          <button
-            type="button"
-            onClick={() => navigate("/notifications")}
-            className="relative flex items-center justify-center w-11 h-11 rounded-md hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-            aria-label={`Notifications (${displayedCount} non lues)`}
-          >
-            <Bell className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
-            {displayedCount > 0 && (
-              <span
-                className="absolute top-2 right-2 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold tabular-nums flex items-center justify-center"
+          {/* ── Notifications dropdown ───────────────────────────────────── */}
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              onClick={() => setNotifOpen((v) => !v)}
+              className="relative flex items-center justify-center w-11 h-11 rounded-md hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              aria-label={`Notifications (${unreadCount} non lues)`}
+              aria-expanded={notifOpen}
+              aria-haspopup="dialog"
+            >
+              <Bell className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
+              {unreadCount > 0 && (
+                <span
+                  className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center ring-2"
+                  style={{
+                    background: "hsl(var(--destructive))",
+                    color: "hsl(var(--destructive-foreground))",
+                    ringColor: "hsl(var(--topbar-bg))",
+                    boxShadow: "0 0 0 2px hsl(var(--topbar-bg))",
+                  }}
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {notifOpen && (
+              <div
+                role="dialog"
+                aria-label="Notifications récentes"
+                className="absolute right-0 top-full mt-2 w-[360px] max-w-[calc(100vw-1rem)] rounded-xl overflow-hidden z-30"
                 style={{
-                  background: "hsl(var(--destructive))",
-                  color: "hsl(var(--destructive-foreground))",
-                  boxShadow: "0 0 0 2px hsl(var(--topbar-bg))",
+                  background: "hsl(var(--popover))",
+                  color: "hsl(var(--popover-foreground))",
+                  border: "1px solid hsl(var(--border))",
+                  boxShadow: "var(--shadow-lg)",
                 }}
               >
-                {displayedCount > 99 ? "99+" : displayedCount}
-              </span>
+                {/* Header */}
+                <div
+                  className="flex items-center justify-between px-4 py-3"
+                  style={{ borderBottom: "1px solid hsl(var(--border))", background: "hsl(var(--muted) / 0.4)" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-primary" />
+                    <span className="text-[13px] font-semibold text-foreground">
+                      Notifications
+                    </span>
+                    {unreadCount > 0 && (
+                      <span
+                        className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold"
+                        style={{
+                          background: "hsl(var(--destructive))",
+                          color: "hsl(var(--destructive-foreground))",
+                        }}
+                      >
+                        {unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <Link
+                    to="/notifications"
+                    onClick={() => setNotifOpen(false)}
+                    className="text-[11px] font-medium text-primary hover:underline"
+                  >
+                    Tout voir
+                  </Link>
+                </div>
+
+                {/* Body */}
+                <div className="max-h-[340px] overflow-y-auto">
+                  {notifsLoading ? (
+                    <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-[12px]">Chargement…</span>
+                    </div>
+                  ) : recentNotifs.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 gap-2 text-muted-foreground">
+                      <Bell className="w-6 h-6 opacity-30" />
+                      <span className="text-[12px]">Aucune notification</span>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {recentNotifs.map((notif) => {
+                        const { Icon, colorClass } = resolveNotifStyle(notif.notification_type);
+                        return (
+                          <button
+                            key={notif.id}
+                            type="button"
+                            onClick={() => {
+                              if (!notif.is_read) {
+                                markRead.mutate(notif.id);
+                              }
+                              setNotifOpen(false);
+                              navigate("/notifications");
+                            }}
+                            className={cn(
+                              "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors",
+                              notif.is_read
+                                ? "opacity-70 hover:bg-muted/40"
+                                : "bg-primary/[0.04] hover:bg-primary/[0.08]"
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
+                                colorClass
+                              )}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={cn(
+                                  "text-[12px] leading-snug truncate",
+                                  notif.is_read ? "font-normal text-foreground/80" : "font-semibold text-foreground"
+                                )}
+                              >
+                                {notif.title}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                                {notif.message}
+                              </p>
+                              <span className="text-[10px] text-muted-foreground/60 mt-0.5 inline-block">
+                                {timeAgo(notif.created_at)}
+                              </span>
+                            </div>
+                            {!notif.is_read && (
+                              <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                {unreadCount > 0 && (
+                  <div
+                    className="px-4 py-2.5"
+                    style={{ borderTop: "1px solid hsl(var(--border))", background: "hsl(var(--muted) / 0.2)" }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!markAllRead.isPending) {
+                          markAllRead.mutate();
+                        }
+                      }}
+                      disabled={markAllRead.isPending}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    >
+                      {markAllRead.isPending ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <CheckCheck className="w-3 h-3" />
+                      )}
+                      Tout marquer comme lu
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
-          </button>
+          </div>
 
           {/* Vertical divider */}
           <span
@@ -393,6 +628,8 @@ export function Topbar({
     </header>
   );
 }
+
+// ─── DropdownItem ─────────────────────────────────────────────────────────────
 
 interface DropdownItemProps {
   icon: React.ElementType;

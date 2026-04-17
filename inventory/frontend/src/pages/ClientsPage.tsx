@@ -28,6 +28,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { clientService } from "@/services/clientService";
 import type { Client } from "@/services/clientService";
+import { toast } from "sonner";
 import type { Sale } from "@/services/salesService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
@@ -166,7 +167,15 @@ export default function ClientsPage() {
     mutationFn: (id: number) => clientService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Client supprimé", {
+        description: `${deletingClient?.name ?? "Le client"} a été supprimé avec succès.`,
+      });
       setDeletingClient(null);
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression", {
+        description: "Impossible de supprimer ce client. Réessayez.",
+      });
     },
   });
 

@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { toast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { productService } from "@/services/productService";
 import { salesService } from "@/services/salesService";
 import type { SaleCreatePayload } from "@/services/salesService";
@@ -39,6 +40,7 @@ interface CartItem {
   category: string;
   stock: number;
   qty: number;
+  imageUrl: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -268,12 +270,19 @@ export default function PosPage() {
       });
       setSaleComplete(true);
       toast({ title: `Vente enregistrée — ${sale.invoice_number ?? sale.id}` });
+      sonnerToast.success(`Vente enregistrée — ${total.toLocaleString("fr-FR")} FCFA`, {
+        description: `${cart.length} article(s) · Monnaie : ${change.toLocaleString("fr-FR")} FCFA`,
+        duration: 4000,
+      });
     },
     onError: () => {
       toast({
         title: "Erreur lors de la vente",
         description: "Stock insuffisant ou erreur serveur. Vérifiez les quantités.",
         variant: "destructive",
+      });
+      sonnerToast.error("Erreur lors de la vente", {
+        description: "Stock insuffisant ou erreur serveur. Vérifiez les quantités.",
       });
     },
   });
@@ -305,6 +314,7 @@ export default function PosPage() {
           category: product.category_name,
           stock: product.stock_quantity,
           qty: 1,
+          imageUrl: product.image_url,
         },
       ];
     });
@@ -317,6 +327,14 @@ export default function PosPage() {
         title: "Stock insuffisant",
         description: `${product.name} est en rupture de stock.`,
         variant: "destructive",
+      });
+      sonnerToast.error("Stock insuffisant", {
+        description: `${product.name} : stock insuffisant pour cette quantité.`,
+      });
+    } else if (product.stock_quantity <= 5) {
+      sonnerToast.warning(`Stock bas — ${product.name}`, {
+        description: `Il reste ${product.stock_quantity} unité(s) en stock.`,
+        duration: 5000,
       });
     }
   }, []);
@@ -340,6 +358,9 @@ export default function PosPage() {
             title: "Produit non trouvé",
             description: `Code-barres : ${code}`,
             variant: "destructive",
+          });
+          sonnerToast.error("Produit non trouvé", {
+            description: `Code-barres : ${code}`,
           });
         }
         return;
@@ -382,6 +403,9 @@ export default function PosPage() {
         title: "Stock insuffisant",
         description: `Quantité demandée dépasse le stock disponible pour : ${stockWarnings.map(i => i.name).join(", ")}`,
         variant: "destructive",
+      });
+      sonnerToast.error("Stock insuffisant", {
+        description: `Quantité demandée dépasse le stock disponible pour : ${stockWarnings.map(i => i.name).join(", ")}`,
       });
       return;
     }
@@ -657,7 +681,7 @@ export default function PosPage() {
                       {/* Icon / image placeholder */}
                       <div className="aspect-square rounded-lg bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-2.5 overflow-hidden group-hover:from-primary/10 group-hover:to-accent/5 transition-colors">
                         <div className="group-hover:scale-110 transition-transform duration-200">
-                          <ProductIcon name={product.name} category={product.category_name} size="md" />
+                          <ProductIcon name={product.name} category={product.category_name} size="md" imageUrl={product.image_url} />
                         </div>
                       </div>
 
@@ -780,7 +804,7 @@ export default function PosPage() {
                       <div className="flex items-center gap-2">
                         {/* Icon 32px */}
                         <div className="w-8 h-8 rounded-md bg-muted shrink-0 flex items-center justify-center overflow-hidden">
-                          <ProductIcon name={item.name} category={item.category} size="sm" />
+                          <ProductIcon name={item.name} category={item.category} size="sm" imageUrl={item.imageUrl} />
                         </div>
 
                         {/* Name + unit price */}
