@@ -183,7 +183,7 @@ export function AppSidebar({
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
         style={{
-          background: "linear-gradient(to bottom, hsl(var(--sidebar-background)), hsl(var(--sidebar-background)))",
+          backgroundColor: "hsl(var(--sidebar-background))",
           backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--sidebar-primary) / 0.18) 0%, transparent 50%), radial-gradient(circle at 80% 20%, hsl(var(--sidebar-ring) / 0.12) 0%, transparent 40%)",
           boxShadow: "inset -1px 0 0 hsl(var(--sidebar-border) / 0.8), 4px 0 24px hsl(0 0% 0% / 0.18)",
           transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
