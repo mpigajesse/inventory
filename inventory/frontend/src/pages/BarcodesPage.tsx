@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Barcode from "react-barcode";
 import { useReactToPrint } from "react-to-print";
-import { Printer, RefreshCw, PrinterCheck, Search, QrCode } from "lucide-react";
+import { Printer, RefreshCw, PrinterCheck, Search, QrCode, Wand2 } from "lucide-react";
 import { ProductIcon } from "@/components/ui/ProductIcon";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { productService } from "@/services/productService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -338,6 +340,8 @@ export default function BarcodesPage() {
   const [generatedBarcodes, setGeneratedBarcodes] = useState<Record<number, string>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const queryClient = useQueryClient();
 
   // Merge API data with any locally generated barcodes
   const products: ProductBarcode[] = useMemo(() => {
@@ -381,6 +385,29 @@ export default function BarcodesPage() {
     setGeneratedBarcodes((prev) => ({ ...prev, [id]: generateEAN13() }));
   }
 
+  const handleGenerateAll = useCallback(async () => {
+    const missing = products.filter((p) => !p.barcode);
+    if (missing.length === 0) return;
+
+    setIsGeneratingAll(true);
+    let done = 0;
+    const toastId = toast.loading(`Génération en cours… 0 / ${missing.length}`);
+
+    for (const product of missing) {
+      try {
+        await productService.generateBarcode(product.id);
+      } catch {
+        // silently skip failed items; they remain without barcode
+      }
+      done += 1;
+      toast.loading(`Génération en cours… ${done} / ${missing.length}`, { id: toastId });
+    }
+
+    toast.success(`${done} code${done > 1 ? "s-barres générés" : "-barres généré"}`, { id: toastId });
+    await queryClient.invalidateQueries({ queryKey: ["products"] });
+    setIsGeneratingAll(false);
+  }, [products, queryClient]);
+
   function handleToggleSelect(id: number) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -409,6 +436,7 @@ export default function BarcodesPage() {
 
   const withBarcodeCount = products.filter((p) => Boolean(p.barcode)).length;
   const totalCount = products.length;
+  const missingCount = totalCount - withBarcodeCount;
 
   return (
     <TooltipProvider>
@@ -467,6 +495,25 @@ export default function BarcodesPage() {
                   : `${totalCount - withBarcodeCount} produit${(totalCount - withBarcodeCount) !== 1 ? "s" : ""} sans code-barres`}
               </p>
             </div>
+          </div>
+
+          {/* Bouton générer les manquants */}
+          <div className="shrink-0 flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 rounded-xl gap-2"
+              disabled={missingCount === 0 || isGeneratingAll || isLoading}
+              onClick={handleGenerateAll}
+            >
+              <Wand2 className="w-4 h-4" />
+              Générer les manquants
+              {missingCount > 0 && (
+                <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-muted text-[10px] font-bold px-1.5 text-muted-foreground">
+                  {missingCount} manquant{missingCount > 1 ? "s" : ""}
+                </span>
+              )}
+            </Button>
           </div>
 
           {/* Bouton imprimer la sélection — with tooltip when disabled */}

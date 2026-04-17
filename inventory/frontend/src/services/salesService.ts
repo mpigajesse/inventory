@@ -18,6 +18,7 @@ export interface SaleItem {
   id: number;
   product: number;
   product_name: string;
+  barcode?: string;
   quantity: number;
   unit_price: number;
   subtotal: number;

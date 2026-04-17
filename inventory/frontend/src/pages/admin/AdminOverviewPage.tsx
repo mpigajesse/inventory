@@ -15,12 +15,14 @@ import {
   Trophy,
   Medal,
   Award,
+  Barcode,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { activityService } from "@/services/activityService";
 import type { ActivityLog, VendeurActivitySummary } from "@/services/activityService";
 import { salesService } from "@/services/salesService";
 import type { DailyStat } from "@/services/salesService";
+import { productService } from "@/services/productService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -504,6 +506,14 @@ export default function AdminOverviewPage() {
     queryFn: () => salesService.getDailyStats(period),
   });
 
+  const { data: productsData, isLoading: productsLoading } = useQuery({
+    queryKey: ["products"],
+    queryFn: () => productService.getAll({ page_size: "1000" }),
+    staleTime: 5 * 60_000,
+  });
+
+  const noBarcodesCount = (productsData?.results ?? []).filter((p) => !p.barcode).length;
+
   const recentActivity: ActivityLog[] = activityData?.results ?? [];
   const vendeurs: VendeurActivitySummary[] = vendeurSummaries ?? [];
   const leaderboard: DailyStat[] = (dailyStats ?? [])
@@ -581,6 +591,77 @@ export default function AdminOverviewPage() {
 
           {/* Period selector */}
           <PeriodTabs value={period} onChange={setPeriod} />
+        </div>
+
+        {/* ── 1b. KPI — produits sans code-barres ─────────────────────── */}
+        <div
+          onClick={() => navigate("/barcodes")}
+          style={{
+            display: "inline-flex",
+            alignSelf: "flex-start",
+            alignItems: "center",
+            gap: 14,
+            background: "hsl(var(--card))",
+            border: `1px solid hsl(var(--border))`,
+            borderRadius: 14,
+            padding: "14px 20px",
+            cursor: "pointer",
+            boxShadow: "0 1px 4px hsl(22 30% 15% / 0.06)",
+            transition: "all 0.18s ease",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 6px 18px ${COPPER}22, 0 1px 4px hsl(22 30% 15% / 0.08)`;
+            (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 4px hsl(22 30% 15% / 0.06)";
+            (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: `${COPPER}18`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Barcode style={{ width: 18, height: 18, color: COPPER }} />
+          </div>
+          <div>
+            <p style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", margin: 0, marginBottom: 2 }}>
+              Sans code-barres
+            </p>
+            {productsLoading ? (
+              <div
+                style={{
+                  height: 24,
+                  width: 48,
+                  borderRadius: 6,
+                  background: "hsl(var(--muted))",
+                  animation: "pulse 1.5s ease-in-out infinite",
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  fontSize: 24,
+                  fontWeight: 800,
+                  fontFamily: "'Fraunces', 'Georgia', serif",
+                  color: noBarcodesCount > 0 ? COPPER : FOREST,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                }}
+              >
+                {noBarcodesCount}
+              </span>
+            )}
+          </div>
+          <ArrowRight style={{ width: 14, height: 14, color: "hsl(var(--muted-foreground))", marginLeft: 4, flexShrink: 0 }} />
         </div>
 
         {/* ── 2. Vendeur performance grid ──────────────────────────────── */}

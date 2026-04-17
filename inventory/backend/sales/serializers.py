@@ -48,10 +48,11 @@ class SaleCreateSerializer(serializers.Serializer):
 
 class SaleItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_barcode = serializers.CharField(source='product.barcode', read_only=True, allow_null=True)
 
     class Meta:
         model = SaleItem
-        fields = ['id', 'product', 'product_name', 'quantity', 'unit_price', 'subtotal']
+        fields = ['id', 'product', 'product_name', 'product_barcode', 'quantity', 'unit_price', 'subtotal']
 
 
 class SaleSerializer(serializers.ModelSerializer):

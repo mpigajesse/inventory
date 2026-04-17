@@ -120,4 +120,16 @@ class ProductViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Impossible de générer un code unique.'}, status=500)
         product.barcode = new_code
         product.save(update_fields=['barcode', 'updated_at'])
+        if log_activity:
+            try:
+                log_activity(
+                    user=request.user,
+                    action='update',
+                    target_model='Product',
+                    target_id=product.pk,
+                    description=f"Code-barres généré pour {product.name} : {product.barcode}",
+                    request=request,
+                )
+            except Exception:
+                pass
         return Response(ProductListSerializer(product).data)

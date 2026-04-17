@@ -34,6 +34,7 @@ import {
   LayoutList,
   LayoutGrid,
   FileSpreadsheet,
+  Barcode,
 } from "lucide-react";
 import { exportProducts } from "@/lib/exportProducts";
 import { ProductIcon } from "@/components/ui/ProductIcon";
@@ -161,6 +162,27 @@ export default function ProductsPage() {
       });
     },
   });
+
+  // ── Generate barcode mutation ──────────────────────────────────────────────
+
+  const [generatingIds, setGeneratingIds] = useState<Set<number>>(new Set());
+
+  async function handleGenerateBarcode(productId: number) {
+    setGeneratingIds((prev) => new Set(prev).add(productId));
+    try {
+      await productService.generateBarcode(productId);
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Code-barres généré");
+    } catch {
+      toast.error("Erreur lors de la génération du code-barres");
+    } finally {
+      setGeneratingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(productId);
+        return next;
+      });
+    }
+  }
 
   // ── Category pre-filter (before table pipeline) ────────────────────────────
 
@@ -832,8 +854,27 @@ export default function ProductsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="font-mono text-xs text-muted-foreground">
-                        {product.barcode || "—"}
+                      <td style={{ maxWidth: "160px" }}>
+                        {product.barcode ? (
+                          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground max-w-full truncate">
+                            {product.barcode}
+                          </span>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs gap-1.5"
+                            disabled={generatingIds.has(product.id)}
+                            onClick={() => handleGenerateBarcode(product.id)}
+                          >
+                            {generatingIds.has(product.id) ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Barcode className="w-3.5 h-3.5" />
+                            )}
+                            Générer
+                          </Button>
+                        )}
                       </td>
                       <td className="text-sm">{product.category_name}</td>
                       <td>

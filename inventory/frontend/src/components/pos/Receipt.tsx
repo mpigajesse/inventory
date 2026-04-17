@@ -1,6 +1,7 @@
 export interface ReceiptItem {
   id: number;
   name: string;
+  barcode?: string | null;
   price: number;
   qty: number;
 }
@@ -106,6 +107,11 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
             {item.name.length > COL_NAME && (
               <div style={{ fontSize: "10px", opacity: 0.7, paddingLeft: "2px" }}>
                 {item.name.slice(COL_NAME)}
+              </div>
+            )}
+            {item.barcode && (
+              <div style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: "8px", color: "#666", paddingLeft: "2px", letterSpacing: "0.04em" }}>
+                {item.barcode}
               </div>
             )}
           </div>

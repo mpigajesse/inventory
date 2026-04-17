@@ -15,10 +15,12 @@ import {
   Sun,
   Sunset,
   Moon,
+  Barcode,
 } from "lucide-react";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -182,6 +184,7 @@ export default function VendeurDashboardPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { can } = usePermissions();
 
   // Mount flag drives all entrance animations
   const [mounted, setMounted] = useState(false);
@@ -471,6 +474,68 @@ export default function VendeurDashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* ── Accès rapide — Étiquettes codes-barres ── */}
+        {can("view_barcodes") && (
+          <div
+            className="mb-7"
+            style={{
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? "translateY(0)" : "translateY(16px)",
+              transition: `opacity 400ms ${ENTRANCE_EASE} 480ms, transform 400ms ${ENTRANCE_EASE} 480ms`,
+            }}
+          >
+            <div className="border-l-2 border-primary/30 pl-3 mb-4">
+              <p
+                className="font-semibold uppercase mb-0.5"
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.12em",
+                  color: "hsl(var(--muted-foreground))",
+                }}
+              >
+                Accès rapide
+              </p>
+              <h2 className="text-base md:text-lg font-bold tracking-tight">
+                Outils
+              </h2>
+            </div>
+
+            <button
+              onClick={() => navigate("/vendeur/barcodes")}
+              className="group flex items-center gap-4 w-full text-left rounded-2xl border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              style={{
+                boxShadow:
+                  "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
+                borderTop: "3px solid hsl(var(--badge-blue))",
+              }}
+            >
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "hsl(var(--badge-blue) / 0.14)" }}
+              >
+                <Barcode
+                  className="w-6 h-6"
+                  strokeWidth={2}
+                  style={{ color: "hsl(var(--badge-blue))" }}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm leading-tight">Étiquettes</p>
+                <p
+                  className="text-[12px] mt-0.5"
+                  style={{ color: "hsl(var(--muted-foreground))" }}
+                >
+                  Imprimer les codes-barres
+                </p>
+              </div>
+              <ArrowRight
+                className="w-4 h-4 shrink-0 opacity-40 group-hover:opacity-80 group-hover:translate-x-0.5 transition-all"
+                style={{ color: "hsl(var(--muted-foreground))" }}
+              />
+            </button>
+          </div>
+        )}
 
         {/* ── Mes dernières ventes ── */}
         <div>

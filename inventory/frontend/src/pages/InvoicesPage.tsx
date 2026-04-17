@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Banknote, Smartphone, CreditCard, Copy, User } from "lucide-react";
+import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Banknote, Smartphone, CreditCard, Copy, User, Barcode } from "lucide-react";
 import { toast } from "sonner";
 import React, { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
@@ -257,7 +257,12 @@ function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
             invoice.items.map((item, idx) => (
               <tr key={item.id} style={{ backgroundColor: idx % 2 === 0 ? "#fff" : "#f9fafb" }}>
                 <td style={{ padding: "8px 10px", borderBottom: "1px solid #e5e7eb" }}>
-                  {item.product_name}
+                  <div>{item.product_name}</div>
+                  {item.barcode && (
+                    <div style={{ fontSize: 10, fontFamily: "monospace", color: "#6b7280", marginTop: 2 }}>
+                      {item.barcode}
+                    </div>
+                  )}
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "center", borderBottom: "1px solid #e5e7eb", color: "#444" }}>
                   {item.quantity}
@@ -464,7 +469,15 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
                   className="border-b last:border-0"
                   style={{ background: idx % 2 !== 0 ? "hsl(30 20% 98%)" : "transparent" }}
                 >
-                  <td className="py-2 pr-2 pl-2">{item.product_name}</td>
+                  <td className="py-2 pr-2 pl-2">
+                    <span>{item.product_name}</span>
+                    {item.barcode && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Barcode className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+                        <span className="text-xs font-mono text-muted-foreground">{item.barcode}</span>
+                      </div>
+                    )}
+                  </td>
                   <td className="py-2 text-center text-muted-foreground">{item.quantity}</td>
                   <td className="py-2 text-right text-muted-foreground">{formatFCFA(item.unit_price)}</td>
                   <td className="py-2 pr-2 text-right font-semibold">{formatFCFA(item.subtotal)}</td>
