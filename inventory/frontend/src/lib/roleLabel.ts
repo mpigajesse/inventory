@@ -1,4 +1,4 @@
-export type Genre = "M" | "F" | null | undefined;
+export type Genre = "M" | "F" | "NC" | null | undefined;
 
 export function getRoleLabel(role: string, genre: Genre): string {
   if (role === "admin") {

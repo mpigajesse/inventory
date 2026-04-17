@@ -43,7 +43,7 @@ const profileSchema = z.object({
   first_name: z.string().min(1, "Le prénom est requis"),
   last_name: z.string().min(1, "Le nom est requis"),
   email: z.string().email("Email invalide"),
-  genre: z.enum(["M", "F", ""]).optional(),
+  genre: z.enum(["M", "F", "NC"]).optional(),
 });
 
 const passwordSchema = z
@@ -361,12 +361,12 @@ function ProfileSection() {
       first_name: defaultFirstName,
       last_name: defaultLastName,
       email: currentUser?.email ?? "",
-      genre: (currentUser?.genre ?? "") as "M" | "F" | "",
+      genre: (currentUser?.genre ?? "NC") as "M" | "F" | "NC",
     },
   });
 
   function onSubmit(values: ProfileFormValues) {
-    updateMutation.mutate(values);
+    updateMutation.mutate({ ...values, genre: values.genre === "NC" ? undefined : values.genre });
   }
 
   return (
@@ -433,7 +433,7 @@ function ProfileSection() {
               control={control}
               name="genre"
               render={({ field }) => (
-                <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <Select value={field.value ?? "NC"} onValueChange={field.onChange}>
                   <SelectTrigger
                     className="rounded-xl transition-all duration-200 focus:ring-[hsl(22_72%_48%/0.5)]"
                     style={{ height: "48px", borderRadius: "12px" }}
@@ -441,7 +441,7 @@ function ProfileSection() {
                     <SelectValue placeholder="Non précisé" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Non précisé</SelectItem>
+                    <SelectItem value="NC">Non précisé</SelectItem>
                     <SelectItem value="M">Monsieur</SelectItem>
                     <SelectItem value="F">Madame</SelectItem>
                   </SelectContent>

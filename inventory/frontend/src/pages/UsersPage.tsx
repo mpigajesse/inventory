@@ -86,7 +86,7 @@ const createUserSchema = z.object({
   username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
   email: z.string().email("Email invalide"),
   role: z.enum(["admin", "vendeur"], { required_error: "Sélectionnez un rôle" }),
-  genre: z.enum(["M", "F", ""]).optional(),
+  genre: z.enum(["M", "F", "NC"]).optional(),
   phone: z.string().optional(),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
 });
@@ -99,7 +99,7 @@ const editUserSchema = z.object({
   username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
   email: z.string().email("Email invalide"),
   role: z.enum(["admin", "vendeur"], { required_error: "Sélectionnez un rôle" }),
-  genre: z.enum(["M", "F", ""]).optional(),
+  genre: z.enum(["M", "F", "NC"]).optional(),
   phone: z.string().optional(),
   is_active_profile: z.boolean(),
 });
@@ -348,6 +348,7 @@ function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProp
       username: "",
       email: "",
       role: "vendeur",
+      genre: "NC",
       phone: "",
       password: "",
     },
@@ -406,12 +407,12 @@ function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProp
             control={control}
             name="genre"
             render={({ field }) => (
-              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+              <Select value={field.value ?? "NC"} onValueChange={field.onChange}>
                 <SelectTrigger className="h-11 rounded-xl border-border/80">
                   <SelectValue placeholder="Non précisé" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Non précisé</SelectItem>
+                  <SelectItem value="NC">Non précisé</SelectItem>
                   <SelectItem value="M">Monsieur</SelectItem>
                   <SelectItem value="F">Madame</SelectItem>
                 </SelectContent>
@@ -495,7 +496,7 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
       username: user.username,
       email: user.email,
       role: user.profile.role,
-      genre: (user.profile.genre ?? "") as "M" | "F" | "",
+      genre: (user.profile.genre ?? "NC") as "M" | "F" | "NC",
       phone: user.profile.phone ?? "",
       is_active_profile: user.profile.is_active,
     },
@@ -553,12 +554,12 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
             control={control}
             name="genre"
             render={({ field }) => (
-              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+              <Select value={field.value ?? "NC"} onValueChange={field.onChange}>
                 <SelectTrigger className="h-11 rounded-xl border-border/80">
                   <SelectValue placeholder="Non précisé" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Non précisé</SelectItem>
+                  <SelectItem value="NC">Non précisé</SelectItem>
                   <SelectItem value="M">Monsieur</SelectItem>
                   <SelectItem value="F">Madame</SelectItem>
                 </SelectContent>
@@ -940,7 +941,7 @@ export default function UsersPage() {
         last_name: values.last_name,
         password: values.password,
         role: values.role,
-        genre: values.genre || null,
+        genre: (!values.genre || values.genre === "NC") ? null : values.genre,
         phone: values.phone,
       }),
     onSuccess: () => {
@@ -1055,7 +1056,7 @@ export default function UsersPage() {
         username: values.username,
         email: values.email,
         role: values.role,
-        genre: values.genre || null,
+        genre: (!values.genre || values.genre === "NC") ? null : values.genre,
         phone: values.phone,
         profile_is_active: values.is_active_profile,
       },
