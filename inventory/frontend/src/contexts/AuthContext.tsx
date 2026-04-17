@@ -8,8 +8,10 @@ export type UserRole = 'admin' | 'vendeur';
 export interface User {
   id: string;
   name: string;
+  username: string;
   email: string;
   role: UserRole;
+  genre?: 'M' | 'F' | null;
   avatar?: string;
   permissions?: Permission[];
 }
@@ -26,8 +28,10 @@ function mapApiUserToUser(apiUser: AuthUser): User {
   return {
     id: String(apiUser.id),
     name: apiUser.full_name || apiUser.username,
+    username: apiUser.username,
     email: apiUser.email,
     role: apiUser.profile.role,
+    genre: apiUser.profile.genre ?? null,
     avatar: apiUser.profile.avatar_url || undefined,
     permissions: (apiUser.profile.permissions ?? []) as Permission[],
   };

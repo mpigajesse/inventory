@@ -32,6 +32,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { getRoleLabel } from "@/lib/roleLabel";
 import { PermissionGate } from "@/components/auth/PermissionGate";
 import { userService } from "@/services/userService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
@@ -42,6 +43,7 @@ const profileSchema = z.object({
   first_name: z.string().min(1, "Le prénom est requis"),
   last_name: z.string().min(1, "Le nom est requis"),
   email: z.string().email("Email invalide"),
+  genre: z.enum(["M", "F", ""]).optional(),
 });
 
 const passwordSchema = z
@@ -228,7 +230,7 @@ function IdentityCard() {
               }}
             >
               {isAdmin ? <Shield className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
-              {isAdmin ? "Administrateur" : "Vendeur·se"}
+              {getRoleLabel(currentUser?.role ?? "vendeur", currentUser?.genre)}
             </span>
           </div>
         </div>
@@ -329,8 +331,10 @@ function ProfileSection() {
       setCurrentUser({
         id: String(updatedUser.id),
         name: updatedUser.full_name || updatedUser.username,
+        username: updatedUser.username,
         email: updatedUser.email,
         role: updatedUser.profile.role,
+        genre: updatedUser.profile.genre ?? null,
         avatar: updatedUser.profile.avatar_url || undefined,
       });
       queryClient.invalidateQueries({ queryKey: ["me"] });
@@ -348,6 +352,7 @@ function ProfileSection() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isDirty },
     reset,
   } = useForm<ProfileFormValues>({
@@ -356,6 +361,7 @@ function ProfileSection() {
       first_name: defaultFirstName,
       last_name: defaultLastName,
       email: currentUser?.email ?? "",
+      genre: (currentUser?.genre ?? "") as "M" | "F" | "",
     },
   });
 
@@ -419,6 +425,29 @@ function ProfileSection() {
             {errors.email && (
               <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
             )}
+          </div>
+
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className={FIELD_LABEL_CLASSES}>Civilité</Label>
+            <Controller
+              control={control}
+              name="genre"
+              render={({ field }) => (
+                <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                  <SelectTrigger
+                    className="rounded-xl transition-all duration-200 focus:ring-[hsl(22_72%_48%/0.5)]"
+                    style={{ height: "48px", borderRadius: "12px" }}
+                  >
+                    <SelectValue placeholder="Non précisé" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Non précisé</SelectItem>
+                    <SelectItem value="M">Monsieur</SelectItem>
+                    <SelectItem value="F">Madame</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
         </div>
 
@@ -711,7 +740,7 @@ function VendeurInfoBanner() {
       </span>
       <div className="min-w-0">
         <p className="text-[13px] font-semibold text-foreground leading-snug">
-          Votre rôle : Vendeur·se
+          Votre rôle : {getRoleLabel("vendeur", currentUser?.genre)}
         </p>
         <p className="text-[12px] text-muted-foreground mt-0.5">
           Contactez un administrateur pour modifier vos permissions ou accéder aux paramètres avancés.

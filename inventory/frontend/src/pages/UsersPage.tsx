@@ -64,6 +64,7 @@ import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { usePermissions, type Permission } from "@/hooks/usePermissions";
 import { AccessDenied } from "@/components/ui/AccessDenied";
 import { useAuth } from "@/contexts/AuthContext";
+import { getRoleLabel } from "@/lib/roleLabel";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,7 @@ const createUserSchema = z.object({
   username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
   email: z.string().email("Email invalide"),
   role: z.enum(["admin", "vendeur"], { required_error: "Sélectionnez un rôle" }),
+  genre: z.enum(["M", "F", ""]).optional(),
   phone: z.string().optional(),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
 });
@@ -97,6 +99,7 @@ const editUserSchema = z.object({
   username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
   email: z.string().email("Email invalide"),
   role: z.enum(["admin", "vendeur"], { required_error: "Sélectionnez un rôle" }),
+  genre: z.enum(["M", "F", ""]).optional(),
   phone: z.string().optional(),
   is_active_profile: z.boolean(),
 });
@@ -164,7 +167,7 @@ function UserAvatar({ name, username, role = "vendeur", size = "md" }: UserAvata
 
 // ─── Role pill ────────────────────────────────────────────────────────────────
 
-function RolePill({ role }: { role: UserRole }) {
+function RolePill({ role, genre }: { role: UserRole; genre?: 'M' | 'F' | null }) {
   const isAdmin = role === "admin";
   return (
     <span
@@ -189,7 +192,7 @@ function RolePill({ role }: { role: UserRole }) {
         ? <Crown style={{ width: "12px", height: "12px" }} aria-hidden="true" />
         : <ShoppingBag className="w-3 h-3" aria-hidden="true" />
       }
-      {isAdmin ? "Admin" : "Vendeur·se"}
+      {getRoleLabel(role, genre)}
     </span>
   );
 }
@@ -398,10 +401,29 @@ function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProp
           />
         </FieldWrapper>
 
-        <FieldWrapper label="Téléphone">
-          <Input id="create-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
+        <FieldWrapper label="Civilité">
+          <Controller
+            control={control}
+            name="genre"
+            render={({ field }) => (
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <SelectTrigger className="h-11 rounded-xl border-border/80">
+                  <SelectValue placeholder="Non précisé" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Non précisé</SelectItem>
+                  <SelectItem value="M">Monsieur</SelectItem>
+                  <SelectItem value="F">Madame</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </FieldWrapper>
       </div>
+
+      <FieldWrapper label="Téléphone">
+        <Input id="create-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
+      </FieldWrapper>
 
       <FieldWrapper label="Mot de passe temporaire" required error={errors.password?.message}>
         <div className="relative">
@@ -473,6 +495,7 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
       username: user.username,
       email: user.email,
       role: user.profile.role,
+      genre: (user.profile.genre ?? "") as "M" | "F" | "",
       phone: user.profile.phone ?? "",
       is_active_profile: user.profile.is_active,
     },
@@ -525,10 +548,29 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
             )}
           />
         </FieldWrapper>
-        <FieldWrapper label="Téléphone">
-          <Input id="edit-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
+        <FieldWrapper label="Civilité">
+          <Controller
+            control={control}
+            name="genre"
+            render={({ field }) => (
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <SelectTrigger className="h-11 rounded-xl border-border/80">
+                  <SelectValue placeholder="Non précisé" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Non précisé</SelectItem>
+                  <SelectItem value="M">Monsieur</SelectItem>
+                  <SelectItem value="F">Madame</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </FieldWrapper>
       </div>
+
+      <FieldWrapper label="Téléphone">
+        <Input id="edit-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
+      </FieldWrapper>
 
       <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
         <div className="space-y-0.5">
@@ -898,6 +940,7 @@ export default function UsersPage() {
         last_name: values.last_name,
         password: values.password,
         role: values.role,
+        genre: values.genre || null,
         phone: values.phone,
       }),
     onSuccess: () => {
@@ -1012,6 +1055,7 @@ export default function UsersPage() {
         username: values.username,
         email: values.email,
         role: values.role,
+        genre: values.genre || null,
         phone: values.phone,
         profile_is_active: values.is_active_profile,
       },
@@ -1264,7 +1308,7 @@ export default function UsersPage() {
 
                         {/* Rôle */}
                         <td className="px-4 py-3.5">
-                          <RolePill role={userRole} />
+                          <RolePill role={userRole} genre={user.profile.genre} />
                         </td>
 
                         {/* Permissions */}

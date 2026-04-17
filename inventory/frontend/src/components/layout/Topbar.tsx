@@ -27,6 +27,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
+import { getRoleLabel } from "@/lib/roleLabel";
 import {
   notificationService,
   type Notification,
@@ -241,7 +242,7 @@ export function Topbar({
 
   const initials = getInitials(currentUser?.name);
   const roleLabel =
-    currentUser?.role === "admin" ? "Administrateur" : "Vendeur·se";
+    getRoleLabel(currentUser?.role ?? "vendeur", currentUser?.genre);
 
   return (
     <>
@@ -629,12 +630,12 @@ export function Topbar({
                     {currentUser?.role === "admin" ? (
                       <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-primary/15 text-primary">
                         <Shield className="w-2.5 h-2.5" />
-                        Administrateur
+                        {getRoleLabel("admin", currentUser?.genre)}
                       </span>
                     ) : (
                       <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-accent/15 text-accent-foreground">
                         <ShoppingBag className="w-2.5 h-2.5" />
-                        Vendeur·se
+                        {getRoleLabel("vendeur", currentUser?.genre)}
                       </span>
                     )}
                   </div>

@@ -10,7 +10,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions', 'last_seen', 'is_online']
+        fields = ['role', 'genre', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions', 'last_seen', 'is_online']
 
     def get_avatar_url(self, obj):
         return obj.avatar.url if obj.avatar else None
@@ -35,19 +35,22 @@ class UserSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=['admin', 'vendeur'], write_only=True, default='vendeur')
     phone = serializers.CharField(required=False, write_only=True)
+    genre = serializers.CharField(required=False, write_only=True, allow_null=True, allow_blank=True)
     password = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'role', 'phone']
+        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'role', 'phone', 'genre']
 
     def create(self, validated_data):
         role = validated_data.pop('role', 'vendeur')
         phone = validated_data.pop('phone', '')
+        genre = validated_data.pop('genre', None)
         password = validated_data.pop('password')
         user = User.objects.create_user(**validated_data, password=password)
         user.profile.role = role
         user.profile.phone = phone
+        user.profile.genre = genre
         user.profile.save()
         return user
 
@@ -72,10 +75,16 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         source='profile.permissions',
         required=False,
     )
+    genre = serializers.CharField(
+        source='profile.genre',
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+    )
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'username', 'role', 'phone', 'profile_is_active', 'permissions']
+        fields = ['first_name', 'last_name', 'email', 'username', 'role', 'phone', 'genre', 'profile_is_active', 'permissions']
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})
@@ -102,7 +111,7 @@ class MeProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions', 'last_seen', 'is_online']
+        fields = ['role', 'genre', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions', 'last_seen', 'is_online']
         read_only_fields = ['role', 'is_active', 'permissions', 'last_seen', 'is_online']
 
     def get_avatar_url(self, obj):

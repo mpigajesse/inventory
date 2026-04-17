@@ -8,8 +8,13 @@ class UserProfile(models.Model):
         ('admin', 'Administrateur'),
         ('vendeur', 'Vendeur'),
     ]
+    GENRE_CHOICES = [
+        ('M', 'Monsieur'),
+        ('F', 'Madame'),
+    ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='vendeur')
+    genre = models.CharField(max_length=1, choices=GENRE_CHOICES, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True)
     avatar = CloudinaryField('avatar', folder='inventory/avatars', blank=True, null=True)
     is_active = models.BooleanField(default=True)

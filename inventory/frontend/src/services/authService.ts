@@ -12,6 +12,7 @@ export interface AuthTokens {
 
 export interface UserProfile {
   role: 'admin' | 'vendeur';
+  genre: 'M' | 'F' | null;
   phone: string;
   avatar: string | null;
   avatar_url: string | null;

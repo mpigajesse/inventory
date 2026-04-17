@@ -63,6 +63,7 @@ import { api } from "@/lib/api";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import type { Permission } from "@/hooks/usePermissions";
 import { Link } from "react-router-dom";
+import { getRoleLabel } from "@/lib/roleLabel";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -118,6 +119,7 @@ const editUserSchema = z.object({
     .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
   email: z.string().email("Email invalide"),
   role: z.enum(["admin", "vendeur"], { required_error: "Sélectionnez un rôle" }),
+  genre: z.enum(["M", "F", ""]).optional(),
   phone: z.string().optional(),
   is_active_profile: z.boolean(),
 });
@@ -449,9 +451,29 @@ function EditUserForm({
           {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="detail-phone" className={FIELD_LABEL_CLASSES}>Téléphone</Label>
-          <Input id="detail-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
+          <Label className={FIELD_LABEL_CLASSES}>Civilité</Label>
+          <Controller
+            control={control}
+            name="genre"
+            render={({ field }) => (
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <SelectTrigger className="h-11 rounded-xl border-border/80">
+                  <SelectValue placeholder="Non précisé" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Non précisé</SelectItem>
+                  <SelectItem value="M">Monsieur</SelectItem>
+                  <SelectItem value="F">Madame</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="detail-phone" className={FIELD_LABEL_CLASSES}>Téléphone</Label>
+        <Input id="detail-phone" placeholder="+241 07 XX XX XX" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("phone")} />
       </div>
 
       <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
@@ -606,6 +628,7 @@ export default function UserDetailPage() {
       username: values.username,
       email: values.email,
       role: values.role,
+      genre: values.genre || null,
       phone: values.phone,
       profile_is_active: values.is_active_profile,
     });
@@ -617,6 +640,7 @@ export default function UserDetailPage() {
     username: user.username,
     email: user.email,
     role: user.profile.role,
+    genre: (user.profile.genre ?? "") as "M" | "F" | "",
     phone: user.profile.phone ?? "",
     is_active_profile: user.is_active,
   };
@@ -712,7 +736,7 @@ export default function UserDetailPage() {
                   }
                 >
                   {isAdmin ? <Crown className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
-                  {isAdmin ? "Administrateur" : "Vendeur·se"}
+                  {getRoleLabel(role, user.profile.genre)}
                 </span>
                 {/* Active status */}
                 <span
@@ -1264,7 +1288,7 @@ export default function UserDetailPage() {
                     className="text-xs font-bold uppercase tracking-wider"
                     style={{ color: isAdmin ? "hsl(22 72% 48%)" : "hsl(210 70% 52%)" }}
                   >
-                    {isAdmin ? "Administrateur" : "Vendeur·se"}
+                    {getRoleLabel(role, user.profile.genre)}
                   </p>
                 </div>
               </div>

@@ -22,6 +22,7 @@ import {
   Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getRoleLabel } from "@/lib/roleLabel";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions, type Permission } from "@/hooks/usePermissions";
 import { useNotificationStore } from "@/stores/notificationStore";
@@ -145,7 +146,7 @@ export function AppSidebar({
 
   const initials = getInitials(currentUser?.name);
   const displayName = currentUser?.name ?? "Utilisateur";
-  const roleLabel = currentUser?.role === "admin" ? "Administrateur" : "Vendeur·se";
+  const roleLabel = getRoleLabel(currentUser?.role ?? "vendeur", currentUser?.genre);
 
   /**
    * Build filtered, runtime-resolved nav groups.

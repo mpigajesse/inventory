@@ -14,6 +14,7 @@ export interface UserListItem {
   date_joined: string;
   profile: {
     role: 'admin' | 'vendeur';
+    genre: 'M' | 'F' | null;
     phone: string;
     avatar: string | null;
     avatar_url: string | null;
@@ -35,6 +36,7 @@ export interface CreateUserPayload {
   last_name: string;
   password: string;
   role: string;
+  genre?: string | null;
   phone?: string;
 }
 
@@ -44,6 +46,7 @@ export interface UserUpdatePayload {
   email?: string;
   username?: string;
   role?: 'admin' | 'vendeur';
+  genre?: string | null;
   phone?: string;
   /** Maps to `profile_is_active` on the backend UserUpdateSerializer */
   profile_is_active?: boolean;

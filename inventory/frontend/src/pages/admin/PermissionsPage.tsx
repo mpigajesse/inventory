@@ -41,6 +41,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Permission } from "@/hooks/usePermissions";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
+import { getRoleLabel } from "@/lib/roleLabel";
 
 // ─── Permission definitions ───────────────────────────────────────────────────
 
@@ -191,7 +192,7 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
                       }
                 }
               >
-                {isAdmin ? "Admin" : "Vendeur·se"}
+                {getRoleLabel(user.profile.role, user.profile.genre)}
               </span>
             </div>
           </div>
