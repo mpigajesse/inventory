@@ -322,11 +322,11 @@ export default function ReportsPage() {
 
             {isLoading ? (
               <div className="h-48 flex items-end gap-2">
-                {Array.from({ length: 7 }).map((_, i) => (
+                {[55, 80, 45, 90, 65, 75, 50].map((heightPct, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-2">
                     <div
                       className="w-full rounded-t-md skeleton-shimmer"
-                      style={{ height: `${30 + Math.random() * 60}%` }}
+                      style={{ height: `${heightPct}%` }}
                     />
                     <SkeletonBar width="60%" />
                   </div>

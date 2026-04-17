@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ShoppingCart,
   ArrowRight,
@@ -22,6 +24,8 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
+import { salesService } from "@/services/salesService";
+import type { Sale } from "@/services/salesService";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -62,7 +66,7 @@ function getGreetingIcon(date: Date): React.ComponentType<{ className?: string; 
   return Moon;
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Types & styles ───────────────────────────────────────────────────────────
 
 type VendeurKpiTint = "copper" | "green" | "blue";
 
@@ -97,7 +101,7 @@ const tintStyles: Record<
   },
 };
 
-const vendeurKpis: Array<{
+interface VendeurKpiDef {
   label: string;
   numericEnd: number;
   suffix: string;
@@ -106,38 +110,7 @@ const vendeurKpis: Array<{
   trendDir: "up" | "down" | "neutral";
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   tint: VendeurKpiTint;
-}> = [
-  {
-    label: "Mes ventes du jour",
-    numericEnd: 87500,
-    suffix: " F",
-    duration: 1200,
-    change: "+12%",
-    trendDir: "up",
-    icon: TrendingUp,
-    tint: "copper",
-  },
-  {
-    label: "Transactions",
-    numericEnd: 9,
-    suffix: "",
-    duration: 800,
-    change: "+2 vs hier",
-    trendDir: "up",
-    icon: Receipt,
-    tint: "green",
-  },
-  {
-    label: "Clients servis",
-    numericEnd: 9,
-    suffix: "",
-    duration: 800,
-    change: "Aujourd'hui",
-    trendDir: "neutral",
-    icon: UserCheck,
-    tint: "blue",
-  },
-];
+}
 
 function KpiValue({
   end,
@@ -167,14 +140,6 @@ function KpiValue({
   );
 }
 
-const mesDerniereVentes = [
-  { id: "VNT-023", heure: "14:20", articles: 4, total: "56 500 FCFA" },
-  { id: "VNT-022", heure: "13:08", articles: 2, total: "23 000 FCFA" },
-  { id: "VNT-021", heure: "11:42", articles: 5, total: "78 000 FCFA" },
-  { id: "VNT-020", heure: "10:15", articles: 1, total: "12 500 FCFA" },
-  { id: "VNT-019", heure: "09:32", articles: 3, total: "45 000 FCFA" },
-];
-
 // Easing for entrance animations
 const ENTRANCE_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
@@ -199,6 +164,72 @@ export default function VendeurDashboardPage() {
   const initials = getInitials(fullName);
   const greeting = getGreeting(today);
   const GreetingIcon = getGreetingIcon(today);
+
+  // ── Real API data ──────────────────────────────────────────────────────────
+
+  const { data: dailyStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["vendeur-daily-stats", "today"],
+    queryFn: () => salesService.getDailyStats("today"),
+    refetchInterval: 60_000,
+  });
+
+  const { data: recentSalesData, isLoading: salesLoading } = useQuery({
+    queryKey: ["vendeur-recent-sales", currentUser?.id],
+    queryFn: () =>
+      salesService.getAll({
+        ordering: "-created_at",
+        limit: "10",
+      }),
+    refetchInterval: 60_000,
+  });
+
+  const isLoading = statsLoading || salesLoading;
+
+  // Find stats for the current user among all cashiers
+  const myStats = dailyStats?.find(
+    (s) => s.cashier_id === currentUser?.id
+  );
+
+  const myRevenue = myStats?.total_revenue ?? 0;
+  const myTransactions = myStats?.sales_count ?? 0;
+  // Unique clients: derive from recent sales (best-effort without a dedicated endpoint)
+  const recentSales: Sale[] = recentSalesData?.results ?? [];
+  const myClientsCount = new Set(
+    recentSales.filter((s) => s.client !== null).map((s) => s.client)
+  ).size;
+
+  const vendeurKpis: VendeurKpiDef[] = [
+    {
+      label: "Mes ventes du jour",
+      numericEnd: myRevenue,
+      suffix: " F",
+      duration: 1200,
+      change: myTransactions > 0 ? `${myTransactions} transaction${myTransactions !== 1 ? "s" : ""}` : "Aucune vente",
+      trendDir: myRevenue > 0 ? "up" : "neutral",
+      icon: TrendingUp,
+      tint: "copper",
+    },
+    {
+      label: "Transactions",
+      numericEnd: myTransactions,
+      suffix: "",
+      duration: 800,
+      change: "Aujourd'hui",
+      trendDir: myTransactions > 0 ? "up" : "neutral",
+      icon: Receipt,
+      tint: "green",
+    },
+    {
+      label: "Clients servis",
+      numericEnd: myClientsCount,
+      suffix: "",
+      duration: 800,
+      change: "Aujourd'hui",
+      trendDir: "neutral",
+      icon: UserCheck,
+      tint: "blue",
+    },
+  ];
 
   return (
     <>
@@ -277,7 +308,20 @@ export default function VendeurDashboardPage() {
 
         {/* ── KPI cards — stagger in ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
-          {vendeurKpis.map((kpi, index) => {
+          {isLoading ? (
+            <>
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="rounded-2xl border bg-card p-5">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="w-10 h-10 rounded-xl" />
+                  </div>
+                  <Skeleton className="h-9 w-28 mb-3" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+              ))}
+            </>
+          ) : vendeurKpis.map((kpi, index) => {
             const Icon = kpi.icon;
             const t = tintStyles[kpi.tint];
             const borderTopColor = kpiBorderTop[kpi.tint];
@@ -562,7 +606,13 @@ export default function VendeurDashboardPage() {
             className="bg-card rounded-2xl border overflow-hidden"
             style={{ boxShadow: "0 2px 12px hsl(22 72% 48% / 0.05)" }}
           >
-            {mesDerniereVentes.length === 0 ? (
+            {salesLoading ? (
+              <div className="p-4 space-y-3">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-10 w-full rounded" />
+                ))}
+              </div>
+            ) : recentSales.length === 0 ? (
               <div className="p-10 text-center">
                 <div className="inline-flex w-12 h-12 rounded-full bg-muted items-center justify-center mb-3">
                   <ShoppingBag className="w-5 h-5 text-muted-foreground" />
@@ -578,11 +628,15 @@ export default function VendeurDashboardPage() {
               <>
                 {/* Mobile cards */}
                 <div className="md:hidden divide-y">
-                  {mesDerniereVentes.map((vente, index) => {
+                  {recentSales.map((sale, index) => {
                     const rowDelay = 200 + index * 40;
+                    const heure = new Date(sale.created_at).toLocaleTimeString("fr-FR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
                     return (
                       <div
-                        key={vente.id}
+                        key={sale.id}
                         className="p-4 flex items-start justify-between gap-3 cursor-pointer"
                         style={{
                           opacity: mounted ? 1 : 0,
@@ -604,18 +658,17 @@ export default function VendeurDashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm truncate">
-                              {vente.id}
+                              {sale.invoice_number ?? `VNT-${sale.id}`}
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                              {vente.heure} ·{" "}
-                              {vente.articles} article
-                              {vente.articles !== 1 ? "s" : ""}
+                              {heure} · {sale.items.length} article
+                              {sale.items.length !== 1 ? "s" : ""}
                             </p>
                             <p
                               className="mt-1 tabular-nums font-bold text-sm"
                               style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                             >
-                              {vente.total}
+                              {sale.total_amount.toLocaleString("fr-FR")} FCFA
                             </p>
                           </div>
                         </div>
@@ -649,11 +702,15 @@ export default function VendeurDashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mesDerniereVentes.map((vente, index) => {
+                      {recentSales.map((sale, index) => {
                         const rowDelay = 200 + index * 40;
+                        const heure = new Date(sale.created_at).toLocaleTimeString("fr-FR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
                         return (
                           <tr
-                            key={vente.id}
+                            key={sale.id}
                             className="cursor-pointer"
                             style={{
                               opacity: mounted ? 1 : 0,
@@ -671,19 +728,21 @@ export default function VendeurDashboardPage() {
                             <td>
                               <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                                <span className="font-semibold">{vente.id}</span>
+                                <span className="font-semibold">
+                                  {sale.invoice_number ?? `VNT-${sale.id}`}
+                                </span>
                               </div>
                             </td>
                             <td className="text-muted-foreground tabular-nums">
-                              {vente.heure}
+                              {heure}
                             </td>
-                            <td className="tabular-nums">{vente.articles}</td>
+                            <td className="tabular-nums">{sale.items.length}</td>
                             <td className="text-right">
                               <span
                                 className="font-bold tabular-nums"
                                 style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                               >
-                                {vente.total}
+                                {sale.total_amount.toLocaleString("fr-FR")} FCFA
                               </span>
                             </td>
                             <td>

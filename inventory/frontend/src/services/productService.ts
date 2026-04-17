@@ -72,4 +72,12 @@ export const productService = {
 
   deleteCategory: (id: number) =>
     api.delete(`/products/categories/${id}/`).then(r => r.data),
+
+  uploadImage: (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api
+      .post<Product>(`/products/${id}/upload_image/`, formData, multipartConfig())
+      .then(r => r.data);
+  },
 };

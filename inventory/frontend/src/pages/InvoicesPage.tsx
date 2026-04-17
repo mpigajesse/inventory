@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Banknote, Smartphone, CreditCard, Copy, User, Barcode } from "lucide-react";
+import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Banknote, Smartphone, CreditCard, Copy, User, Barcode, Download } from "lucide-react";
 import { toast } from "sonner";
 import React, { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
@@ -324,6 +324,230 @@ function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
   );
 }
 
+// ─── PDF download ─────────────────────────────────────────────────────────────
+
+async function downloadInvoicePDF(invoice: Invoice): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  const pageW = 210;
+  const marginL = 15;
+  const marginR = 15;
+  const contentW = pageW - marginL - marginR;
+
+  const totalAmount = Number(invoice.total_amount);
+  const amountPaid = Number(invoice.amount_paid);
+  const balanceDue = Number(invoice.balance_due);
+  const changeGiven = amountPaid - totalAmount;
+
+  const fmt = (n: number | string) =>
+    Number(n).toLocaleString("fr-FR") + " FCFA";
+  const fmtDate = (iso: string) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("fr-FR");
+  };
+
+  let y = 15;
+
+  // ── Header ──────────────────────────────────────────────────────────────────
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(20, 20, 20);
+  doc.text("NAOSERVICES INVENTORY", marginL, y);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  y += 5;
+  doc.text("MPJ HIGH-TECH · Partenaire technologique", marginL, y);
+  y += 4;
+  doc.text("Libreville, Gabon — +241 07 40 13 02", marginL, y);
+
+  // Invoice number block (top-right)
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(120, 120, 120);
+  doc.text("FACTURE", pageW - marginR, 15, { align: "right" });
+
+  doc.setFont("courier", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(20, 20, 20);
+  doc.text(invoice.invoice_number, pageW - marginR, 21, { align: "right" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Date : ${fmtDate(invoice.issued_at)}`, pageW - marginR, 27, { align: "right" });
+
+  y += 6;
+  // Divider
+  doc.setDrawColor(20, 20, 20);
+  doc.setLineWidth(0.5);
+  doc.line(marginL, y, pageW - marginR, y);
+  y += 8;
+
+  // ── Client block ─────────────────────────────────────────────────────────────
+  doc.setFillColor(249, 250, 251);
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(marginL, y, contentW, 16, 2, 2, "FD");
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(107, 114, 128);
+  doc.text("CLIENT", marginL + 4, y + 5);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(20, 20, 20);
+  doc.text(invoice.client_name ?? "Client comptoir", marginL + 4, y + 11);
+  y += 22;
+
+  // ── Items table ───────────────────────────────────────────────────────────────
+  const colX = {
+    designation: marginL,
+    qty: marginL + contentW * 0.55,
+    unitPrice: marginL + contentW * 0.70,
+    total: marginL + contentW,
+  };
+
+  // Table header
+  doc.setFillColor(20, 20, 20);
+  doc.rect(marginL, y, contentW, 8, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text("DÉSIGNATION", colX.designation + 2, y + 5.2);
+  doc.text("QTÉ", colX.qty, y + 5.2, { align: "center" });
+  doc.text("PRIX UNIT.", colX.unitPrice + (colX.total - colX.unitPrice) / 2 - 10, y + 5.2, { align: "center" });
+  doc.text("TOTAL", colX.total - 2, y + 5.2, { align: "right" });
+  y += 8;
+
+  const items = invoice.items ?? [];
+  items.forEach((item, idx) => {
+    const rowH = item.barcode ? 11 : 8;
+    if (idx % 2 !== 0) {
+      doc.setFillColor(249, 250, 251);
+      doc.rect(marginL, y, contentW, rowH, "F");
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(20, 20, 20);
+    doc.text(item.product_name, colX.designation + 2, y + 5.5, {
+      maxWidth: colX.qty - colX.designation - 4,
+    });
+
+    if (item.barcode) {
+      doc.setFont("courier", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor(107, 114, 128);
+      doc.text(item.barcode, colX.designation + 2, y + 9.5);
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(String(item.quantity), colX.qty, y + 5.5, { align: "center" });
+
+    doc.setFont("courier", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(fmt(item.unit_price), colX.unitPrice + (colX.total - colX.unitPrice) / 2 - 10, y + 5.5, { align: "center" });
+
+    doc.setFont("courier", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(20, 20, 20);
+    doc.text(fmt(item.subtotal), colX.total - 2, y + 5.5, { align: "right" });
+
+    // Row bottom border
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.2);
+    doc.line(marginL, y + rowH, pageW - marginR, y + rowH);
+    y += rowH;
+  });
+
+  if (items.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Aucun article", pageW / 2, y + 6, { align: "center" });
+    y += 10;
+  }
+
+  y += 6;
+
+  // ── Totals block ──────────────────────────────────────────────────────────────
+  const totalsX = marginL + contentW * 0.55;
+  const totalsW = contentW * 0.45;
+
+  const addTotalRow = (
+    label: string,
+    value: string,
+    bold: boolean,
+    color: [number, number, number] = [80, 80, 80]
+  ) => {
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(bold ? 9 : 8);
+    doc.setTextColor(...color);
+    doc.text(label, totalsX + 2, y + 5);
+    doc.setFont("courier", bold ? "bold" : "normal");
+    doc.text(value, totalsX + totalsW - 2, y + 5, { align: "right" });
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.2);
+    doc.line(totalsX, y + 7, totalsX + totalsW, y + 7);
+    y += 8;
+  };
+
+  addTotalRow("Somme payée", fmt(amountPaid), false);
+  if (changeGiven > 0) {
+    addTotalRow("Monnaie rendue", fmt(changeGiven), false, [22, 163, 74]);
+  }
+  if (balanceDue > 0) {
+    addTotalRow("Reste à payer", fmt(balanceDue), false, [217, 119, 6]);
+  }
+
+  // Total row with thick top border
+  doc.setDrawColor(20, 20, 20);
+  doc.setLineWidth(0.6);
+  doc.line(totalsX, y, totalsX + totalsW, y);
+  y += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(20, 20, 20);
+  doc.text("TOTAL", totalsX + 2, y);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(11);
+  doc.text(fmt(totalAmount), totalsX + totalsW - 2, y, { align: "right" });
+  y += 12;
+
+  // ── Footer ────────────────────────────────────────────────────────────────────
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.3);
+  doc.line(marginL, y, pageW - marginR, y);
+  y += 6;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(107, 114, 128);
+  doc.text("Merci de votre visite", pageW / 2, y, { align: "center" });
+  y += 5;
+  doc.setFontSize(7);
+  doc.setTextColor(156, 163, 175);
+  doc.text(
+    `© NAOSERVICES · MPJ HIGH-TECH — Document généré le ${new Date().toLocaleDateString("fr-FR")}`,
+    pageW / 2,
+    y,
+    { align: "center" }
+  );
+
+  const dateSlug = fmtDate(invoice.issued_at).replace(/\//g, "-");
+  doc.save(`facture-${invoice.invoice_number}-${dateSlug}.pdf`);
+}
+
 // ─── Invoice detail (modal content) ──────────────────────────────────────────
 
 interface InvoiceDetailProps {
@@ -534,6 +758,13 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
 
       <DialogFooter className="mt-4">
         <Button variant="outline" onClick={onClose}>Fermer</Button>
+        <Button
+          variant="outline"
+          onClick={() => downloadInvoicePDF(invoice)}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Télécharger PDF
+        </Button>
         <Button
           onClick={() => handlePrint()}
           style={{ background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))", border: "none" }}

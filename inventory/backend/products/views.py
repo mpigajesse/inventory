@@ -1,5 +1,6 @@
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from users.permissions import IsAdminRole, IsAdminOrReadOnly
@@ -88,6 +89,28 @@ class ProductViewSet(viewsets.ModelViewSet):
                 pass
         instance.is_active = False
         instance.save()
+
+    @action(detail=True, methods=['post'], url_path='upload-image', parser_classes=[MultiPartParser])
+    def upload_image(self, request, pk=None):
+        """Upload or replace the product image via Cloudinary."""
+        product = self.get_object()
+        if 'image' not in request.FILES:
+            return Response({'error': 'Aucune image fournie.'}, status=400)
+        product.image = request.FILES['image']
+        product.save(update_fields=['image'])
+        if log_activity:
+            try:
+                log_activity(
+                    user=request.user,
+                    action='update',
+                    target_model='Product',
+                    target_id=product.pk,
+                    description=f"Image mise à jour pour {product.name}",
+                    request=request,
+                )
+            except Exception:
+                pass
+        return Response(ProductListSerializer(product).data)
 
     @action(detail=False, methods=['get'], url_path='barcode/(?P<code>[^/.]+)')
     def by_barcode(self, request, code=None):

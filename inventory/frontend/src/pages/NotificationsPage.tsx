@@ -156,6 +156,16 @@ export default function NotificationsPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => notificationService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: () => {
+      toast({ title: "Impossible de supprimer la notification", variant: "destructive" });
+    },
+  });
+
   // ── Derived values ─────────────────────────────────────────────────────────
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
@@ -225,13 +235,22 @@ export default function NotificationsPage() {
     }
   }
 
-  function handleDelete(id: number, e: React.MouseEvent) {
+  function handleDelete(notif: Notification, e: React.MouseEvent) {
     e.stopPropagation();
-    setRemovingId(id);
-    setTimeout(() => {
-      setRemovingId(null);
-      markReadMutation.mutate(id);
-    }, 300);
+    setRemovingId(notif.id);
+    // Backend requires notification to be read before deletion.
+    // Mark as read first if needed, then delete after the exit animation.
+    const doDelete = () => {
+      setTimeout(() => {
+        setRemovingId(null);
+        deleteMutation.mutate(notif.id);
+      }, 300);
+    };
+    if (!notif.is_read) {
+      markReadMutation.mutate(notif.id, { onSettled: doDelete });
+    } else {
+      doDelete();
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -588,7 +607,7 @@ export default function NotificationsPage() {
 
                       {/* Dismiss button */}
                       <button
-                        onClick={(e) => handleDelete(notif.id, e)}
+                        onClick={(e) => handleDelete(notif, e)}
                         className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-muted transition-all duration-150"
                         aria-label="Supprimer"
                       >

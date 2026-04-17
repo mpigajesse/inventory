@@ -49,4 +49,7 @@ export const notificationService = {
 
   markReadBulk: (ids: number[]) =>
     api.post<void>('/notifications/mark-read-bulk/', { ids }).then((r) => r.data),
+
+  delete: (id: number) =>
+    api.delete<void>(`/notifications/${id}/`).then((r) => r.data),
 };

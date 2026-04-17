@@ -282,7 +282,9 @@ export default function ProductFormPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // ── Fetch categories ───────────────────────────────────────────────────────
 
@@ -331,7 +333,10 @@ export default function ProductFormPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: FormData) => productService.create(data),
-    onSuccess: (product) => {
+    onSuccess: async (product) => {
+      if (imageFile) {
+        await uploadImageAfterSave(product.id);
+      }
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Produit enregistré", {
         description: `${product.name} a été ajouté au catalogue.`,
@@ -350,7 +355,10 @@ export default function ProductFormPage() {
 
   const updateMutation = useMutation({
     mutationFn: (data: FormData) => productService.update(Number(id), data),
-    onSuccess: (product) => {
+    onSuccess: async (product) => {
+      if (imageFile) {
+        await uploadImageAfterSave(product.id);
+      }
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["product", id] });
       toast.success("Produit modifié", {
@@ -365,7 +373,7 @@ export default function ProductFormPage() {
     },
   });
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isPending = createMutation.isPending || updateMutation.isPending || isUploadingImage;
 
   // ── Image helpers ──────────────────────────────────────────────────────────
 
@@ -403,9 +411,24 @@ export default function ProductFormPage() {
     setImageFile(null);
     setImagePreview("");
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   }
 
   // ── Submit ─────────────────────────────────────────────────────────────────
+
+  async function uploadImageAfterSave(productId: number) {
+    if (!imageFile) return;
+    setIsUploadingImage(true);
+    try {
+      await productService.uploadImage(productId, imageFile);
+    } catch {
+      toast.error("Erreur lors de l'envoi de l'image", {
+        description: "Le produit a été enregistré, mais l'image n'a pas pu être téléchargée.",
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  }
 
   function onSubmit(values: ProductFormValues) {
     const formData = new FormData();
@@ -415,7 +438,6 @@ export default function ProductFormPage() {
     formData.append("category", String(values.category));
     if (values.barcode) formData.append("barcode", values.barcode);
     if (values.description) formData.append("description", values.description);
-    if (imageFile) formData.append("image", imageFile);
 
     if (isEdit) {
       updateMutation.mutate(formData);
@@ -713,22 +735,43 @@ export default function ProductFormPage() {
                     onDragLeave={handleDragLeave}
                   />
 
-                  {currentImageSrc && (
+                  {/* Camera + File buttons */}
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      Caméra
+                    </button>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="mt-3 text-xs font-medium w-full text-center transition-colors"
-                      style={{ color: 'hsl(22 72% 48%)' }}
+                      className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
                     >
-                      Changer l'image
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      Fichier
                     </button>
-                  )}
+                  </div>
 
-                  {/* Hidden file input */}
+                  {/* Hidden file input — gallery/filesystem */}
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    className="sr-only"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    onChange={handleImageChange}
+                  />
+
+                  {/* Hidden file input — camera capture */}
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
                     className="sr-only"
                     aria-hidden="true"
                     tabIndex={-1}
@@ -797,7 +840,11 @@ export default function ProductFormPage() {
                 }}
               >
                 {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isEdit ? "Enregistrer les modifications" : "Créer le produit"}
+                {isUploadingImage
+                  ? "Envoi de l'image…"
+                  : isEdit
+                  ? "Enregistrer les modifications"
+                  : "Créer le produit"}
               </button>
             </div>
           </form>
