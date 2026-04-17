@@ -6,6 +6,7 @@ export type DisplayMode = 'light' | 'dark' | 'system';
 
 interface ThemeContextValue {
   theme: Theme;
+  resolvedTheme: Theme;
   setTheme: (theme: Theme) => void;
   displayMode: DisplayMode;
   setDisplayMode: (mode: DisplayMode) => void;
@@ -88,8 +89,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     try { localStorage.setItem(storageKey(userId, 'display-mode'), next); } catch { /* unavailable */ }
   }
 
+  const resolvedTheme = resolveTheme(colorTheme, displayMode);
+
   return (
-    <ThemeContext.Provider value={{ theme: colorTheme, setTheme, displayMode, setDisplayMode }}>
+    <ThemeContext.Provider value={{ theme: colorTheme, resolvedTheme, setTheme, displayMode, setDisplayMode }}>
       {children}
     </ThemeContext.Provider>
   );

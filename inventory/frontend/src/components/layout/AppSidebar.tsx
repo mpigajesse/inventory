@@ -183,9 +183,9 @@ export function AppSidebar({
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
         style={{
-          background: "linear-gradient(to bottom, hsl(20 30% 9%), hsl(18 25% 6%))",
-          backgroundImage: "radial-gradient(circle at 20% 50%, hsl(22 40% 20% / 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, hsl(152 30% 15% / 0.2) 0%, transparent 40%)",
-          boxShadow: "inset -1px 0 0 hsl(20 22% 17% / 0.8), 4px 0 24px hsl(0 0% 0% / 0.18)",
+          background: "linear-gradient(to bottom, hsl(var(--sidebar-background)), hsl(var(--sidebar-background)))",
+          backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--sidebar-primary) / 0.18) 0%, transparent 50%), radial-gradient(circle at 80% 20%, hsl(var(--sidebar-ring) / 0.12) 0%, transparent 40%)",
+          boxShadow: "inset -1px 0 0 hsl(var(--sidebar-border) / 0.8), 4px 0 24px hsl(0 0% 0% / 0.18)",
           transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
         aria-label="Navigation principale"
@@ -394,7 +394,7 @@ export function AppSidebar({
                                 style={{
                                   background: "hsl(var(--destructive))",
                                   color: "hsl(var(--destructive-foreground))",
-                                  boxShadow: "0 0 0 2px hsl(18 25% 6%)",
+                                  boxShadow: "0 0 0 2px hsl(var(--sidebar-background))",
                                 }}
                               >
                                 {item.badge > 9 ? "9+" : item.badge}
@@ -476,7 +476,7 @@ export function AppSidebar({
                   className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
                   style={{
                     background: "hsl(var(--success))",
-                    boxShadow: "0 0 0 2px hsl(18 25% 6%)",
+                    boxShadow: "0 0 0 2px hsl(var(--sidebar-background))",
                   }}
                 />
               </span>
@@ -533,7 +533,7 @@ export function AppSidebar({
                   className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
                   style={{
                     background: "hsl(var(--success))",
-                    boxShadow: "0 0 0 2px hsl(18 25% 6%)",
+                    boxShadow: "0 0 0 2px hsl(var(--sidebar-background))",
                   }}
                 />
               </span>

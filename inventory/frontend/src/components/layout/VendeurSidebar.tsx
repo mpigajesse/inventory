@@ -164,9 +164,8 @@ export function VendeurSidebar({
         )}
         style={{
           background:
-            "linear-gradient(to bottom, hsl(20 30% 9%), hsl(18 25% 6%))",
+            "linear-gradient(to bottom, hsl(var(--sidebar-bg) / 1), hsl(var(--sidebar-background) / 1))",
           boxShadow: "inset -1px 0 0 hsl(var(--sidebar-border))",
-          position: "relative",
           overflow: "hidden",
         }}
         aria-label="Navigation vendeur"

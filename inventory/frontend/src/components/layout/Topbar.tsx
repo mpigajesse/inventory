@@ -262,7 +262,6 @@ export function Topbar({
         WebkitBackdropFilter: "blur(12px)",
         borderBottom: "1px solid hsl(var(--border) / 0.5)",
         boxShadow: "0 1px 3px hsl(22 30% 15% / 0.08)",
-        position: "relative",
       }}
     >
       {/* Ligne gradient top */}

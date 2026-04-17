@@ -248,6 +248,18 @@ export default function SettingsPage() {
     defaultValues: DEFAULT_POS_SETTINGS,
   });
 
+  // Load existing settings on mount
+  useEffect(() => {
+    api.get("/settings/pos/").then((r) => {
+      reset({
+        currency: r.data.currency ?? DEFAULT_POS_SETTINGS.currency,
+        ticket_format: r.data.ticket_format ?? DEFAULT_POS_SETTINGS.ticket_format,
+        invoice_prefix: r.data.invoice_prefix ?? DEFAULT_POS_SETTINGS.invoice_prefix,
+        ticket_footer: r.data.ticket_footer ?? DEFAULT_POS_SETTINGS.ticket_footer,
+      });
+    }).catch(() => {}); // silently skip if backend not yet ready
+  }, []);
+
   const saveMutation = useMutation({
     mutationFn: (data: PosSettingsFormValues) =>
       api.patch("/settings/pos/", data).then((r) => r.data),
