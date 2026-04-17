@@ -46,6 +46,7 @@ import { useForm, Controller, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTableManager } from "@/hooks/useTableManager";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import {
   stockService,
@@ -395,6 +396,7 @@ export default function StockPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { can } = usePermissions();
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -741,14 +743,16 @@ export default function StockPage() {
           onToggleAll={() => toggleAll(allPageIds)}
           selectedCount={selectedIds.size}
           bulkActions={
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleBulkAdjustOpen}
-            >
-              <ArrowUpDown className="w-3.5 h-3.5 mr-1.5" />
-              Ajuster la sélection
-            </Button>
+            can('manage_stock') ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkAdjustOpen}
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 mr-1.5" />
+                Ajuster la sélection
+              </Button>
+            ) : undefined
           }
           filterValue={categoryFilter}
           filterOptions={categoryOptions}
@@ -860,17 +864,19 @@ export default function StockPage() {
                     </div>
 
                     {/* Bouton Ajuster */}
-                    <div className="mt-auto pt-1 border-t opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full h-7 text-xs border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
-                        onClick={() => setModal({ type: "adjust", item })}
-                      >
-                        <ArrowUpDown className="w-3 h-3 mr-1" />
-                        Ajuster
-                      </Button>
-                    </div>
+                    {can('manage_stock') && (
+                      <div className="mt-auto pt-1 border-t opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full h-7 text-xs border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                          onClick={() => setModal({ type: "adjust", item })}
+                        >
+                          <ArrowUpDown className="w-3 h-3 mr-1" />
+                          Ajuster
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -969,23 +975,27 @@ export default function StockPage() {
                         <td>{renderStatusBadge(item.status)}</td>
                         <td>
                           <div className="flex items-center justify-end gap-1.5 pr-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 px-2.5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
-                              onClick={() => setModal({ type: "adjust", item })}
-                            >
-                              <ArrowUpDown className="w-3.5 h-3.5 lg:mr-1" />
-                              <span className="hidden lg:inline">Ajuster</span>
-                            </Button>
-                            <button
-                              className="p-2 rounded-md hover:bg-secondary flex items-center gap-1 text-xs text-muted-foreground transition-colors"
-                              title="Définir les seuils"
-                              onClick={() => setModal({ type: "threshold", item })}
-                            >
-                              <SlidersHorizontal className="w-4 h-4" />
-                              <span className="hidden lg:inline">Seuils</span>
-                            </button>
+                            {can('manage_stock') && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-2.5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={() => setModal({ type: "adjust", item })}
+                              >
+                                <ArrowUpDown className="w-3.5 h-3.5 lg:mr-1" />
+                                <span className="hidden lg:inline">Ajuster</span>
+                              </Button>
+                            )}
+                            {can('manage_stock') && (
+                              <button
+                                className="p-2 rounded-md hover:bg-secondary flex items-center gap-1 text-xs text-muted-foreground transition-colors"
+                                title="Définir les seuils"
+                                onClick={() => setModal({ type: "threshold", item })}
+                              >
+                                <SlidersHorizontal className="w-4 h-4" />
+                                <span className="hidden lg:inline">Seuils</span>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1068,24 +1078,26 @@ export default function StockPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                    <button
-                      className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors flex items-center gap-1.5 text-xs text-muted-foreground font-medium"
-                      title="Définir les seuils"
-                      onClick={() => setModal({ type: "threshold", item })}
-                    >
-                      <SlidersHorizontal className="w-3.5 h-3.5" />
-                      <span>Seuils</span>
-                    </button>
-                    <Button
-                      size="sm"
-                      className="h-8 rounded-md bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/20"
-                      onClick={() => setModal({ type: "adjust", item })}
-                    >
-                      <ArrowUpDown className="w-3.5 h-3.5 mr-1.5" />
-                      Ajuster
-                    </Button>
-                  </div>
+                  {can('manage_stock') && (
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                      <button
+                        className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors flex items-center gap-1.5 text-xs text-muted-foreground font-medium"
+                        title="Définir les seuils"
+                        onClick={() => setModal({ type: "threshold", item })}
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        <span>Seuils</span>
+                      </button>
+                      <Button
+                        size="sm"
+                        className="h-8 rounded-md bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/20"
+                        onClick={() => setModal({ type: "adjust", item })}
+                      >
+                        <ArrowUpDown className="w-3.5 h-3.5 mr-1.5" />
+                        Ajuster
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}

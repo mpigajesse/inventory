@@ -7,6 +7,8 @@ import { Printer, Save, Palette, Check, Sun, Moon, Monitor, X } from "lucide-rea
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Theme, DisplayMode } from "@/contexts/ThemeContext";
+import { usePermissions } from "@/hooks/usePermissions";
+import { AccessDenied } from "@/components/ui/AccessDenied";
 
 interface ThemeOption {
   id: Theme;
@@ -158,6 +160,13 @@ function SettingsSection({ icon, title, description, children, animationDelay }:
 export default function SettingsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const { theme, setTheme, displayMode, setDisplayMode } = useTheme();
+  const { can } = usePermissions();
+
+  if (!can('manage_settings')) {
+    return (
+      <AccessDenied message="Vous n'avez pas la permission d'accéder à ces paramètres." />
+    );
+  }
 
   return (
     <>

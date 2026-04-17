@@ -1,33 +1,22 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
 import type { UserRole } from '@/contexts/AuthContext';
 
 interface RoleGuardProps {
   allowedRoles: UserRole[];
   children: React.ReactNode;
+  redirectTo?: string;
 }
 
-export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
+export function RoleGuard({ allowedRoles, children, redirectTo = '/dashboard' }: RoleGuardProps) {
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
 
-  const hasAccess = currentUser !== null && allowedRoles.includes(currentUser.role);
+  if (!currentUser) {
+    return <Navigate to="/auth/login" replace />;
+  }
 
-  useEffect(() => {
-    if (!hasAccess) {
-      toast({
-        title: 'Accès non autorisé',
-        description: "Vous n'avez pas les droits nécessaires pour accéder à cette page.",
-        variant: 'destructive',
-      });
-      navigate('/dashboard', { replace: true });
-    }
-  }, [hasAccess, navigate]);
-
-  if (!hasAccess) {
-    return null;
+  if (!allowedRoles.includes(currentUser.role)) {
+    return <Navigate to={redirectTo} replace />;
   }
 
   return <>{children}</>;

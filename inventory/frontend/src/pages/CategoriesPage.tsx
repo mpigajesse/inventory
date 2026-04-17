@@ -30,6 +30,7 @@ import type { Category } from "@/services/productService";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
@@ -161,6 +162,7 @@ type ModalState =
 export default function CategoriesPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [search, setSearch] = useState("");
@@ -233,14 +235,16 @@ export default function CategoriesPage() {
               )}
             </p>
           </div>
-          <Button
-            size="sm"
-            className="shrink-0 rounded-lg shadow-sm shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
-            onClick={() => setModal({ type: "form", category: null })}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle catégorie
-          </Button>
+          {can('manage_products') && (
+            <Button
+              size="sm"
+              className="shrink-0 rounded-lg shadow-sm shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
+              onClick={() => setModal({ type: "form", category: null })}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle catégorie
+            </Button>
+          )}
         </div>
 
         {/* Toolbar — search seul */}
@@ -296,23 +300,25 @@ export default function CategoriesPage() {
                 </div>
 
                 {/* Actions visibles */}
-                <div className="flex items-center gap-1 pt-1.5 border-t mt-auto">
-                  <button
-                    className="flex-1 p-1.5 rounded-md hover:bg-secondary transition-colors flex items-center justify-center gap-1 text-[11px] text-muted-foreground font-medium"
-                    title="Modifier"
-                    onClick={() => setModal({ type: "form", category })}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Modifier
-                  </button>
-                  <button
-                    className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
-                    title="Supprimer"
-                    onClick={() => setModal({ type: "delete", category })}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                  </button>
-                </div>
+                {can('manage_products') && (
+                  <div className="flex items-center gap-1 pt-1.5 border-t mt-auto">
+                    <button
+                      className="flex-1 p-1.5 rounded-md hover:bg-secondary transition-colors flex items-center justify-center gap-1 text-[11px] text-muted-foreground font-medium"
+                      title="Modifier"
+                      onClick={() => setModal({ type: "form", category })}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Modifier
+                    </button>
+                    <button
+                      className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+                      title="Supprimer"
+                      onClick={() => setModal({ type: "delete", category })}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
         </div>
@@ -370,20 +376,24 @@ export default function CategoriesPage() {
                       </td>
                       <td>
                         <div className="flex items-center justify-end gap-1 pr-2">
-                          <button
-                            className="p-2 rounded-md hover:bg-secondary transition-colors"
-                            title="Modifier"
-                            onClick={() => setModal({ type: "form", category })}
-                          >
-                            <Pencil className="w-4 h-4 text-muted-foreground" />
-                          </button>
-                          <button
-                            className="p-2 rounded-md hover:bg-destructive/10 transition-colors"
-                            title="Supprimer"
-                            onClick={() => setModal({ type: "delete", category })}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </button>
+                          {can('manage_products') && (
+                            <button
+                              className="p-2 rounded-md hover:bg-secondary transition-colors"
+                              title="Modifier"
+                              onClick={() => setModal({ type: "form", category })}
+                            >
+                              <Pencil className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          )}
+                          {can('manage_products') && (
+                            <button
+                              className="p-2 rounded-md hover:bg-destructive/10 transition-colors"
+                              title="Supprimer"
+                              onClick={() => setModal({ type: "delete", category })}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

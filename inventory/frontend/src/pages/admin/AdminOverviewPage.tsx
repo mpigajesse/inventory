@@ -1,6 +1,7 @@
-import { useOutletContext, useNavigate } from "react-router-dom";
+import { useOutletContext, useNavigate, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
+import { useAuth } from "@/contexts/AuthContext";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -161,6 +162,7 @@ const HEALTH_ITEMS = [
 export default function AdminOverviewPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -177,6 +179,10 @@ export default function AdminOverviewPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [disablingUser, setDisablingUser] = useState<AdminUser | null>(null);
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
+
+  if (currentUser?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   function handleRoleChange(userId: number, newRole: UserRole) {
     setUsers((prev) =>

@@ -2,8 +2,8 @@ from django.db import transaction
 from rest_framework import viewsets, generics, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from users.permissions import IsAdminRole, IsAdminOrReadOnly
 from .models import Stock, StockMovement
 from .serializers import StockSerializer, StockAdjustmentSerializer, StockMovementSerializer
 
@@ -11,12 +11,18 @@ from .serializers import StockSerializer, StockAdjustmentSerializer, StockMoveme
 class StockViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Stock.objects.select_related('product__category').filter(product__is_active=True)
     serializer_class = StockSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['product__name', 'product__barcode']
     filterset_fields = ['product__category']
     ordering_fields = ['quantity', 'product__name']
     ordering = ['product__name']
+
+    def get_permissions(self):
+        """adjust et update_thresholds sont réservés aux admins."""
+        if self.action in ('adjust', 'update_thresholds'):
+            return [IsAdminRole()]
+        return super().get_permissions()
 
     @action(detail=False, methods=['get'], url_path='alerts')
     def alerts(self, request):
@@ -83,7 +89,7 @@ class StockViewSet(viewsets.ReadOnlyModelViewSet):
 
 class StockMovementListView(generics.ListAPIView):
     serializer_class = StockMovementSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['product', 'movement_type']
     ordering = ['-created_at']

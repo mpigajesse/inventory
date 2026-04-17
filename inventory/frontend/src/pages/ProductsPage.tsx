@@ -45,6 +45,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productService } from "@/services/productService";
 import type { Product } from "@/services/productService";
 import { useTableManager } from "@/hooks/useTableManager";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -74,6 +75,7 @@ export default function ProductsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -231,14 +233,16 @@ export default function ProductsPage() {
               <FileSpreadsheet className="w-4 h-4 mr-2" />
               Exporter Excel
             </Button>
-            <Button
-              size="sm"
-              className="rounded-lg shadow-sm shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
-              onClick={() => navigate("/products/new")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter un produit
-            </Button>
+            {can('manage_products') && (
+              <Button
+                size="sm"
+                className="rounded-lg shadow-sm shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
+                onClick={() => navigate("/products/new")}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un produit
+              </Button>
+            )}
           </div>
         </div>
 
@@ -288,14 +292,16 @@ export default function ProductsPage() {
           onToggleAll={() => toggleAll(allPageIds)}
           selectedCount={selectedIds.size}
           bulkActions={
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={handleDeleteSelection}
-            >
-              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-              Supprimer la sélection
-            </Button>
+            can('manage_products') ? (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDeleteSelection}
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                Supprimer la sélection
+              </Button>
+            ) : undefined
           }
           filterValue={categoryFilter}
           filterOptions={categoryFilterOptions}
@@ -371,28 +377,30 @@ export default function ProductsPage() {
                     </div>
 
                     {/* Actions au hover */}
-                    <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        className="p-1.5 rounded-md bg-card shadow-sm border hover:bg-secondary"
-                        title="Modifier"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/products/${product.id}/edit`);
-                        }}
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                      <button
-                        className="p-1.5 rounded-md bg-card shadow-sm border hover:bg-destructive/10"
-                        title="Supprimer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setModal({ type: "delete", product });
-                        }}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                      </button>
-                    </div>
+                    {can('manage_products') && (
+                      <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          className="p-1.5 rounded-md bg-card shadow-sm border hover:bg-secondary"
+                          title="Modifier"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/products/${product.id}/edit`);
+                          }}
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          className="p-1.5 rounded-md bg-card shadow-sm border hover:bg-destructive/10"
+                          title="Supprimer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModal({ type: "delete", product });
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -481,20 +489,24 @@ export default function ProductsPage() {
                   >
                     <Eye className="w-4 h-4 text-muted-foreground" />
                   </button>
-                  <button
-                    className="p-2 rounded-md hover:bg-secondary"
-                    title="Modifier"
-                    onClick={() => navigate(`/products/${product.id}/edit`)}
-                  >
-                    <Pencil className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                  <button
-                    className="p-2 rounded-md hover:bg-destructive/10"
-                    title="Supprimer"
-                    onClick={() => setModal({ type: "delete", product })}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </button>
+                  {can('manage_products') && (
+                    <button
+                      className="p-2 rounded-md hover:bg-secondary"
+                      title="Modifier"
+                      onClick={() => navigate(`/products/${product.id}/edit`)}
+                    >
+                      <Pencil className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  )}
+                  {can('manage_products') && (
+                    <button
+                      className="p-2 rounded-md hover:bg-destructive/10"
+                      title="Supprimer"
+                      onClick={() => setModal({ type: "delete", product })}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -594,20 +606,24 @@ export default function ProductsPage() {
                         >
                           <Eye className="w-4 h-4 text-muted-foreground" />
                         </button>
-                        <button
-                          className="p-2 rounded-md hover:bg-secondary"
-                          title="Modifier"
-                          onClick={() => navigate(`/products/${product.id}/edit`)}
-                        >
-                          <Pencil className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button
-                          className="p-2 rounded-md hover:bg-destructive/10"
-                          title="Supprimer"
-                          onClick={() => setModal({ type: "delete", product })}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </button>
+                        {can('manage_products') && (
+                          <button
+                            className="p-2 rounded-md hover:bg-secondary"
+                            title="Modifier"
+                            onClick={() => navigate(`/products/${product.id}/edit`)}
+                          >
+                            <Pencil className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        )}
+                        {can('manage_products') && (
+                          <button
+                            className="p-2 rounded-md hover:bg-destructive/10"
+                            title="Supprimer"
+                            onClick={() => setModal({ type: "delete", product })}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </button>
+                        )}
                         <button
                           className="p-2 rounded-md hover:bg-secondary"
                           title="Plus d'options"
@@ -712,15 +728,17 @@ export default function ProductsPage() {
               >
                 Fermer
               </Button>
-              <Button
-                onClick={() => {
-                  setModal({ type: "none" });
-                  navigate(`/products/${modal.product.id}/edit`);
-                }}
-              >
-                <Pencil className="w-4 h-4 mr-2" />
-                Modifier
-              </Button>
+              {can('manage_products') && (
+                <Button
+                  onClick={() => {
+                    setModal({ type: "none" });
+                    navigate(`/products/${modal.product.id}/edit`);
+                  }}
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Modifier
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

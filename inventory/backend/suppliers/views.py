@@ -1,6 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
-from rest_framework.permissions import IsAuthenticated
+from users.permissions import IsAdminRole
 
 from .models import PurchaseOrder, Supplier
 from .serializers import PurchaseOrderSerializer, SupplierSerializer
@@ -9,7 +9,7 @@ from .serializers import PurchaseOrderSerializer, SupplierSerializer
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.filter(is_active=True)
     serializer_class = SupplierSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminRole]
     # DjangoFilterBackend added so filterset_fields is honoured.
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['city', 'country', 'is_active']
@@ -30,7 +30,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         .prefetch_related('items__product')
     )
     serializer_class = PurchaseOrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminRole]
     # SearchFilter added so search_fields works; DjangoFilterBackend kept for filterset_fields.
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['supplier', 'status']

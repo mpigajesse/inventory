@@ -22,11 +22,13 @@ import { useNavigate } from "react-router-dom";
 import { supplierService } from "@/services/supplierService";
 import type { Supplier } from "@/services/supplierService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function SuppliersPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -99,22 +101,26 @@ export default function SuppliersPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => exportSuppliers(suppliers)}
-            >
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Exporter Excel
-            </Button>
-            <Button
-              size="sm"
-              className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
-              onClick={() => navigate("/suppliers/new")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau fournisseur
-            </Button>
+            {can('manage_suppliers') && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => exportSuppliers(suppliers)}
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Exporter Excel
+              </Button>
+            )}
+            {can('manage_suppliers') && (
+              <Button
+                size="sm"
+                className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
+                onClick={() => navigate("/suppliers/new")}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouveau fournisseur
+              </Button>
+            )}
           </div>
         </div>
 
@@ -212,22 +218,24 @@ export default function SuppliersPage() {
                         </span>
                       </p>
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-                      <button
-                        className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                        title="Modifier"
-                        onClick={() => navigate(`/suppliers/${supplier.id}/edit`)}
-                      >
-                        <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                      <button
-                        className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
-                        title="Supprimer"
-                        onClick={() => setDeletingSupplier(supplier)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
-                      </button>
-                    </div>
+                    {can('manage_suppliers') && (
+                      <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <button
+                          className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
+                          title="Modifier"
+                          onClick={() => navigate(`/suppliers/${supplier.id}/edit`)}
+                        >
+                          <Edit className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+                          title="Supprimer"
+                          onClick={() => setDeletingSupplier(supplier)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -252,6 +252,12 @@ export default function VendeurPosPage() {
   const handlePrint = useReactToPrint({
     contentRef: receiptRef,
     documentTitle: currentTicket.number,
+    pageStyle: `
+      @page { size: 80mm auto; margin: 3mm; }
+      body { margin: 0; font-family: monospace; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    `,
+    onAfterPrint: resetSale,
   });
 
   const addToCart = useCallback((product: Product) => {
@@ -352,15 +358,6 @@ export default function VendeurPosPage() {
       <>
         <Topbar title="Caisse" subtitle="Espace vendeur" onMenuClick={onMenuClick} />
 
-        <style>{`
-          @media print {
-            @page { size: 80mm auto; margin: 4mm; }
-            body > * { display: none !important; }
-            #receipt-printable { display: block !important; position: fixed; top: 0; left: 0; width: 72mm; }
-          }
-          #receipt-printable { display: none; }
-        `}</style>
-
         <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto bg-gradient-to-br from-[hsl(var(--background))] via-[hsl(var(--muted))]/40 to-[hsl(var(--accent))]/10">
           <div className="w-full max-w-sm animate-slide-in">
 
@@ -417,7 +414,7 @@ export default function VendeurPosPage() {
               }} />
             </div>
 
-            <div ref={receiptRef} id="receipt-printable">
+            <div ref={receiptRef} style={{ display: "none" }}>
               <Receipt
                 items={cart}
                 total={total}

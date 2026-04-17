@@ -2,6 +2,8 @@ import { useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/ui/StatCard";
+import { usePermissions } from "@/hooks/usePermissions";
+import { AccessDenied } from "@/components/ui/AccessDenied";
 import {
   DollarSign,
   ShoppingCart,
@@ -41,16 +43,25 @@ function SkeletonBar({ width = "100%" }: { width?: string }) {
 
 export default function ReportsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
+  const { can } = usePermissions();
 
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ["dashboard"],
     queryFn: dashboardService.getStats,
+    enabled: can('view_reports'),
   });
 
   const { data: alertsData } = useQuery({
     queryKey: ["stockAlerts"],
     queryFn: stockService.getAlerts,
+    enabled: can('view_reports'),
   });
+
+  if (!can('view_reports')) {
+    return (
+      <AccessDenied message="Vous n'avez pas la permission de consulter les rapports." />
+    );
+  }
 
   const stockAlerts = alertsData ?? [];
 
@@ -291,7 +302,7 @@ export default function ReportsPage() {
               </div>
             </div>
             <button
-              disabled={!stats || isLoading}
+              disabled={!stats || isLoading || !can('view_reports')}
               onClick={() => {
                 if (stats) {
                   exportReportToExcel({ stats, stockAlerts });

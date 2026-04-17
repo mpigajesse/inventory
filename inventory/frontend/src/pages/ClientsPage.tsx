@@ -3,6 +3,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Dialog,
   DialogContent,
@@ -146,6 +147,7 @@ function HistoryModal({ client, onClose }: HistoryModalProps) {
 
 export default function ClientsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -209,22 +211,26 @@ export default function ClientsPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => exportClients(clients)}
-            >
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Exporter Excel
-            </Button>
-            <Button
-              size="sm"
-              className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
-              onClick={() => navigate("/clients/new")}
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Nouveau client
-            </Button>
+            {can('manage_clients') && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => exportClients(clients)}
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Exporter Excel
+              </Button>
+            )}
+            {can('manage_clients') && (
+              <Button
+                size="sm"
+                className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
+                onClick={() => navigate("/clients/new")}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Nouveau client
+              </Button>
+            )}
           </div>
         </div>
 
@@ -280,20 +286,24 @@ export default function ClientsPage() {
                     >
                       <History className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
-                    <button
-                      className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                      title="Modifier"
-                      onClick={() => navigate(`/clients/${client.id}/edit`)}
-                    >
-                      <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                    <button
-                      className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
-                      title="Supprimer"
-                      onClick={() => setDeletingClient(client)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
-                    </button>
+                    {can('manage_clients') && (
+                      <button
+                        className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
+                        title="Modifier"
+                        onClick={() => navigate(`/clients/${client.id}/edit`)}
+                      >
+                        <Edit className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                    )}
+                    {can('manage_clients') && (
+                      <button
+                        className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+                        title="Supprimer"
+                        onClick={() => setDeletingClient(client)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

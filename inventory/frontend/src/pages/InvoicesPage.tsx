@@ -15,12 +15,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Receipt } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import { useTableManager } from "@/hooks/useTableManager";
 import { invoiceService } from "@/services/invoiceService";
 import type { Invoice } from "@/services/invoiceService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { exportInvoicesToExcel } from "@/lib/exportInvoices";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,6 +70,180 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "cancelled", label: "Annulées" },
 ];
 
+// ─── Composant d'impression isolé (rendu dans un div caché) ──────────────────
+
+interface PrintableInvoiceProps {
+  invoice: Invoice;
+}
+
+function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
+  const balanceDue = Number(invoice.balance_due);
+  const amountPaid = Number(invoice.amount_paid);
+  const totalAmount = Number(invoice.total_amount);
+  const changeGiven = amountPaid - totalAmount;
+
+  const statusLabels: Record<Invoice["status"], string> = {
+    paid: "PAYÉE",
+    partial: "PARTIELLE",
+    unpaid: "IMPAYÉE",
+    cancelled: "ANNULÉE",
+  };
+
+  const statusColors: Record<Invoice["status"], string> = {
+    paid: "#16a34a",
+    partial: "#d97706",
+    unpaid: "#dc2626",
+    cancelled: "#6b7280",
+  };
+
+  const statusBg: Record<Invoice["status"], string> = {
+    paid: "#dcfce7",
+    partial: "#fef3c7",
+    unpaid: "#fee2e2",
+    cancelled: "#f3f4f6",
+  };
+
+  return (
+    <div style={{ fontFamily: "Arial, Helvetica, sans-serif", color: "#111", fontSize: 13, padding: "0 8px" }}>
+      {/* En-tête entreprise */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, borderBottom: "2px solid #111", paddingBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
+            NAOSERVICES INVENTORY
+          </div>
+          <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>
+            MPJ HIGH-TECH · Partenaire technologique
+          </div>
+          <div style={{ fontSize: 11, color: "#555" }}>
+            Libreville, Gabon — +241 07 40 13 02
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: "#777", textTransform: "uppercase", letterSpacing: 1 }}>
+            Facture
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "monospace", marginTop: 2 }}>
+            {invoice.invoice_number}
+          </div>
+          <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>
+            Date : {formatDate(invoice.issued_at)}
+          </div>
+        </div>
+      </div>
+
+      {/* Statut paiement */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+        <div style={{
+          display: "inline-block",
+          padding: "6px 16px",
+          border: `2px solid ${statusColors[invoice.status]}`,
+          borderRadius: 6,
+          backgroundColor: statusBg[invoice.status],
+          color: statusColors[invoice.status],
+          fontWeight: 700,
+          fontSize: 12,
+          letterSpacing: 1,
+          textTransform: "uppercase",
+        }}>
+          {statusLabels[invoice.status]}
+        </div>
+      </div>
+
+      {/* Bloc client */}
+      <div style={{ marginBottom: 24, padding: "12px 16px", backgroundColor: "#f9fafb", borderRadius: 6, border: "1px solid #e5e7eb" }}>
+        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#6b7280", marginBottom: 4 }}>
+          Client
+        </div>
+        <div style={{ fontWeight: 600, fontSize: 14 }}>
+          {invoice.client_name ?? "Client comptoir"}
+        </div>
+      </div>
+
+      {/* Tableau articles */}
+      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20 }}>
+        <thead>
+          <tr style={{ backgroundColor: "#111", color: "#fff" }}>
+            <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              Désignation
+            </th>
+            <th style={{ textAlign: "center", padding: "8px 10px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, width: 60 }}>
+              Qté
+            </th>
+            <th style={{ textAlign: "right", padding: "8px 10px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, width: 130 }}>
+              Prix unit.
+            </th>
+            <th style={{ textAlign: "right", padding: "8px 10px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, width: 130 }}>
+              Total ligne
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {invoice.items && invoice.items.length > 0 ? (
+            invoice.items.map((item, idx) => (
+              <tr key={item.id} style={{ backgroundColor: idx % 2 === 0 ? "#fff" : "#f9fafb" }}>
+                <td style={{ padding: "8px 10px", borderBottom: "1px solid #e5e7eb" }}>
+                  {item.product_name}
+                </td>
+                <td style={{ padding: "8px 10px", textAlign: "center", borderBottom: "1px solid #e5e7eb", color: "#444" }}>
+                  {item.quantity}
+                </td>
+                <td style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #e5e7eb", color: "#444", fontFamily: "monospace" }}>
+                  {formatFCFA(item.unit_price)}
+                </td>
+                <td style={{ padding: "8px 10px", textAlign: "right", borderBottom: "1px solid #e5e7eb", fontWeight: 600, fontFamily: "monospace" }}>
+                  {formatFCFA(item.subtotal)}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={4} style={{ padding: "12px 10px", textAlign: "center", color: "#9ca3af", fontStyle: "italic" }}>
+                Aucun article
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {/* Totaux */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
+        <div style={{ width: 280 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #e5e7eb", fontSize: 12, color: "#555" }}>
+            <span>Somme payée</span>
+            <span style={{ fontFamily: "monospace" }}>{formatFCFA(amountPaid)}</span>
+          </div>
+          {changeGiven > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #e5e7eb", fontSize: 12, color: "#16a34a" }}>
+              <span>Monnaie rendue</span>
+              <span style={{ fontFamily: "monospace" }}>{formatFCFA(changeGiven)}</span>
+            </div>
+          )}
+          {balanceDue > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #e5e7eb", fontSize: 12, color: "#d97706" }}>
+              <span>Reste à payer</span>
+              <span style={{ fontFamily: "monospace" }}>{formatFCFA(balanceDue)}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderTop: "2px solid #111", marginTop: 4 }}>
+            <span style={{ fontWeight: 700, fontSize: 15, textTransform: "uppercase", letterSpacing: 0.5 }}>Total</span>
+            <span style={{ fontWeight: 700, fontSize: 15, fontFamily: "monospace" }}>{formatFCFA(totalAmount)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Pied de page */}
+      <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 14, marginTop: 8, textAlign: "center" }}>
+        <div style={{ fontSize: 11, color: "#6b7280" }}>
+          Merci pour votre confiance — NAOSERVICES · MPJ HIGH-TECH
+        </div>
+        <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
+          Monnaie : FCFA — Document généré le {new Date().toLocaleDateString("fr-FR")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Invoice detail (modal content) ──────────────────────────────────────────
 
 interface InvoiceDetailProps {
@@ -81,8 +257,28 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
   const totalAmount = Number(invoice.total_amount);
   const changeGiven = amountPaid - totalAmount;
 
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Facture ${invoice.invoice_number}`,
+    pageStyle: `
+      @page { size: A4; margin: 15mm; }
+      @media print {
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }
+    `,
+  });
+
   return (
     <>
+      {/* Zone cachée dédiée à l'impression — non visible dans l'interface */}
+      <div style={{ display: "none" }}>
+        <div ref={printRef}>
+          <PrintableInvoice invoice={invoice} />
+        </div>
+      </div>
+
       <div className="space-y-5 text-sm">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -172,7 +368,7 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
 
       <DialogFooter className="mt-2">
         <Button variant="outline" onClick={onClose}>Fermer</Button>
-        <Button onClick={() => window.print()}>
+        <Button onClick={() => handlePrint()}>
           <Printer className="w-4 h-4 mr-2" />
           Imprimer
         </Button>
@@ -181,10 +377,52 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
   );
 }
 
+// ─── Bouton d'impression inline (tableau et cartes mobiles) ──────────────────
+
+interface InlinePrintButtonProps {
+  invoice: Invoice;
+  className?: string;
+  iconSize?: string;
+}
+
+function InlinePrintButton({ invoice, className, iconSize = "w-3.5 h-3.5" }: InlinePrintButtonProps) {
+  const printRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Facture ${invoice.invoice_number}`,
+    pageStyle: `
+      @page { size: A4; margin: 15mm; }
+      @media print {
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }
+    `,
+  });
+
+  return (
+    <>
+      {/* Zone cachée dédiée à l'impression de cette facture */}
+      <div style={{ display: "none" }}>
+        <div ref={printRef}>
+          <PrintableInvoice invoice={invoice} />
+        </div>
+      </div>
+      <button
+        className={className ?? "p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"}
+        title="Imprimer"
+        onClick={() => handlePrint()}
+      >
+        <Printer className={`${iconSize} text-muted-foreground`} />
+      </button>
+    </>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function InvoicesPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
+  const { can } = usePermissions();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
 
@@ -255,14 +493,16 @@ export default function InvoicesPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportInvoicesToExcel(invoices)}
-            >
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Exporter Excel
-            </Button>
+            {can('view_reports') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportInvoicesToExcel(invoices)}
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Exporter Excel
+              </Button>
+            )}
             <Button
               size="sm"
               className="bg-primary text-primary-foreground shadow-sm hover:shadow-md transition-shadow"
@@ -375,16 +615,7 @@ export default function InvoicesPage() {
                             >
                               <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                             </button>
-                            <button
-                              className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                              title="Imprimer"
-                              onClick={() => {
-                                setViewingInvoice(inv);
-                                setTimeout(() => window.print(), 300);
-                              }}
-                            >
-                              <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-                            </button>
+                            <InlinePrintButton invoice={inv} />
                           </div>
                         </td>
                       </tr>
@@ -464,16 +695,11 @@ export default function InvoicesPage() {
                       >
                         <Eye className="w-4 h-4 text-muted-foreground" />
                       </button>
-                      <button
+                      <InlinePrintButton
+                        invoice={inv}
                         className="p-2 rounded-md hover:bg-primary/10 transition-colors"
-                        title="Imprimer"
-                        onClick={() => {
-                          setViewingInvoice(inv);
-                          setTimeout(() => window.print(), 300);
-                        }}
-                      >
-                        <Printer className="w-4 h-4 text-muted-foreground" />
-                      </button>
+                        iconSize="w-4 h-4"
+                      />
                     </div>
                   </div>
                 </div>

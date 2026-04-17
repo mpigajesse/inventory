@@ -17,10 +17,14 @@ import {
   UserCog,
   CheckCheck,
   Loader2,
+  Shield,
+  ShoppingBag,
+  Users,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import {
   notificationService,
@@ -137,6 +141,7 @@ export function Topbar({
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const { can } = usePermissions();
   const queryClient = useQueryClient();
 
   const profilePath =
@@ -306,6 +311,25 @@ export function Topbar({
           >
             <Search className="w-5 h-5 text-muted-foreground" />
           </button>
+
+          {/* POS shortcut — vendeur only */}
+          {currentUser?.role === "vendeur" && (
+            <button
+              type="button"
+              onClick={() => navigate("/pos")}
+              className={cn(
+                "hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md",
+                "text-[12px] font-medium",
+                "bg-primary/10 text-primary hover:bg-primary/20",
+                "transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              )}
+              title="Aller à la Caisse"
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              <span>Caisse</span>
+            </button>
+          )}
 
           {/* ── Notifications dropdown ───────────────────────────────────── */}
           <div className="relative" ref={notifRef}>
@@ -548,6 +572,18 @@ export function Topbar({
                     <p className="text-[11px] text-muted-foreground truncate">
                       {currentUser?.email ?? roleLabel}
                     </p>
+                    {/* Role badge */}
+                    {currentUser?.role === "admin" ? (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-primary/15 text-primary">
+                        <Shield className="w-2.5 h-2.5" />
+                        Administrateur
+                      </span>
+                    ) : (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-accent/15 text-accent-foreground">
+                        <ShoppingBag className="w-2.5 h-2.5" />
+                        Vendeur
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -561,14 +597,26 @@ export function Topbar({
                       navigate(profilePath);
                     }}
                   />
-                  <DropdownItem
-                    icon={Settings}
-                    label="Paramètres"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate(settingsPath);
-                    }}
-                  />
+                  {can("manage_settings") && (
+                    <DropdownItem
+                      icon={Settings}
+                      label="Paramètres"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate(settingsPath);
+                      }}
+                    />
+                  )}
+                  {can("manage_users") && (
+                    <DropdownItem
+                      icon={Users}
+                      label="Utilisateurs"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate("/users");
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div

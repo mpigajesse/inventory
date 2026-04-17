@@ -22,7 +22,8 @@ import {
   Loader2,
   Camera,
   Mail,
-  BadgeCheck,
+  ShoppingBag,
+  Info,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -30,6 +31,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { PermissionGate } from "@/components/auth/PermissionGate";
 import { userService } from "@/services/userService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
@@ -202,10 +204,14 @@ function IdentityCard() {
                   "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider",
                   isAdmin
                     ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-                    : "bg-accent/15 text-accent ring-1 ring-accent/25",
+                    : "bg-accent/15 text-accent-foreground ring-1 ring-accent/25",
                 ].join(" ")}
               >
-                <BadgeCheck className="w-3 h-3" />
+                {isAdmin ? (
+                  <Shield className="w-3 h-3" />
+                ) : (
+                  <ShoppingBag className="w-3 h-3" />
+                )}
                 {isAdmin ? "Admin" : "Vendeur"}
               </span>
             </div>
@@ -613,10 +619,46 @@ function PreferencesSection() {
   );
 }
 
+// ─── Vendeur info banner ──────────────────────────────────────────────────────
+
+function VendeurInfoBanner() {
+  return (
+    <div
+      className="flex items-start gap-3 rounded-xl border px-4 py-3.5 mb-6"
+      style={{
+        background: "hsl(var(--accent) / 0.08)",
+        borderColor: "hsl(var(--accent) / 0.25)",
+      }}
+      role="note"
+      aria-label="Information sur le rôle"
+    >
+      <span
+        className="mt-0.5 inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+        style={{
+          background: "hsl(var(--accent) / 0.15)",
+          color: "hsl(var(--accent-foreground))",
+        }}
+      >
+        <Info className="w-4 h-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[13px] font-semibold text-foreground leading-snug">
+          Votre rôle : Vendeur
+        </p>
+        <p className="text-[12px] text-muted-foreground mt-0.5">
+          Contactez un administrateur pour modifier vos permissions ou accéder aux paramètres avancés.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
+  const { currentUser } = useAuth();
+  const isVendeur = currentUser?.role === "vendeur";
 
   return (
     <>
@@ -627,9 +669,12 @@ export default function ProfilePage() {
       />
       <div className="page-container animate-slide-in">
         <IdentityCard />
+        {isVendeur && <VendeurInfoBanner />}
         <ProfileSection />
         <SecuritySection />
-        <PreferencesSection />
+        <PermissionGate permission="manage_settings">
+          <PreferencesSection />
+        </PermissionGate>
       </div>
     </>
   );

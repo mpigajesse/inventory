@@ -48,6 +48,39 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return user
 
 
+class UserUpdateSerializer(serializers.ModelSerializer):
+    role = serializers.ChoiceField(
+        choices=UserProfile.ROLE_CHOICES,
+        source='profile.role',
+        required=False,
+    )
+    phone = serializers.CharField(
+        source='profile.phone',
+        required=False,
+        allow_blank=True,
+    )
+    profile_is_active = serializers.BooleanField(
+        source='profile.is_active',
+        required=False,
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'username', 'role', 'phone', 'profile_is_active']
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if profile_data:
+            profile = instance.profile
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
+        return instance
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True, min_length=6)

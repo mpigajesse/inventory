@@ -1,9 +1,9 @@
 from django.db import transaction
 from rest_framework import viewsets, generics, filters, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from users.permissions import IsAdminOrReadOnly, IsVendeurOrAdmin
 
 from .models import Sale, SaleItem
 from .serializers import SaleCreateSerializer, SaleSerializer
@@ -24,7 +24,7 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
         'items__product'
     )
     serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['payment_method', 'cashier', 'client']
     ordering = ['-created_at']
@@ -36,7 +36,7 @@ class CreateSaleView(generics.CreateAPIView):
     create SaleItems -> create StockMovements -> create Invoice.
     """
     serializer_class = SaleCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsVendeurOrAdmin]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

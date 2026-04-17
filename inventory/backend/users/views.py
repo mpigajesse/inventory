@@ -1,19 +1,16 @@
 from django.contrib.auth.models import User
 from rest_framework import viewsets, generics, permissions, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import UserProfile
+from .permissions import IsAdminRole
 from .serializers import (
-    UserSerializer, UserCreateSerializer, ChangePasswordSerializer,
-    MeSerializer, CustomTokenObtainPairSerializer,
+    UserSerializer, UserCreateSerializer, UserUpdateSerializer,
+    ChangePasswordSerializer, MeSerializer, CustomTokenObtainPairSerializer,
 )
-
-
-class IsAdminRole(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return hasattr(request.user, 'profile') and request.user.profile.role == 'admin'
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -23,10 +20,13 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.select_related('profile').filter(is_superuser=False)
     permission_classes = [permissions.IsAuthenticated, IsAdminRole]
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_serializer_class(self):
         if self.action == 'create':
             return UserCreateSerializer
+        if self.action in ('update', 'partial_update'):
+            return UserUpdateSerializer
         return UserSerializer
 
     def destroy(self, request, *args, **kwargs):
@@ -37,8 +37,19 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user.is_active = False
+        user.profile.is_active = False
         user.save()
+        user.profile.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'], url_path='activate')
+    def activate(self, request, pk=None):
+        user = self.get_object()
+        user.is_active = True
+        user.profile.is_active = True
+        user.save()
+        user.profile.save()
+        return Response({'status': 'activated'})
 
 
 class MeView(generics.RetrieveUpdateAPIView):

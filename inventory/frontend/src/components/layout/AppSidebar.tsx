@@ -21,64 +21,71 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions, type Permission } from "@/hooks/usePermissions";
+import { useNotificationStore } from "@/stores/notificationStore";
 
-interface NavItem {
+interface NavItemDef {
   label: string;
   path: string;
   icon: React.ElementType;
-  badge?: number;
+  /** Permission required to see this item. Omit = visible to all roles. */
+  permission?: Permission;
 }
 
-interface NavGroup {
+interface NavGroupDef {
   id: string;
   label: string;
-  items: NavItem[];
+  items: NavItemDef[];
 }
 
 /**
- * Navigation organised as meaningful groups — each group has a semantic label
- * that appears as a small, uppercase, tracked-out heading in the expanded
- * sidebar. The groups follow the user's mental model: first the daily
- * operational surfaces (POS, dashboard), then catalogue, then people, then
- * administration. This hierarchy reduces scan time compared to a flat list.
+ * Static navigation definition — permissions are declared per item and
+ * evaluated at render time via usePermissions so the list stays declarative.
+ *
+ * Groups follow the user's mental model:
+ *   1. Daily operations (POS, dashboard)
+ *   2. Catalogue & stock  (admin-only)
+ *   3. Relations          (invoices + clients for everyone; suppliers admin-only)
+ *   4. Administration     (admin-only)
  */
-const navGroups: NavGroup[] = [
+const NAV_GROUPS: NavGroupDef[] = [
   {
     id: "operations",
     label: "Opérations",
     items: [
       { label: "Tableau de bord", path: "/dashboard", icon: LayoutDashboard },
       { label: "Point de vente", path: "/pos", icon: ShoppingCart },
-      { label: "Notifications", path: "/notifications", icon: Bell, badge: 5 },
+      // Notifications badge is injected dynamically from the store (see below)
+      { label: "Notifications", path: "/notifications", icon: Bell },
     ],
   },
   {
     id: "catalogue",
     label: "Catalogue & stock",
     items: [
-      { label: "Produits", path: "/products", icon: Package },
-      { label: "Catégories", path: "/categories", icon: Tag },
-      { label: "Codes-barres", path: "/barcodes", icon: QrCode },
-      { label: "Stock", path: "/stock", icon: Warehouse },
+      { label: "Produits", path: "/products", icon: Package, permission: "manage_products" },
+      { label: "Catégories", path: "/categories", icon: Tag, permission: "manage_products" },
+      { label: "Codes-barres", path: "/barcodes", icon: QrCode, permission: "view_barcodes" },
+      { label: "Stock", path: "/stock", icon: Warehouse, permission: "manage_stock" },
     ],
   },
   {
     id: "relations",
     label: "Relations",
     items: [
-      { label: "Factures", path: "/invoices", icon: FileText },
-      { label: "Clients", path: "/clients", icon: Users },
-      { label: "Fournisseurs", path: "/suppliers", icon: Truck },
+      { label: "Factures", path: "/invoices", icon: FileText, permission: "view_invoices" },
+      { label: "Clients", path: "/clients", icon: Users, permission: "manage_clients" },
+      { label: "Fournisseurs", path: "/suppliers", icon: Truck, permission: "manage_suppliers" },
     ],
   },
   {
     id: "administration",
     label: "Administration",
     items: [
-      { label: "Utilisateurs", path: "/users", icon: UserCog },
-      { label: "Rapports", path: "/reports", icon: BarChart3 },
-      { label: "Paramètres", path: "/settings", icon: Settings },
-      { label: "Administration", path: "/admin/overview", icon: ShieldCheck },
+      { label: "Utilisateurs", path: "/users", icon: UserCog, permission: "manage_users" },
+      { label: "Rapports", path: "/reports", icon: BarChart3, permission: "view_reports" },
+      { label: "Paramètres", path: "/settings", icon: Settings, permission: "manage_settings" },
+      { label: "Administration", path: "/admin/overview", icon: ShieldCheck, permission: "manage_users" },
     ],
   },
 ];
@@ -111,6 +118,8 @@ export function AppSidebar({
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const { can } = usePermissions();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   const handleNavClick = (): void => {
     onMobileOpenChange(false);
@@ -124,6 +133,24 @@ export function AppSidebar({
   const initials = getInitials(currentUser?.name);
   const displayName = currentUser?.name ?? "Utilisateur";
   const roleLabel = currentUser?.role === "admin" ? "Administrateur" : "Vendeur";
+
+  /**
+   * Build filtered, runtime-resolved nav groups.
+   * - Items with a permission are hidden when the current user cannot perform it.
+   * - Groups with no visible items are removed entirely (smooth transition below).
+   * - The Notifications item gets the live unreadCount badge injected here.
+   */
+  const visibleGroups = NAV_GROUPS
+    .map((group) => ({
+      ...group,
+      items: group.items
+        .filter((item) => !item.permission || can(item.permission))
+        .map((item) => ({
+          ...item,
+          badge: item.path === "/notifications" ? unreadCount : undefined,
+        })),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <>
@@ -254,8 +281,14 @@ export function AppSidebar({
           className="flex-1 py-2 px-2 overflow-y-auto overflow-x-hidden"
           aria-label="Menu"
         >
-          {navGroups.map((group, groupIdx) => (
-            <div key={group.id} className={cn(groupIdx > 0 && "mt-3")}>
+          {visibleGroups.map((group, groupIdx) => (
+            <div
+              key={group.id}
+              className={cn(
+                "transition-all duration-200",
+                groupIdx > 0 && "mt-3"
+              )}
+            >
               {/* Group label — only visible when expanded */}
               <p
                 className={cn(

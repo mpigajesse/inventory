@@ -1,8 +1,8 @@
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from users.permissions import IsVendeurOrAdmin
 from .models import Client
 from .serializers import ClientSerializer
 from notifications.utils import notify_new_client
@@ -11,7 +11,7 @@ from notifications.utils import notify_new_client
 class ClientViewSet(viewsets.ModelViewSet):
     queryset = Client.objects.filter(is_active=True)
     serializer_class = ClientSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsVendeurOrAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'phone', 'email']
     filterset_fields = ['city', 'is_active']

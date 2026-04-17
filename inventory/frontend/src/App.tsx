@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { VendeurLayout } from "@/components/layout/VendeurLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import { lazy, Suspense } from "react";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -59,26 +60,113 @@ const App = () => (
             <Route path="/auth/register" element={<RegisterPage />} />
 
             <Route element={<AppLayout />}>
+              {/* Routes accessibles à tous les rôles authentifiés */}
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/stock" element={<StockPage />} />
               <Route path="/pos" element={<PosPage />} />
               <Route path="/invoices" element={<InvoicesPage />} />
               <Route path="/clients" element={<ClientsPage />} />
-              <Route path="/users" element={<UsersPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/barcodes" element={<BarcodesPage />} />
-              <Route path="/suppliers" element={<SuppliersPage />} />
-              <Route path="/products/new" element={<ProductFormPage />} />
-              <Route path="/products/:id/edit" element={<ProductFormPage />} />
               <Route path="/clients/new" element={<ClientFormPage />} />
               <Route path="/clients/:id/edit" element={<ClientFormPage />} />
-              <Route path="/suppliers/new" element={<SupplierFormPage />} />
-              <Route path="/suppliers/:id/edit" element={<SupplierFormPage />} />
-              <Route path="/categories" element={<CategoriesPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+
+              {/* Routes admin-only */}
+              <Route
+                path="/products"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <ProductsPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/products/new"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <ProductFormPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/products/:id/edit"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <ProductFormPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/categories"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <CategoriesPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/stock"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <StockPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/users"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <UsersPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <ReportsPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <SettingsPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/suppliers"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <SuppliersPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/suppliers/new"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <SupplierFormPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/suppliers/:id/edit"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <SupplierFormPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/barcodes"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <BarcodesPage />
+                  </RoleGuard>
+                }
+              />
             </Route>
 
             {/* Espace vendeur */}
@@ -90,10 +178,24 @@ const App = () => (
               <Route path="/vendeur/profile" element={<ProfilePage />} />
             </Route>
 
-            {/* Admin */}
+            {/* Admin — routes /admin/* */}
             <Route element={<AppLayout />}>
-              <Route path="/admin/overview" element={<AdminOverviewPage />} />
-              <Route path="/admin/activity" element={<ActivityLogPage />} />
+              <Route
+                path="/admin/overview"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <AdminOverviewPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/admin/activity"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <ActivityLogPage />
+                  </RoleGuard>
+                }
+              />
             </Route>
 
             <Route path="*" element={<NotFound />} />

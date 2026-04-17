@@ -1,6 +1,6 @@
 from rest_framework import viewsets, filters
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from users.permissions import IsVendeurOrAdmin
 from .models import Invoice
 from .serializers import InvoiceSerializer
 
@@ -10,7 +10,7 @@ class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
         'client', 'issued_by', 'sale'
     ).prefetch_related('sale__items__product')
     serializer_class = InvoiceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsVendeurOrAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'client']
     search_fields = ['invoice_number', 'client__name']

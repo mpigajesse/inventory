@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { TableToolbar } from "@/components/ui/TableToolbar";
 import { SortableHeader } from "@/components/ui/SortableHeader";
 import {
@@ -40,19 +41,35 @@ import {
   EyeOff,
   Loader2,
   UserCog,
+  Pencil,
+  UserX,
+  UserCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { useTableManager } from "@/hooks/useTableManager";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "@/components/ui/use-toast";
-import { userService, type UserListItem } from "@/services/userService";
+import { toast } from "sonner";
+import {
+  userService,
+  type UserListItem,
+  type UserUpdatePayload,
+} from "@/services/userService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+import { usePermissions } from "@/hooks/usePermissions";
+import { AccessDenied } from "@/components/ui/AccessDenied";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type UserRole = "admin" | "vendeur";
+type StatusFilter = "all" | "active" | "inactive";
+
+type ModalState =
+  | { type: "none" }
+  | { type: "create" }
+  | { type: "edit"; user: UserListItem }
+  | { type: "delete"; user: UserListItem };
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
@@ -67,6 +84,18 @@ const createUserSchema = z.object({
 });
 
 type CreateUserFormValues = z.infer<typeof createUserSchema>;
+
+const editUserSchema = z.object({
+  first_name: z.string().min(1, "Le prénom est requis"),
+  last_name: z.string().min(1, "Le nom est requis"),
+  username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
+  email: z.string().email("Email invalide"),
+  role: z.enum(["admin", "vendeur"], { required_error: "Sélectionnez un rôle" }),
+  phone: z.string().optional(),
+  is_active_profile: z.boolean(),
+});
+
+type EditUserFormValues = z.infer<typeof editUserSchema>;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -316,6 +345,229 @@ function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProp
   );
 }
 
+// ─── Edit user form ───────────────────────────────────────────────────────────
+
+interface EditUserFormProps {
+  user: UserListItem;
+  onSubmit: (values: EditUserFormValues) => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+}
+
+function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormProps) {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<EditUserFormValues>({
+    resolver: zodResolver(editUserSchema),
+    defaultValues: {
+      first_name: user.first_name,
+      last_name: user.last_name,
+      username: user.username,
+      email: user.email,
+      role: user.profile.role,
+      phone: user.profile.phone ?? "",
+      is_active_profile: user.is_active,
+    },
+  });
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-first-name" className={FIELD_LABEL_CLASSES}>
+            Prénom <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="edit-first-name"
+            placeholder="Ex : Fatou"
+            className="h-11 rounded-lg"
+            {...register("first_name")}
+          />
+          {errors.first_name && (
+            <p className="text-xs text-destructive">{errors.first_name.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-last-name" className={FIELD_LABEL_CLASSES}>
+            Nom <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="edit-last-name"
+            placeholder="Ex : Mbaye"
+            className="h-11 rounded-lg"
+            {...register("last_name")}
+          />
+          {errors.last_name && (
+            <p className="text-xs text-destructive">{errors.last_name.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="edit-username" className={FIELD_LABEL_CLASSES}>
+          Nom d'utilisateur <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="edit-username"
+          placeholder="Ex : fatou.mbaye"
+          className="h-11 rounded-lg"
+          {...register("username")}
+        />
+        {errors.username && (
+          <p className="text-xs text-destructive">{errors.username.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="edit-email" className={FIELD_LABEL_CLASSES}>
+          Email <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="edit-email"
+          type="email"
+          placeholder="utilisateur@naoservices.ga"
+          className="h-11 rounded-lg"
+          {...register("email")}
+        />
+        {errors.email && (
+          <p className="text-xs text-destructive">{errors.email.message}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className={FIELD_LABEL_CLASSES}>
+            Rôle <span className="text-destructive">*</span>
+          </Label>
+          <Controller
+            control={control}
+            name="role"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger className="h-11 rounded-lg">
+                  <SelectValue placeholder="Sélectionner un rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="vendeur">Vendeur</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.role && (
+            <p className="text-xs text-destructive">{errors.role.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-phone" className={FIELD_LABEL_CLASSES}>
+            Téléphone
+          </Label>
+          <Input
+            id="edit-phone"
+            placeholder="+241 07 XX XX XX"
+            className="h-11 rounded-lg"
+            {...register("phone")}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+        <div className="space-y-0.5">
+          <Label className={FIELD_LABEL_CLASSES}>Statut du compte</Label>
+          <p className="text-xs text-muted-foreground">
+            Activer ou désactiver l'accès de cet utilisateur
+          </p>
+        </div>
+        <Controller
+          control={control}
+          name="is_active_profile"
+          render={({ field }) => (
+            <Switch
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              aria-label="Statut du compte"
+            />
+          )}
+        />
+      </div>
+
+      <DialogFooter className="gap-2 sm:gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="min-h-[44px] rounded-lg"
+        >
+          Annuler
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+        >
+          {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Enregistrer les modifications
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+// ─── Status filter pills ──────────────────────────────────────────────────────
+
+interface StatusFilterPillsProps {
+  value: StatusFilter;
+  onChange: (v: StatusFilter) => void;
+  counts: { all: number; active: number; inactive: number };
+}
+
+function StatusFilterPills({ value, onChange, counts }: StatusFilterPillsProps) {
+  const options: { key: StatusFilter; label: string; count: number }[] = [
+    { key: "all", label: "Tous", count: counts.all },
+    { key: "active", label: "Actifs", count: counts.active },
+    { key: "inactive", label: "Inactifs", count: counts.inactive },
+  ];
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap" role="group" aria-label="Filtrer par statut">
+      {options.map((opt) => {
+        const isActive = value === opt.key;
+        return (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => onChange(opt.key)}
+            className={[
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              isActive
+                ? "bg-primary text-primary-foreground shadow-[0_2px_8px_-4px_hsl(var(--primary)/0.6)]"
+                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+            ].join(" ")}
+          >
+            {opt.label}
+            <span
+              className={[
+                "inline-flex items-center justify-center rounded-full px-1.5 py-0 text-[10px] font-bold min-w-[18px]",
+                isActive
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-background/60 text-muted-foreground",
+              ].join(" ")}
+            >
+              {opt.count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const ROLE_FILTER_OPTIONS = [
@@ -326,10 +578,11 @@ const ROLE_FILTER_OPTIONS = [
 export default function UsersPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [revokingUser, setRevokingUser] = useState<UserListItem | null>(null);
+  const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   // ── Data ──────────────────────────────────────────────────────────────────
 
@@ -353,15 +606,40 @@ export default function UsersPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      setShowCreate(false);
-      toast({ title: "Utilisateur créé avec succès." });
+      setModal({ type: "none" });
+      toast.success("Utilisateur créé avec succès.");
     },
     onError: () => {
-      toast({
-        title: "Erreur lors de la création",
-        description: "Vérifiez les informations saisies.",
-        variant: "destructive",
-      });
+      toast.error("Erreur lors de la création. Vérifiez les informations saisies.");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<UserUpdatePayload> }) =>
+      userService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setModal({ type: "none" });
+      toast.success("Utilisateur modifié avec succès.");
+    },
+    onError: () => {
+      toast.error("Erreur lors de la modification. Vérifiez les informations saisies.");
+    },
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: (id: number) => userService.activate(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      const user = users.find((u) => u.id === id);
+      if (user?.is_active) {
+        toast.success("Compte désactivé.");
+      } else {
+        toast.success("Compte réactivé.");
+      }
+    },
+    onError: () => {
+      toast.error("Impossible de changer le statut du compte.");
     },
   });
 
@@ -369,22 +647,28 @@ export default function UsersPage() {
     mutationFn: (id: number) => userService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      setRevokingUser(null);
-      toast({ title: "Accès révoqué." });
+      setModal({ type: "none" });
+      toast.success("Accès révoqué.");
     },
     onError: () => {
-      toast({
-        title: "Erreur lors de la révocation",
-        variant: "destructive",
-      });
+      toast.error("Erreur lors de la révocation.");
     },
   });
 
   // ── Filtering ─────────────────────────────────────────────────────────────
 
-  const roleFiltered = roleFilter
-    ? users.filter((u) => u.profile.role === (roleFilter as UserRole))
-    : users;
+  const totalUsers = users.length;
+  const activeCount = users.filter((u) => u.is_active).length;
+  const inactiveCount = totalUsers - activeCount;
+  const adminCount = users.filter((u) => u.profile.role === "admin").length;
+  const vendeurCount = totalUsers - adminCount;
+
+  const filtered = users.filter((u) => {
+    if (roleFilter && u.profile.role !== (roleFilter as UserRole)) return false;
+    if (statusFilter === "active" && !u.is_active) return false;
+    if (statusFilter === "inactive" && u.is_active) return false;
+    return true;
+  });
 
   const {
     paginated,
@@ -397,27 +681,51 @@ export default function UsersPage() {
     clearSelection,
     isAllSelected,
     isIndeterminate,
-  } = useTableManager(roleFiltered as unknown as Record<string, unknown>[], {
+  } = useTableManager(filtered as unknown as Record<string, unknown>[], {
     searchKeys: ["full_name", "email", "username"] as never[],
   });
 
   const typedPaginated = paginated as unknown as UserListItem[];
   const allPageIds = typedPaginated.map((u) => u.id);
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
   function handleCreate(values: CreateUserFormValues) {
     createMutation.mutate(values);
   }
 
-  function handleRevoke() {
-    if (!revokingUser) return;
-    deleteMutation.mutate(revokingUser.id);
+  function handleEdit(values: EditUserFormValues) {
+    if (modal.type !== "edit") return;
+    updateMutation.mutate({
+      id: modal.user.id,
+      data: {
+        first_name: values.first_name,
+        last_name: values.last_name,
+        username: values.username,
+        email: values.email,
+        role: values.role,
+        phone: values.phone,
+        is_active_profile: values.is_active_profile,
+      },
+    });
   }
 
-  const totalUsers = users.length;
-  const adminCount = users.filter((u) => u.profile.role === "admin").length;
-  const vendeurCount = totalUsers - adminCount;
+  function handleRevoke() {
+    if (modal.type !== "delete") return;
+    deleteMutation.mutate(modal.user.id);
+  }
+
+  function toggleActivation(user: UserListItem) {
+    activateMutation.mutate(user.id);
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (!can('manage_users')) {
+    return (
+      <AccessDenied message="Vous n'avez pas la permission de gérer les utilisateurs." />
+    );
+  }
 
   return (
     <>
@@ -458,17 +766,31 @@ export default function UsersPage() {
             </div>
           </div>
 
-          <Button
-            onClick={() => setShowCreate(true)}
-            className="shrink-0 min-h-[44px] rounded-lg text-primary-foreground shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] hover:shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.7)] transition-shadow"
-            style={{
-              background:
-                "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.82) 100%)",
+          {can('manage_users') && (
+            <Button
+              onClick={() => setModal({ type: "create" })}
+              className="shrink-0 min-h-[44px] rounded-lg text-primary-foreground shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] hover:shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.7)] transition-shadow"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.82) 100%)",
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvel utilisateur
+            </Button>
+          )}
+        </div>
+
+        {/* Filtre statut */}
+        <div className="mb-3">
+          <StatusFilterPills
+            value={statusFilter}
+            onChange={(v) => {
+              setStatusFilter(v);
+              clearSelection();
             }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvel utilisateur
-          </Button>
+            counts={{ all: totalUsers, active: activeCount, inactive: inactiveCount }}
+          />
         </div>
 
         {/* Barre d'outils tableau */}
@@ -525,7 +847,7 @@ export default function UsersPage() {
                       onSort={toggleSort}
                     />
                     <th>Statut</th>
-                    <th className="w-20">Actions</th>
+                    <th className="w-32">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -585,14 +907,44 @@ export default function UsersPage() {
                           />
                         </td>
                         <td>
-                          <button
-                            className="inline-flex items-center justify-center w-9 h-9 rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-                            title="Révoquer l'accès"
-                            aria-label={`Révoquer l'accès de ${displayName}`}
-                            onClick={() => setRevokingUser(user)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {can('manage_users') && (
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                title="Modifier"
+                                aria-label={`Modifier ${displayName}`}
+                                onClick={() => setModal({ type: "edit", user })}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                className={[
+                                  "inline-flex items-center justify-center w-9 h-9 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2",
+                                  user.is_active
+                                    ? "text-destructive/70 hover:text-destructive hover:bg-destructive/10 focus-visible:ring-destructive/40"
+                                    : "text-[hsl(var(--success,142_76%_36%))]/70 hover:text-[hsl(var(--success,142_76%_36%))] hover:bg-[hsl(var(--success,142_76%_36%))]/10 focus-visible:ring-[hsl(var(--success,142_76%_36%))]/40",
+                                ].join(" ")}
+                                title={user.is_active ? "Désactiver" : "Réactiver"}
+                                aria-label={user.is_active ? `Désactiver ${displayName}` : `Réactiver ${displayName}`}
+                                onClick={() => toggleActivation(user)}
+                                disabled={activateMutation.isPending}
+                              >
+                                {user.is_active ? (
+                                  <UserX className="w-4 h-4" />
+                                ) : (
+                                  <UserCheck className="w-4 h-4" />
+                                )}
+                              </button>
+                              <button
+                                className="inline-flex items-center justify-center w-9 h-9 rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                                title="Révoquer l'accès"
+                                aria-label={`Révoquer l'accès de ${displayName}`}
+                                onClick={() => setModal({ type: "delete", user })}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -654,14 +1006,44 @@ export default function UsersPage() {
                       />
                     </div>
                   </div>
-                  <button
-                    className="inline-flex items-center justify-center w-11 h-11 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-                    title="Révoquer l'accès"
-                    aria-label={`Révoquer l'accès de ${displayName}`}
-                    onClick={() => setRevokingUser(user)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {can('manage_users') && (
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        title="Modifier"
+                        aria-label={`Modifier ${displayName}`}
+                        onClick={() => setModal({ type: "edit", user })}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        className={[
+                          "inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          user.is_active
+                            ? "text-destructive/70 hover:text-destructive hover:bg-destructive/10 focus-visible:ring-destructive/40"
+                            : "text-success/70 hover:text-success hover:bg-success/10 focus-visible:ring-success/40",
+                        ].join(" ")}
+                        title={user.is_active ? "Désactiver" : "Réactiver"}
+                        aria-label={user.is_active ? `Désactiver ${displayName}` : `Réactiver ${displayName}`}
+                        onClick={() => toggleActivation(user)}
+                        disabled={activateMutation.isPending}
+                      >
+                        {user.is_active ? (
+                          <UserX className="w-4 h-4" />
+                        ) : (
+                          <UserCheck className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                        title="Révoquer l'accès"
+                        aria-label={`Révoquer l'accès de ${displayName}`}
+                        onClick={() => setModal({ type: "delete", user })}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -671,9 +1053,9 @@ export default function UsersPage() {
 
       {/* ── Modal : Nouvel utilisateur ── */}
       <Dialog
-        open={showCreate}
+        open={modal.type === "create"}
         onOpenChange={(open) => {
-          if (!createMutation.isPending) setShowCreate(open);
+          if (!createMutation.isPending && !open) setModal({ type: "none" });
         }}
       >
         <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both]">
@@ -693,18 +1075,54 @@ export default function UsersPage() {
           <div className="pt-1">
             <CreateUserForm
               onSubmit={handleCreate}
-              onCancel={() => setShowCreate(false)}
+              onCancel={() => setModal({ type: "none" })}
               isSubmitting={createMutation.isPending}
             />
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* ── Modal : Modifier utilisateur ── */}
+      <Dialog
+        open={modal.type === "edit"}
+        onOpenChange={(open) => {
+          if (!updateMutation.isPending && !open) setModal({ type: "none" });
+        }}
+      >
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both]">
+          <DialogHeader className="pb-2 border-b border-border/60">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 text-primary shrink-0">
+                <Pencil className="w-4 h-4" />
+              </span>
+              <div>
+                <DialogTitle className="text-base font-semibold">Modifier l'utilisateur</DialogTitle>
+                {modal.type === "edit" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {modal.user.full_name || modal.user.username}
+                  </p>
+                )}
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="pt-1">
+            {modal.type === "edit" && (
+              <EditUserForm
+                user={modal.user}
+                onSubmit={handleEdit}
+                onCancel={() => setModal({ type: "none" })}
+                isSubmitting={updateMutation.isPending}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ── AlertDialog : Révoquer accès ── */}
       <AlertDialog
-        open={!!revokingUser}
+        open={modal.type === "delete"}
         onOpenChange={(open) => {
-          if (!open) setRevokingUser(null);
+          if (!open) setModal({ type: "none" });
         }}
       >
         <AlertDialogContent>
@@ -712,8 +1130,12 @@ export default function UsersPage() {
             <AlertDialogTitle>Révoquer l'accès ?</AlertDialogTitle>
             <AlertDialogDescription>
               Révoquer l'accès de{" "}
-              <strong>{revokingUser?.full_name || revokingUser?.username}</strong>{" "}
-              supprimera definitivement son compte. Cette action est irreversible.
+              <strong>
+                {modal.type === "delete"
+                  ? modal.user.full_name || modal.user.username
+                  : ""}
+              </strong>{" "}
+              supprimera définitivement son compte. Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
