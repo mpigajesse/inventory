@@ -1,4 +1,4 @@
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -338,6 +338,13 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <Link
+                to="/statistics"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border bg-card text-sm font-semibold hover:bg-secondary/60 transition-colors"
+              >
+                <TrendingUp className="w-4 h-4" />
+                Voir les statistiques détaillées →
+              </Link>
               <button
                 onClick={() => navigate("/reports")}
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border bg-card text-sm font-semibold hover:bg-secondary/60 transition-colors"

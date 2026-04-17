@@ -1,5 +1,5 @@
 import React from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/ui/StatCard";
@@ -100,17 +100,26 @@ export default function ReportsPage() {
 
         {/* ── Page header premium ── */}
         <div className="page-header-premium">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <BarChart2 className="w-5 h-5 text-primary" />
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <BarChart2 className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="page-header-eyebrow">Analyse &amp; performances</p>
+                <h1 className="page-header-title">Rapports</h1>
+                <p className="page-header-subtitle">
+                  Ventes hebdomadaires, produits phares et tendances de votre activité
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="page-header-eyebrow">Analyse &amp; performances</p>
-              <h1 className="page-header-title">Rapports</h1>
-              <p className="page-header-subtitle">
-                Ventes hebdomadaires, produits phares et tendances de votre activité
-              </p>
-            </div>
+            <Link
+              to="/statistics"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline shrink-0"
+            >
+              <BarChart2 className="w-4 h-4" />
+              Voir les statistiques avancées →
+            </Link>
           </div>
         </div>
 

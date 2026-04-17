@@ -26,4 +26,5 @@ urlpatterns = [
     path('api/activity/', include('activity.urls')),
     path('api/users/', include('users.urls')),
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard-stats'),
+    path('api/statistics/', include('statistics_app.urls')),
 ]

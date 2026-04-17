@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'notifications',
     'activity',
     'users',
+    'statistics_app',
 ]
 
 MIDDLEWARE = [
