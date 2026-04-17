@@ -1454,7 +1454,7 @@ export default function StockPage() {
         ) : null}
 
         {/* ── Mobile : card list ─────────────────────────────────────────────── */}
-        {!isLoading && (
+        {viewMode === "list" && !isLoading && (
           <div key={tableKey} className="md:hidden space-y-2">
             {typedPaginated.length === 0 && (
               <div className="text-center py-8 text-muted-foreground text-sm">

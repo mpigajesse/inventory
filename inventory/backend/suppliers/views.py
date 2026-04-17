@@ -1,6 +1,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
 from users.permissions import IsAdminRole
+from activity.utils import log_activity
 
 from .models import PurchaseOrder, Supplier
 from .serializers import PurchaseOrderSerializer, SupplierSerializer
@@ -17,10 +18,43 @@ class SupplierViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'created_at']
     ordering = ['name']
 
+    def perform_create(self, serializer: SupplierSerializer) -> None:
+        instance = serializer.save()
+        try:
+            log_activity(
+                user=self.request.user, action='create', target_model='Supplier',
+                target_id=instance.pk,
+                description=f"Fournisseur créé : {instance.name}",
+                request=self.request,
+            )
+        except Exception:
+            pass
+
+    def perform_update(self, serializer: SupplierSerializer) -> None:
+        instance = serializer.save()
+        try:
+            log_activity(
+                user=self.request.user, action='update', target_model='Supplier',
+                target_id=instance.pk,
+                description=f"Fournisseur modifié : {instance.name}",
+                request=self.request,
+            )
+        except Exception:
+            pass
+
     def perform_destroy(self, instance: Supplier) -> None:
         """Soft-delete: marque le fournisseur inactif au lieu de le supprimer."""
+        name = getattr(instance, 'name', str(instance.pk))
         instance.is_active = False
         instance.save()
+        try:
+            log_activity(
+                user=self.request.user, action='delete', target_model='Supplier',
+                description=f"Fournisseur supprimé : {name}",
+                request=self.request,
+            )
+        except Exception:
+            pass
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):

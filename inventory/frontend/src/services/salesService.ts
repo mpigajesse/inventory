@@ -44,6 +44,13 @@ export interface PaginatedSales {
   count: number;
 }
 
+export interface DailyStat {
+  cashier_id: number;
+  cashier_name: string;
+  sales_count: number;
+  total_revenue: number;
+}
+
 export const salesService = {
   create: (data: SaleCreatePayload) =>
     api.post<Sale>('/sales/create/', data).then((res) => res.data),
@@ -55,4 +62,7 @@ export const salesService = {
 
   getById: (id: number) =>
     api.get<Sale>(`/sales/${id}/`).then((res) => res.data),
+
+  getDailyStats: (since: 'today' | 'week' | 'month' = 'today') =>
+    api.get<DailyStat[]>('/sales/daily-stats/', { params: { since } }).then((res) => res.data),
 };

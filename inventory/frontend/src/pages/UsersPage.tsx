@@ -59,6 +59,7 @@ import {
   type UserListItem,
   type UserUpdatePayload,
 } from "@/services/userService";
+import { activityService, type VendeurActivitySummary } from "@/services/activityService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { usePermissions, type Permission } from "@/hooks/usePermissions";
 import { AccessDenied } from "@/components/ui/AccessDenied";
@@ -215,6 +216,84 @@ function StatusDot({ active }: { active: boolean }) {
       />
       {active ? "Actif" : "Inactif"}
     </span>
+  );
+}
+
+// ─── Activity helpers ─────────────────────────────────────────────────────────
+
+function formatRelativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return "à l'instant";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `il y a ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `il y a ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return `il y a ${days} j`;
+}
+
+function formatRevenue(amount: number): string {
+  return amount.toLocaleString("fr-FR") + " FCFA";
+}
+
+interface ActivityCellProps {
+  summary: VendeurActivitySummary | undefined;
+  compact?: boolean;
+}
+
+function ActivityCell({ summary, compact = false }: ActivityCellProps) {
+  if (!summary || summary.action_count === 0) {
+    return (
+      <span className="text-xs text-muted-foreground italic">
+        Aucune activité
+      </span>
+    );
+  }
+
+  const salesLine = (
+    <span className="font-semibold text-xs" style={{ color: "hsl(22 72% 42%)" }}>
+      {summary.sales_count} vente{summary.sales_count > 1 ? "s" : ""}
+    </span>
+  );
+
+  const revenueLine = (
+    <span className="text-xs text-muted-foreground">
+      {formatRevenue(summary.total_revenue)}
+    </span>
+  );
+
+  const lastSeenLine = summary.last_action_at ? (
+    <span className="text-[11px] text-muted-foreground/70">
+      {formatRelativeTime(summary.last_action_at)}
+    </span>
+  ) : null;
+
+  if (compact) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5">
+        {salesLine}
+        <span className="text-border/80">·</span>
+        {revenueLine}
+        {lastSeenLine && (
+          <>
+            <span className="text-border/80">·</span>
+            {lastSeenLine}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-1.5">
+        {salesLine}
+        <span className="text-border/80 text-[11px]">·</span>
+        {revenueLine}
+      </div>
+      {lastSeenLine}
+    </div>
   );
 }
 
@@ -798,6 +877,16 @@ export default function UsersPage() {
     queryFn: () => userService.getAll(),
   });
 
+  const { data: activityData } = useQuery({
+    queryKey: ["vendeur-summary", "week"],
+    queryFn: () => activityService.getVendeurSummary("week"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const activityMap = new Map<number, VendeurActivitySummary>(
+    (activityData ?? []).map((s) => [s.user_id, s])
+  );
+
   const users: UserListItem[] = data?.results ?? [];
 
   const createMutation = useMutation({
@@ -1090,13 +1179,14 @@ export default function UsersPage() {
                     />
                     <th className="text-left px-4 py-3" style={{ fontSize: "11px", fontWeight: 700, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>Permissions</th>
                     <th className="text-left px-4 py-3" style={{ fontSize: "11px", fontWeight: 700, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>Statut</th>
+                    <th className="text-left px-4 py-3" style={{ fontSize: "11px", fontWeight: 700, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>Activité (7j)</th>
                     <th className="w-36 px-4 py-3" style={{ fontSize: "11px", fontWeight: 700, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {typedPaginated.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="text-center py-12">
+                      <td colSpan={8} className="text-center py-12">
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted">
                             <UserCog className="w-5 h-5" />
@@ -1193,6 +1283,11 @@ export default function UsersPage() {
                         {/* Statut */}
                         <td className="px-4 py-3.5">
                           <StatusDot active={active} />
+                        </td>
+
+                        {/* Activité 7j */}
+                        <td className="px-4 py-3.5">
+                          <ActivityCell summary={activityMap.get(user.id)} />
                         </td>
 
                         {/* Actions */}
@@ -1347,6 +1442,7 @@ export default function UsersPage() {
                       <RolePill role={userRole} />
                       <StatusDot active={active} />
                     </div>
+                    <ActivityCell summary={activityMap.get(user.id)} compact />
                   </div>
                   {can('manage_users') && (
                     <div className="flex flex-col gap-1 shrink-0">

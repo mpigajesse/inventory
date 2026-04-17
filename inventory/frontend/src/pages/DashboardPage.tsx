@@ -8,6 +8,7 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { dashboardService } from "@/services/dashboardService";
 import type { DashboardStats } from "@/services/dashboardService";
 import type { Sale } from "@/services/salesService";
+import { activityService } from "@/services/activityService";
 import {
   DollarSign,
   ShoppingCart,
@@ -23,6 +24,7 @@ import {
   BarChart2,
   ShieldCheck,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
@@ -507,6 +509,83 @@ function GradientButton({
       />
       {children}
     </button>
+  );
+}
+
+// ─── Vendeur Activity Section ────────────────────────────────────────────────
+
+function VendeurActivitySection() {
+  const { data: summary, isLoading } = useQuery({
+    queryKey: ['vendeur-summary', 'today'],
+    queryFn: () => activityService.getVendeurSummary('today'),
+    refetchInterval: 60_000,
+  });
+
+  if (isLoading) return <div style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'hsl(var(--muted-foreground))' }} />
+  </div>;
+
+  if (!summary?.length) return (
+    <div style={{ textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: 13, padding: '24px 0' }}>
+      Aucune activité vendeur aujourd'hui
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginTop: 8 }}>
+      {summary.map(v => (
+        <div key={v.user_id} style={{
+          background: 'hsl(var(--card))',
+          borderRadius: 16,
+          padding: '16px 20px',
+          border: '1px solid hsl(var(--border))',
+          boxShadow: 'var(--shadow-warm-sm, 0 1px 4px hsl(0 0% 0% / 0.06))',
+        }}>
+          {/* Avatar + name */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+              background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontWeight: 700, fontSize: 15,
+            }}>
+              {(v.full_name || v.username).charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'hsl(var(--foreground))' }}>{v.full_name || v.username}</div>
+              <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginTop: 1 }}>
+                {v.last_action_at ? new Date(v.last_action_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'Inactif'}
+              </div>
+            </div>
+          </div>
+          {/* Stats row */}
+          <div style={{ display: 'flex', gap: 16 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>Ventes</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: 'hsl(22 72% 48%)', fontFamily: 'var(--font-amount, Fraunces, serif)' }}>{v.sales_count}</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>Chiffre</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'hsl(var(--foreground))' }}>{(v.total_revenue || 0).toLocaleString('fr-FR')} FCFA</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>Actions</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: 'hsl(152 38% 38%)' }}>{v.action_count}</div>
+            </div>
+          </div>
+          {/* Last action */}
+          {v.last_action && (
+            <div style={{
+              marginTop: 10, fontSize: 11, color: 'hsl(var(--muted-foreground))',
+              background: 'hsl(var(--muted) / 0.5)', borderRadius: 8, padding: '5px 10px',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {v.last_action}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1063,6 +1142,17 @@ export default function DashboardPage() {
 
           </div>
         </div>
+
+        {/* ── Activité vendeurs ── */}
+        <section style={{ marginTop: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 3, height: 20, borderRadius: 2, background: 'hsl(22 72% 48%)' }} />
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: 'hsl(var(--foreground))' }}>Activité vendeurs — aujourd'hui</h2>
+            <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginLeft: 'auto' }}>Rafraîchit toutes les 60s</span>
+          </div>
+          <VendeurActivitySection />
+        </section>
+
       </div>
     </>
   );

@@ -17,6 +17,26 @@ from .serializers import (
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            username = request.data.get('username', '')
+            try:
+                from django.contrib.auth.models import User as DjangoUser
+                user = DjangoUser.objects.get(username=username)
+                from activity.utils import log_activity
+                log_activity(
+                    user=user,
+                    action='login',
+                    target_model='User',
+                    target_id=user.pk,
+                    description=f"Connexion de {user.get_full_name() or user.username}",
+                    request=request,
+                )
+            except Exception:
+                pass  # Never block login for a logging error
+        return response
+
 
 class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAdminRole]
@@ -83,6 +103,48 @@ class UserViewSet(viewsets.ModelViewSet):
         user.profile.permissions = permissions
         user.profile.save(update_fields=['permissions'])
         return Response({'permissions': permissions}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='stats')
+    def stats(self, request, pk=None):
+        """Comprehensive stats for a specific vendeur (admin only)."""
+        profile = getattr(request.user, 'profile', None)
+        if profile is None or profile.role != 'admin':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Admin only")
+
+        user = self.get_object()
+        from django.db.models import Sum, Count
+        from django.utils import timezone
+        import datetime
+        from sales.models import Sale
+        from activity.models import ActivityLog
+
+        today = timezone.now().date()
+        start_of_today = timezone.make_aware(datetime.datetime.combine(today, datetime.time.min))
+        start_of_week = timezone.now() - datetime.timedelta(days=7)
+        start_of_month = timezone.now() - datetime.timedelta(days=30)
+
+        def sale_stats(since):
+            agg = Sale.objects.filter(cashier=user, created_at__gte=since).aggregate(
+                count=Count('id'), revenue=Sum('total_amount')
+            )
+            return {'count': agg['count'] or 0, 'revenue': agg['revenue'] or 0}
+
+        last_activity = ActivityLog.objects.filter(user=user).order_by('-created_at').first()
+        last_sale = Sale.objects.filter(cashier=user).order_by('-created_at').first()
+
+        return Response({
+            'user_id': user.pk,
+            'username': user.username,
+            'full_name': user.get_full_name(),
+            'today': sale_stats(start_of_today),
+            'week': sale_stats(start_of_week),
+            'month': sale_stats(start_of_month),
+            'last_activity': last_activity.created_at if last_activity else None,
+            'last_action': last_activity.description if last_activity else None,
+            'last_sale_at': last_sale.created_at if last_sale else None,
+            'last_sale_amount': last_sale.total_amount if last_sale else None,
+        })
 
     @action(detail=True, methods=['get'], url_path='activity')
     def recent_activity(self, request, pk=None):

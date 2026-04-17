@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from users.permissions import IsVendeurOrAdmin
+from activity.utils import log_activity
 from .models import Client
 from .serializers import ClientSerializer
 from notifications.utils import notify_new_client
@@ -19,13 +20,43 @@ class ClientViewSet(viewsets.ModelViewSet):
     ordering = ['name']
 
     def perform_create(self, serializer: ClientSerializer) -> None:
-        client = serializer.save()
-        notify_new_client(client)
+        instance = serializer.save()
+        notify_new_client(instance)
+        try:
+            log_activity(
+                user=self.request.user, action='create', target_model='Client',
+                target_id=instance.pk,
+                description=f"Client créé : {instance.name}",
+                request=self.request,
+            )
+        except Exception:
+            pass
+
+    def perform_update(self, serializer: ClientSerializer) -> None:
+        instance = serializer.save()
+        try:
+            log_activity(
+                user=self.request.user, action='update', target_model='Client',
+                target_id=instance.pk,
+                description=f"Client modifié : {instance.name}",
+                request=self.request,
+            )
+        except Exception:
+            pass
 
     def perform_destroy(self, instance: Client) -> None:
         """Soft-delete: désactive le client sans le supprimer de la base."""
+        name = getattr(instance, 'name', str(instance.pk))
         instance.is_active = False
         instance.save()
+        try:
+            log_activity(
+                user=self.request.user, action='delete', target_model='Client',
+                description=f"Client supprimé : {name}",
+                request=self.request,
+            )
+        except Exception:
+            pass
 
     @action(detail=True, methods=['get'], url_path='purchases')
     def purchases(self, request, pk=None):

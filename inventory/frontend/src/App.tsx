@@ -35,6 +35,7 @@ const AdminOverviewPage = lazy(() => import("./pages/admin/AdminOverviewPage"));
 const ActivityLogPage = lazy(() => import("./pages/admin/ActivityLogPage"));
 const PermissionsPage = lazy(() => import("./pages/admin/PermissionsPage"));
 const UserDetailPage = lazy(() => import("./pages/admin/UserDetailPage"));
+const VendeurMonitorPage = lazy(() => import("./pages/admin/VendeurMonitorPage"));
 const StatisticsPage = lazy(() => import("./pages/StatisticsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -220,6 +221,14 @@ const App = () => (
                 element={
                   <RoleGuard allowedRoles={["admin"]}>
                     <PermissionsPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/admin/vendeurs"
+                element={
+                  <RoleGuard allowedRoles={["admin"]}>
+                    <VendeurMonitorPage />
                   </RoleGuard>
                 }
               />

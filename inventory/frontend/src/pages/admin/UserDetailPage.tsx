@@ -50,11 +50,16 @@ import {
   ExternalLink,
   Crown,
   Zap,
+  Plus,
+  Minus,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import {
   userService,
   type UserUpdatePayload,
 } from "@/services/userService";
+import { api } from "@/lib/api";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import type { Permission } from "@/hooks/usePermissions";
 import { Link } from "react-router-dom";
@@ -166,6 +171,21 @@ function getInitialsFromName(name: string, fallback: string): string {
   return fallback.slice(0, 2).toUpperCase() || "??";
 }
 
+// ─── User stats type ──────────────────────────────────────────────────────────
+
+interface UserStats {
+  today_sales_count: number;
+  today_sales_revenue: number;
+  week_sales_count: number;
+  week_sales_revenue: number;
+  month_sales_count: number;
+  month_sales_revenue: number;
+  last_sale_at: string | null;
+  last_sale_amount: number | null;
+}
+
+// ─── Activity helpers ─────────────────────────────────────────────────────────
+
 function resolveActivityIcon(action: string, targetModel: string): React.ElementType {
   const model = (targetModel ?? "").toLowerCase();
   const act = (action ?? "").toLowerCase();
@@ -173,7 +193,29 @@ function resolveActivityIcon(action: string, targetModel: string): React.Element
   if (model === "product") return Package;
   if (model === "stock" || model === "stockmovement") return Package;
   if (act === "login" || act === "logout") return LogIn;
+  if (act === "create") return Plus;
+  if (act === "delete") return Minus;
+  if (act === "update") return RefreshCw;
   return Activity;
+}
+
+/** Returns { bg, text } style strings for each action type per spec:
+ *  sale=copper, login=blue, create=green, delete=red, update=amber */
+function resolveActivityStyles(action: string, targetModel: string): { bg: string; text: string } {
+  const model = (targetModel ?? "").toLowerCase();
+  const act = (action ?? "").toLowerCase();
+  const isSale = act === "sale" || model === "sale" || model === "saleitem";
+  const isLogin = act === "login" || act === "logout";
+  const isCreate = act === "create";
+  const isDelete = act === "delete";
+  const isUpdate = act === "update";
+
+  if (isSale) return { bg: "hsl(22 72% 48% / 0.12)", text: "hsl(22 72% 48%)" };     // copper
+  if (isLogin) return { bg: "hsl(210 70% 52% / 0.12)", text: "hsl(210 70% 52%)" };  // blue
+  if (isCreate) return { bg: "hsl(152 38% 38% / 0.12)", text: "hsl(152 38% 38%)" }; // green
+  if (isDelete) return { bg: "hsl(0 70% 50% / 0.12)", text: "hsl(0 70% 50%)" };     // red
+  if (isUpdate) return { bg: "hsl(38 92% 50% / 0.12)", text: "hsl(38 92% 42%)" };   // amber
+  return { bg: "hsl(var(--muted) / 0.6)", text: "hsl(var(--muted-foreground))" };
 }
 
 function resolveActivityColor(action: string, targetModel: string): string {
@@ -187,6 +229,17 @@ function resolveActivityColor(action: string, targetModel: string): string {
     return "bg-amber-500/10 text-amber-600";
   if (act === "login" || act === "logout") return "bg-muted text-muted-foreground";
   return "bg-muted text-muted-foreground";
+}
+
+/** Group activity logs by calendar day label */
+function groupByDay(logs: { created_at: string }[]): Map<string, typeof logs> {
+  const map = new Map<string, typeof logs>();
+  for (const log of logs) {
+    const label = formatDateOnly(log.created_at);
+    if (!map.has(label)) map.set(label, []);
+    map.get(label)!.push(log);
+  }
+  return map;
 }
 
 // ─── Premium KPI Card ─────────────────────────────────────────────────────────
@@ -468,6 +521,12 @@ export default function UserDetailPage() {
   const { data: activityLogs, isLoading: activityLoading } = useQuery({
     queryKey: ["user-activity", id],
     queryFn: () => userService.getActivity(Number(id)),
+    enabled: !!id,
+  });
+
+  const { data: userStats } = useQuery({
+    queryKey: ["user-stats", id],
+    queryFn: () => api.get<UserStats>(`/users/${id}/stats/`).then((r) => r.data),
     enabled: !!id,
   });
 
@@ -861,9 +920,110 @@ export default function UserDetailPage() {
             </SectionCard>
             </div>
 
-            {/* Activité récente */}
+            {/* ── Performance & Activité ── */}
             <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 740ms, transform 0.4s ease-out 740ms" }}>
-            <SectionCard title="Activité récente">
+            <SectionCard title="Performance &amp; Activité">
+              {/* ── Stats summary cards ── */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                {([
+                  {
+                    label: "Ventes aujourd'hui",
+                    count: userStats?.today_sales_count ?? 0,
+                    revenue: userStats?.today_sales_revenue ?? 0,
+                    accent: "copper" as const,
+                    icon: ShoppingCart,
+                  },
+                  {
+                    label: "Ventes cette semaine",
+                    count: userStats?.week_sales_count ?? 0,
+                    revenue: userStats?.week_sales_revenue ?? 0,
+                    accent: "green" as const,
+                    icon: TrendingUp,
+                  },
+                  {
+                    label: "Ventes ce mois",
+                    count: userStats?.month_sales_count ?? 0,
+                    revenue: userStats?.month_sales_revenue ?? 0,
+                    accent: "blue" as const,
+                    icon: Calendar,
+                  },
+                ]).map(({ label, count, revenue, accent, icon: Icon }) => {
+                  const colors = {
+                    copper: { bg: "hsl(22 72% 48% / 0.08)", icon: "hsl(22 72% 48%)", border: "hsl(22 72% 48% / 0.2)", top: "hsl(22 72% 48%)" },
+                    green: { bg: "hsl(152 38% 38% / 0.08)", icon: "hsl(152 38% 38%)", border: "hsl(152 38% 38% / 0.2)", top: "hsl(152 38% 38%)" },
+                    blue: { bg: "hsl(210 70% 52% / 0.08)", icon: "hsl(210 70% 52%)", border: "hsl(210 70% 52% / 0.2)", top: "hsl(210 70% 52%)" },
+                  };
+                  const c = colors[accent];
+                  return (
+                    <div
+                      key={label}
+                      className="rounded-xl p-3.5 flex items-start gap-3"
+                      style={{
+                        background: "hsl(var(--muted) / 0.3)",
+                        border: `1px solid hsl(var(--border) / 0.5)`,
+                        borderTop: `3px solid ${c.top}`,
+                      }}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ background: c.bg, border: `1px solid ${c.border}` }}
+                      >
+                        <Icon style={{ width: "15px", height: "15px", color: c.icon }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.1em] mb-0.5">
+                          {label}
+                        </p>
+                        <p className="text-sm font-extrabold text-foreground leading-tight">
+                          {count} vente{count !== 1 ? "s" : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatRevenue(revenue)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ── Last sale banner ── */}
+              {(userStats?.last_sale_at || userStats?.last_sale_amount != null) && (
+                <div
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl mb-5"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(22 72% 48% / 0.07), hsl(36 88% 52% / 0.04))",
+                    border: "1px solid hsl(22 72% 48% / 0.2)",
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "hsl(22 72% 48% / 0.12)" }}
+                  >
+                    <ShoppingCart style={{ width: "14px", height: "14px", color: "hsl(22 72% 48%)" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">
+                      Dernière vente
+                    </p>
+                    <p className="text-sm font-bold text-foreground mt-0.5">
+                      {userStats.last_sale_at ? formatDateFr(userStats.last_sale_at) : "—"}
+                    </p>
+                  </div>
+                  {userStats.last_sale_amount != null && (
+                    <span
+                      className="text-sm font-extrabold shrink-0 px-3 py-1 rounded-full"
+                      style={{
+                        background: "hsl(22 72% 48% / 0.12)",
+                        color: "hsl(22 72% 48%)",
+                      }}
+                    >
+                      {formatRevenue(userStats.last_sale_amount)}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* ── Activity timeline grouped by day ── */}
               {activityLoading ? (
                 <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -875,50 +1035,87 @@ export default function UserDetailPage() {
                   <p className="text-sm">Aucune activité enregistrée.</p>
                 </div>
               ) : (
-                <div className="space-y-1">
-                  {activityLogs.slice(0, 20).map((log, logIdx) => {
-                    const Icon = resolveActivityIcon(log.action, log.target_model);
-                    const colorClass = resolveActivityColor(log.action, log.target_model);
-                    return (
-                      <div
-                        key={log.id}
-                        className="flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0"
-                        style={{
-                          animationDelay: `${logIdx * 35}ms`,
-                          animation: "slideInUp 0.25s ease forwards",
-                          opacity: 0,
-                        }}
-                      >
-                        <div
-                          className={[
-                            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
-                            colorClass,
-                          ].join(" ")}
+                <div className="space-y-5">
+                  {Array.from(groupByDay(activityLogs.slice(0, 40))).map(([dayLabel, dayLogs]) => (
+                    <div key={dayLabel}>
+                      {/* Day header */}
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-[0.12em] px-2 py-0.5 rounded-full"
+                          style={{
+                            background: "hsl(var(--muted) / 0.6)",
+                            color: "hsl(var(--muted-foreground))",
+                          }}
                         >
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground leading-snug">
-                            <span className="font-medium">{log.action}</span>
-                            {log.target_model && (
-                              <span className="text-muted-foreground">
-                                {" "}— {log.target_model}
-                                {log.target_id ? ` #${log.target_id}` : ""}
-                              </span>
-                            )}
-                          </p>
-                          {log.description && (
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                              {log.description}
-                            </p>
-                          )}
-                          <span className="text-[11px] text-muted-foreground/60 mt-0.5 inline-block">
-                            {timeAgo(log.created_at)}
-                          </span>
-                        </div>
+                          {dayLabel}
+                        </span>
+                        <div className="flex-1 h-px bg-border/40" />
                       </div>
-                    );
-                  })}
+
+                      {/* Entries for this day */}
+                      <div className="space-y-0.5">
+                        {(dayLogs as typeof activityLogs).map((log, logIdx) => {
+                          const Icon = resolveActivityIcon(log.action, log.target_model);
+                          const styles = resolveActivityStyles(log.action, log.target_model);
+                          const isSaleEntry =
+                            (log.action ?? "").toLowerCase() === "sale" ||
+                            (log.target_model ?? "").toLowerCase() === "sale" ||
+                            (log.target_model ?? "").toLowerCase() === "saleitem";
+                          return (
+                            <div
+                              key={log.id}
+                              className="flex items-start gap-3 py-2.5 border-b border-border/25 last:border-0"
+                              style={{
+                                animationDelay: `${logIdx * 30}ms`,
+                                animation: "slideInUp 0.22s ease forwards",
+                                opacity: 0,
+                              }}
+                            >
+                              <div
+                                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                                style={{ background: styles.bg, color: styles.text }}
+                              >
+                                <Icon className="w-3.5 h-3.5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm text-foreground leading-snug">
+                                    <span className="font-medium">{log.action}</span>
+                                    {log.target_model && (
+                                      <span className="text-muted-foreground">
+                                        {" "}— {log.target_model}
+                                        {log.target_id ? ` #${log.target_id}` : ""}
+                                      </span>
+                                    )}
+                                  </p>
+                                  {/* Sale amount badge */}
+                                  {isSaleEntry && log.sale_amount != null && (
+                                    <span
+                                      className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                                      style={{
+                                        background: "hsl(22 72% 48% / 0.12)",
+                                        color: "hsl(22 72% 48%)",
+                                      }}
+                                    >
+                                      {formatRevenue(log.sale_amount)}
+                                    </span>
+                                  )}
+                                </div>
+                                {log.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                    {log.description}
+                                  </p>
+                                )}
+                                <span className="text-[11px] text-muted-foreground/60 mt-0.5 inline-block">
+                                  {timeAgo(log.created_at)}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </SectionCard>

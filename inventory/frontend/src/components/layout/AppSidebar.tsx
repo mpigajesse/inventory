@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Tag,
   Store,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -85,6 +86,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Administration",
     items: [
       { label: "Utilisateurs", path: "/users", icon: UserCog, permission: "manage_users" },
+      { label: "Surveillance vendeurs", path: "/admin/vendeurs", icon: Activity, permission: "manage_users" },
       { label: "Permissions", path: "/admin/permissions", icon: ShieldCheck, permission: "manage_users" },
       { label: "Rapports", path: "/reports", icon: BarChart3, permission: "view_reports" },
       { label: "Statistiques", path: "/statistics", icon: BarChart2, permission: "view_reports" },

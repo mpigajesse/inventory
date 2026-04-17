@@ -18,6 +18,7 @@ import {
   Loader2,
   FileSpreadsheet,
   Clock,
+  UserCheck,
 } from "lucide-react";
 import { dashboardService } from "@/services/dashboardService";
 import { stockService } from "@/services/stockService";
@@ -90,6 +91,12 @@ export default function ReportsPage() {
   const { data: alertsData } = useQuery({
     queryKey: ["stockAlerts"],
     queryFn: stockService.getAlerts,
+    enabled: can('view_reports'),
+  });
+
+  const { data: vendeurStats, isLoading: isLoadingVendeurStats } = useQuery({
+    queryKey: ["sales-daily-stats", "month"],
+    queryFn: () => salesService.getDailyStats("month"),
     enabled: can('view_reports'),
   });
 
@@ -594,6 +601,85 @@ export default function ReportsPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* ── Ventes par vendeur (ce mois) ── */}
+        <div
+          className="mt-5 card-premium overflow-hidden"
+          style={{
+            borderRadius: "20px",
+            opacity: 0,
+            animation: "fadeIn 0.5s ease forwards",
+            animationDelay: "350ms",
+          }}
+        >
+          <div className="flex items-center gap-2 px-6 py-4 border-b">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <UserCheck className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold font-heading">Ventes par vendeur — Ce mois</h2>
+              <p className="text-xs text-muted-foreground">Cumul des ventes par caissier sur les 30 derniers jours</p>
+            </div>
+          </div>
+
+          {isLoadingVendeurStats ? (
+            <div className="flex items-center justify-center py-10 gap-3 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Chargement...</span>
+            </div>
+          ) : !vendeurStats || vendeurStats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2 text-muted-foreground">
+              <ShoppingCart className="w-7 h-7 opacity-25" />
+              <p className="text-sm">Aucune donnée disponible pour ce mois</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="data-table w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vendeur</th>
+                    <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ventes</th>
+                    <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Chiffre d'affaires</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vendeurStats
+                    .slice()
+                    .sort((a, b) => b.total_revenue - a.total_revenue)
+                    .map((stat, i) => (
+                      <tr
+                        key={stat.cashier_id}
+                        className="border-t hover:bg-muted/30 transition-colors"
+                        style={{
+                          opacity: 0,
+                          animation: "slideInLeft 0.25s ease forwards",
+                          animationDelay: `${i * 40}ms`,
+                        }}
+                      >
+                        <td className="px-6 py-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                              style={{ background: "var(--gradient-primary)" }}
+                            >
+                              {stat.cashier_name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium font-heading">{stat.cashier_name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 text-right">
+                          <span className="text-sm font-semibold">{stat.sales_count}</span>
+                        </td>
+                        <td className="px-6 py-3 text-right">
+                          <span className="text-sm font-bold amount-editorial">{formatFcfa(stat.total_revenue)}</span>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
       </div>

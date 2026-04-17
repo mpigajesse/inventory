@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
@@ -24,6 +24,7 @@ import type { AppLayoutContext } from "@/components/layout/AppLayout";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ActionType = "vente" | "stock" | "produit" | "connexion" | "système";
+type DateFilterId = "today" | "yesterday" | "week" | "month" | "";
 
 interface LogEntry {
   id: string;
@@ -31,9 +32,11 @@ interface LogEntry {
   dateIso: string;
   dateSort: number;
   user: string;
+  userId: string;
   actionType: ActionType;
   action: string;
   detail: string;
+  saleAmount: number | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -86,14 +89,31 @@ function toLogEntry(log: ActivityLog): LogEntry {
     date: formatDate(log.created_at),
     dateIso: log.created_at,
     dateSort: new Date(log.created_at).getTime(),
-    user: log.user_name,
+    user: log.user_name ?? "—",
+    userId: String(log.user ?? ""),
     actionType,
     action: log.action,
     detail: log.description,
+    saleAmount: log.sale_amount,
   };
 }
 
+function formatSecondsAgo(seconds: number): string {
+  if (seconds < 5) return "à l'instant";
+  if (seconds < 60) return `il y a ${seconds} sec`;
+  const m = Math.floor(seconds / 60);
+  return `il y a ${m} min`;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const DATE_FILTERS: { id: DateFilterId; label: string }[] = [
+  { id: "today", label: "Aujourd'hui" },
+  { id: "yesterday", label: "Hier" },
+  { id: "week", label: "7 jours" },
+  { id: "month", label: "30 jours" },
+  { id: "", label: "Tout" },
+];
 
 const ACTION_TYPE_OPTIONS = [
   { value: "vente", label: "Ventes" },
@@ -172,6 +192,20 @@ const ACTION_CONFIG: Record<
   },
 };
 
+// ─── Copper badge style ───────────────────────────────────────────────────────
+
+const copperBadgeStyle: React.CSSProperties = {
+  display: "inline-block",
+  background: "hsl(22 72% 48%)",
+  color: "#fff",
+  fontSize: 11,
+  fontWeight: 700,
+  borderRadius: 100,
+  padding: "1px 8px",
+  letterSpacing: "0.03em",
+  whiteSpace: "nowrap",
+};
+
 // ─── Timeline icon pill ───────────────────────────────────────────────────────
 
 function ActionTypeIcon({ type }: { type: ActionType }) {
@@ -215,36 +249,59 @@ export default function ActivityLogPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
 
   const [typeFilter, setTypeFilter] = useState("");
-  const [userFilter, setUserFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [userFilter, setUserFilter] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState<DateFilterId>("today");
+
+  // Refresh indicator state
+  const [secondsSinceUpdate, setSecondsSinceUpdate] = useState(0);
+  const lastFetchRef = useRef<number>(Date.now());
+
+  // Build query params for the API
+  const queryParams = useMemo(() => {
+    const p: Record<string, string> = {};
+    if (dateFilter) p["date"] = dateFilter;
+    if (userFilter) p["user_id"] = userFilter;
+    return p;
+  }, [dateFilter, userFilter]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["activity"],
-    queryFn: () => activityService.getAll(),
+    queryKey: ["activity", dateFilter, userFilter],
+    queryFn: () => {
+      lastFetchRef.current = Date.now();
+      setSecondsSinceUpdate(0);
+      return activityService.getAll(queryParams);
+    },
+    refetchInterval: 30_000,
   });
+
+  // Tick every second for the "last updated X sec ago" label
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsSinceUpdate(Math.floor((Date.now() - lastFetchRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const allLogs: LogEntry[] = useMemo(
     () => (data?.results ?? []).map(toLogEntry),
     [data]
   );
 
+  // User pill options — derived from current result set
   const userOptions = useMemo(
-    () => [...new Set(allLogs.map((l) => l.user))].map((u) => ({ value: u, label: u })),
+    () =>
+      [...new Map(allLogs.map((l) => [l.userId, l.user])).entries()]
+        .filter(([uid]) => uid !== "")
+        .map(([uid, name]) => ({ value: uid, label: name })),
     [allLogs]
   );
 
   const preFiltered = useMemo(() => {
     return allLogs.filter((entry) => {
       if (typeFilter && entry.actionType !== typeFilter) return false;
-      if (userFilter && entry.user !== userFilter) return false;
-      if (dateFilter) {
-        const [day, month, year] = entry.date.split(" ")[0].split("/");
-        const entryDate = `${year}-${month}-${day}`;
-        if (entryDate !== dateFilter) return false;
-      }
       return true;
     });
-  }, [allLogs, typeFilter, userFilter, dateFilter]);
+  }, [allLogs, typeFilter]);
 
   const {
     paginated,
@@ -274,7 +331,7 @@ export default function ActivityLogPage() {
   function handleResetFilters() {
     setTypeFilter("");
     setUserFilter("");
-    setDateFilter("");
+    setDateFilter("today");
     setSearch("");
   }
 
@@ -314,6 +371,35 @@ export default function ActivityLogPage() {
               </p>
             </div>
           </div>
+
+          {/* ── Refresh indicator ── */}
+          {!isLoading && !isError && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 11,
+                color: "hsl(var(--muted-foreground))",
+                background: "hsl(var(--muted))",
+                borderRadius: 100,
+                padding: "4px 12px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "hsl(152 38% 44%)",
+                  display: "inline-block",
+                  animation: "pulse 2s infinite",
+                }}
+              />
+              Dernière mise à jour : {formatSecondsAgo(secondsSinceUpdate)}
+            </div>
+          )}
         </div>
 
         {/* ── Erreur ── */}
@@ -339,6 +425,33 @@ export default function ActivityLogPage() {
               </button>
             )}
           </div>
+
+          {/* ── Date quick-filter pills ── */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {DATE_FILTERS.map((f) => {
+              const isActive = dateFilter === f.id;
+              return (
+                <button
+                  key={String(f.id)}
+                  onClick={() => setDateFilter(f.id)}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: "4px 14px",
+                    borderRadius: 100,
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "background 0.15s ease, color 0.15s ease",
+                    background: isActive ? "hsl(22 72% 48%)" : "hsl(var(--muted))",
+                    color: isActive ? "#fff" : "hsl(var(--muted-foreground))",
+                  }}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="flex flex-wrap gap-3">
             {/* Filtre type */}
             <div className="flex flex-col gap-1">
@@ -355,31 +468,54 @@ export default function ActivityLogPage() {
               </select>
             </div>
 
-            {/* Filtre utilisateur */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-muted-foreground">Utilisateur</label>
-              <select
-                value={userFilter}
-                onChange={(e) => setUserFilter(e.target.value)}
-                className="h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer min-w-[160px] transition-colors hover:border-primary/40"
-              >
-                <option value="">Tous les utilisateurs</option>
-                {userOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Filtre date */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-muted-foreground">Date</label>
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer transition-colors hover:border-primary/40"
-              />
-            </div>
+            {/* ── Vendeur filter pills ── */}
+            {userOptions.length > 0 && (
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">Vendeur</label>
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  <button
+                    onClick={() => setUserFilter("")}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: "3px 12px",
+                      borderRadius: 100,
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "background 0.15s ease, color 0.15s ease",
+                      background: userFilter === "" ? "hsl(22 72% 48%)" : "hsl(var(--muted))",
+                      color: userFilter === "" ? "#fff" : "hsl(var(--muted-foreground))",
+                      height: 28,
+                    }}
+                  >
+                    Tous
+                  </button>
+                  {userOptions.map((opt) => {
+                    const isActive = userFilter === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => setUserFilter(isActive ? "" : opt.value)}
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: "3px 12px",
+                          borderRadius: 100,
+                          border: "none",
+                          cursor: "pointer",
+                          transition: "background 0.15s ease, color 0.15s ease",
+                          background: isActive ? "hsl(22 72% 48%)" : "hsl(var(--muted))",
+                          color: isActive ? "#fff" : "hsl(var(--muted-foreground))",
+                          height: 28,
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -543,12 +679,17 @@ export default function ActivityLogPage() {
                         <span className="font-semibold text-sm font-heading">{entry.user}</span>
                       </td>
                       <td>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <StatusBadge
                             label={ACTION_CONFIG[entry.actionType].badge.label}
                             variant={ACTION_CONFIG[entry.actionType].badge.variant}
                           />
                           <span className="text-sm">{entry.action}</span>
+                          {entry.saleAmount != null && (
+                            <span style={copperBadgeStyle}>
+                              {entry.saleAmount.toLocaleString("fr-FR")} FCFA
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td
@@ -660,7 +801,14 @@ export default function ActivityLogPage() {
                               <span className="font-semibold">{entry.user}</span>
                               {' — '}{entry.detail || entry.action}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{formatRelative(entry.dateIso)}</p>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <p className="text-xs text-muted-foreground">{formatRelative(entry.dateIso)}</p>
+                              {entry.saleAmount != null && (
+                                <span style={copperBadgeStyle}>
+                                  {entry.saleAmount.toLocaleString("fr-FR")} FCFA
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           {/* Badge type */}

@@ -6,6 +6,11 @@ from users.permissions import IsAdminRole, IsAdminOrReadOnly
 from .models import Category, Product
 from .serializers import CategorySerializer, ProductListSerializer, ProductDetailSerializer
 
+try:
+    from activity.utils import log_activity
+except ImportError:
+    log_activity = None
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -38,7 +43,49 @@ class ProductViewSet(viewsets.ModelViewSet):
             return ProductListSerializer
         return ProductDetailSerializer
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if log_activity:
+            try:
+                log_activity(
+                    user=self.request.user,
+                    action='create',
+                    target_model='Product',
+                    target_id=instance.pk,
+                    description=f"Produit créé : {instance.name} (réf: {getattr(instance, 'barcode', '') or instance.pk})",
+                    request=self.request,
+                )
+            except Exception:
+                pass
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if log_activity:
+            try:
+                log_activity(
+                    user=self.request.user,
+                    action='update',
+                    target_model='Product',
+                    target_id=instance.pk,
+                    description=f"Produit modifié : {instance.name}",
+                    request=self.request,
+                )
+            except Exception:
+                pass
+
     def perform_destroy(self, instance):
+        if log_activity:
+            try:
+                log_activity(
+                    user=self.request.user,
+                    action='delete',
+                    target_model='Product',
+                    target_id=instance.pk,
+                    description=f"Produit supprimé : {instance.name}",
+                    request=self.request,
+                )
+            except Exception:
+                pass
         instance.is_active = False
         instance.save()
 

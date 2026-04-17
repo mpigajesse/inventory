@@ -1,7 +1,13 @@
+import datetime
+
 from django.db import transaction
+from django.db.models import Sum, Count
+from django.utils import timezone
 from rest_framework import viewsets, generics, filters, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from users.permissions import IsAdminOrReadOnly, IsVendeurOrAdmin
 
@@ -12,6 +18,7 @@ from stock import models as stock_models
 from stock.models import StockMovement
 from invoices.models import Invoice
 from notifications.utils import notify_sale, check_stock_alerts
+from activity.utils import log_activity
 
 
 class SaleViewSet(viewsets.ReadOnlyModelViewSet):
@@ -114,7 +121,60 @@ class CreateSaleView(generics.CreateAPIView):
             stock = locked_stocks[item_data['product_id']]
             check_stock_alerts(stock)
 
+        items_summary = ', '.join(
+            f"{item.product.name} x{item.quantity}"
+            for item in sale.items.select_related('product').all()
+        )
+        log_activity(
+            user=request.user,
+            action='sale',
+            target_model='Sale',
+            target_id=sale.pk,
+            description=f"Vente #{sale.pk} — {sale.total_amount:,} FCFA | {sale.items.count()} article(s) : {items_summary[:200]}",
+            request=request,
+        )
+
         return Response(
             SaleSerializer(sale).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class SalesDailyStatsView(APIView):
+    """Returns sales stats per cashier for admin monitoring."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = getattr(request.user, 'profile', None)
+        if profile is None or profile.role != 'admin':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Admin only")
+
+        today = timezone.now().date()
+        since = request.query_params.get('since', 'today')
+        if since == 'week':
+            start_dt = timezone.now() - datetime.timedelta(days=7)
+        elif since == 'month':
+            start_dt = timezone.now() - datetime.timedelta(days=30)
+        else:
+            start_dt = timezone.make_aware(datetime.datetime.combine(today, datetime.time.min))
+
+        stats = (
+            Sale.objects
+            .filter(created_at__gte=start_dt)
+            .values('cashier__id', 'cashier__first_name', 'cashier__last_name', 'cashier__username')
+            .annotate(
+                sales_count=Count('id'),
+                total_revenue=Sum('total_amount'),
+            )
+            .order_by('-total_revenue')
+        )
+        return Response([
+            {
+                'cashier_id': s['cashier__id'],
+                'cashier_name': f"{s['cashier__first_name']} {s['cashier__last_name']}".strip() or s['cashier__username'],
+                'sales_count': s['sales_count'],
+                'total_revenue': s['total_revenue'] or 0,
+            }
+            for s in stats
+        ])

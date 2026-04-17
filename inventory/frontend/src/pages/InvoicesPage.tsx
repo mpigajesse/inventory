@@ -14,7 +14,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Banknote, Smartphone, CreditCard, Copy, User } from "lucide-react";
+import { toast } from "sonner";
 import React, { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { useTableManager } from "@/hooks/useTableManager";
@@ -790,13 +791,16 @@ export default function InvoicesPage() {
                       <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                         Statut
                       </th>
-                      <th className="px-4 py-3 w-24" />
+                      <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                        Vendeur
+                      </th>
+                      <th className="px-4 py-3 w-28" />
                     </tr>
                   </thead>
                   <tbody key={`${statusFilter}-${search}-${page}`}>
                     {typedPaginated.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="text-center py-12">
+                        <td colSpan={9} className="text-center py-12">
                           <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <FileText className="w-8 h-8 opacity-40" />
                             <p className="text-sm">Aucune facture trouvée.</p>
@@ -880,9 +884,31 @@ export default function InvoicesPage() {
                           />
                         </td>
 
+                        {/* Vendeur */}
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                            <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                              {inv.issued_by_name || "—"}
+                            </span>
+                          </div>
+                        </td>
+
                         {/* Actions — visible au hover */}
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              className="p-1.5 rounded-lg transition-colors hover:bg-muted"
+                              title="Copier numéro"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(inv.invoice_number).then(() =>
+                                  toast.success('Numéro copié !')
+                                );
+                              }}
+                            >
+                              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
                             <button
                               className="p-1.5 rounded-lg transition-colors hover:bg-muted"
                               title="Voir"
@@ -923,7 +949,7 @@ export default function InvoicesPage() {
                             {formatFCFA(grandTotal)}
                           </span>
                         </td>
-                        <td colSpan={3} />
+                        <td colSpan={4} />
                       </tr>
                     </tfoot>
                   )}
@@ -977,6 +1003,12 @@ export default function InvoicesPage() {
                         <span className="mx-1.5 opacity-40">·</span>
                         {inv.items?.length ?? 0} article
                         {(inv.items?.length ?? 0) > 1 ? "s" : ""}
+                        {inv.issued_by_name && (
+                          <>
+                            <span className="mx-1.5 opacity-40">·</span>
+                            <span className="not-tabular-nums">{inv.issued_by_name}</span>
+                          </>
+                        )}
                       </p>
                     </div>
                     <StatusBadge

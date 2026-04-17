@@ -1,102 +1,86 @@
-import { useOutletContext, useNavigate, Navigate } from "react-router-dom";
+import { useOutletContext, useNavigate, Navigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { useAuth } from "@/contexts/AuthContext";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Users,
-  Package,
-  ShoppingCart,
-  Calendar,
-  Tag,
   ShoppingBag,
   LogIn,
+  Tag,
+  Package,
   Settings,
-  UserCog,
-  ExternalLink,
   Activity,
   ArrowRight,
-  Database,
-  KeyRound,
-  UserX,
-  RefreshCcw,
-  CheckCircle2,
-  Cpu,
-  Server,
+  TrendingUp,
+  Clock,
+  Trophy,
+  Medal,
+  Award,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { dashboardService } from "@/services/dashboardService";
 import { activityService } from "@/services/activityService";
-import type { ActivityLog } from "@/services/activityService";
+import type { ActivityLog, VendeurActivitySummary } from "@/services/activityService";
+import { salesService } from "@/services/salesService";
+import type { DailyStat } from "@/services/salesService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-type UserRole = "admin" | "vendeur";
-type UserStatus = "active" | "inactive";
+const COPPER = "hsl(22 72% 48%)";
+const COPPER_LIGHT = "hsl(36 88% 52%)";
+const FOREST = "hsl(152 38% 38%)";
+const AMBER = "hsl(36 88% 52%)";
 
-interface AdminUser {
-  id: number;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  lastLogin: string;
+type Period = "today" | "week" | "month";
+
+const PERIOD_LABELS: Record<Period, string> = {
+  today: "Aujourd'hui",
+  week: "Cette semaine",
+  month: "Ce mois",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatFCFA(amount: number): string {
+  return new Intl.NumberFormat("fr-FR").format(Math.round(amount)) + " FCFA";
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
-  return (
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-        <Icon className="w-3.5 h-3.5 text-primary" />
-      </div>
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-    </div>
-  );
+function formatTime(isoDate: string): string {
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
-/** Pulsing green "Système opérationnel" status badge */
-function SystemStatusBadge() {
-  return (
-    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/25">
-      {/* Dot with pulseSoft animation */}
-      <span className="relative flex h-2 w-2 shrink-0">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-      </span>
-      <span className="text-xs font-semibold text-success leading-none">Système opérationnel</span>
-    </div>
-  );
+function formatRelative(isoDate: string | null): string {
+  if (!isoDate) return "Jamais connecté";
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return isoDate;
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "À l'instant";
+  if (mins < 60) return `Il y a ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Il y a ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  return `Il y a ${days} j`;
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
 }
 
 type ActivityType = "login" | "sale" | "product" | "stock" | "system";
 
 const ACTIVITY_CONFIG: Record<ActivityType, { icon: React.ElementType; bg: string; color: string }> = {
-  login:   { icon: LogIn,      bg: "bg-primary/10",    color: "text-primary" },
-  sale:    { icon: ShoppingBag, bg: "bg-success/10",   color: "text-success" },
-  product: { icon: Tag,        bg: "bg-warning/10",    color: "text-warning" },
-  stock:   { icon: Package,    bg: "bg-primary/10",    color: "text-primary" },
-  system:  { icon: Settings,   bg: "bg-muted",         color: "text-muted-foreground" },
+  login:   { icon: LogIn,       bg: "rgba(139,90,43,0.10)",  color: COPPER },
+  sale:    { icon: ShoppingBag, bg: "rgba(56,142,86,0.10)",  color: FOREST },
+  product: { icon: Tag,         bg: "rgba(202,138,4,0.10)",  color: AMBER },
+  stock:   { icon: Package,     bg: "rgba(139,90,43,0.10)",  color: COPPER },
+  system:  { icon: Settings,    bg: "rgba(100,100,100,0.08)", color: "#888" },
 };
 
 function resolveActivityType(action: string, targetModel: string): ActivityType {
@@ -107,55 +91,374 @@ function resolveActivityType(action: string, targetModel: string): ActivityType 
   return "system";
 }
 
-function ActivityIcon({ type }: { type: ActivityType }) {
-  const { icon: Icon, bg, color } = ACTIVITY_CONFIG[type];
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+/** Pulsing live dot */
+function LiveDot() {
   return (
-    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${bg}`}>
-      <Icon className={`w-4 h-4 ${color}`} />
+    <span className="relative flex h-2.5 w-2.5 shrink-0">
+      <span
+        className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+        style={{ background: FOREST }}
+      />
+      <span
+        className="relative inline-flex h-2.5 w-2.5 rounded-full"
+        style={{ background: FOREST }}
+      />
+    </span>
+  );
+}
+
+/** Period tab selector */
+function PeriodTabs({ value, onChange }: { value: Period; onChange: (p: Period) => void }) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        background: "hsl(var(--muted))",
+        borderRadius: "10px",
+        padding: "3px",
+        gap: "2px",
+      }}
+    >
+      {(["today", "week", "month"] as Period[]).map((p) => (
+        <button
+          key={p}
+          onClick={() => onChange(p)}
+          style={{
+            padding: "5px 14px",
+            borderRadius: "8px",
+            fontSize: "12px",
+            fontWeight: value === p ? 600 : 400,
+            color: value === p ? "#fff" : "hsl(var(--muted-foreground))",
+            background: value === p
+              ? `linear-gradient(135deg, ${COPPER}, ${COPPER_LIGHT})`
+              : "transparent",
+            border: "none",
+            cursor: "pointer",
+            transition: "all 0.18s ease",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {PERIOD_LABELS[p]}
+        </button>
+      ))}
     </div>
   );
 }
 
-function formatActivityDate(isoDate: string): string {
-  const d = new Date(isoDate);
-  if (isNaN(d.getTime())) return isoDate;
-  return d.toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+/** Copper gradient avatar circle */
+function VendeurAvatar({ name }: { name: string }) {
+  return (
+    <div
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: "50%",
+        background: `linear-gradient(135deg, ${COPPER}, ${COPPER_LIGHT})`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        color: "#fff",
+        fontSize: 15,
+        fontWeight: 700,
+        letterSpacing: "0.02em",
+        boxShadow: `0 2px 8px ${COPPER}44`,
+      }}
+    >
+      {getInitials(name)}
+    </div>
+  );
 }
 
-// ─── System health indicators ─────────────────────────────────────────────────
+/** Vendeur performance card */
+function VendeurCard({ vendeur, delay }: { vendeur: VendeurActivitySummary; delay: number }) {
+  const [hovered, setHovered] = useState(false);
 
-const HEALTH_ITEMS = [
-  {
-    icon: Server,
-    label: "API Backend",
-    status: "Connecté",
-    variant: "success" as const,
-  },
-  {
-    icon: Database,
-    label: "Base de données",
-    status: "Opérationnelle",
-    variant: "success" as const,
-  },
-  {
-    icon: Cpu,
-    label: "Version",
-    status: "1.0.0",
-    variant: "info" as const,
-  },
-  {
-    icon: Calendar,
-    label: "Déploiement",
-    status: "01/04/2026",
-    variant: "default" as const,
-  },
-];
+  return (
+    <Link
+      to={`/admin/users/${vendeur.user_id}`}
+      style={{ textDecoration: "none", color: "inherit" }}
+    >
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          background: "hsl(var(--card))",
+          border: `1px solid hsl(var(--border))`,
+          borderRadius: 16,
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+          boxShadow: hovered
+            ? `0 8px 24px ${COPPER}22, 0 2px 8px hsl(22 30% 15% / 0.10)`
+            : `0 1px 4px hsl(22 30% 15% / 0.06)`,
+          transform: hovered ? "translateY(-2px)" : "translateY(0)",
+          transition: "all 0.2s ease",
+          animationDelay: `${delay}ms`,
+          cursor: "pointer",
+        }}
+      >
+        {/* Header: avatar + name + last seen */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <VendeurAvatar name={vendeur.full_name || vendeur.username} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontWeight: 600, fontSize: 14, margin: 0, lineHeight: 1.3 }}>
+              {vendeur.full_name || vendeur.username}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3 }}>
+              <Clock style={{ width: 11, height: 11, color: "hsl(var(--muted-foreground))" }} />
+              <span style={{ fontSize: 11, color: "hsl(var(--muted-foreground))" }}>
+                {formatRelative(vendeur.last_action_at)}
+              </span>
+            </div>
+          </div>
+          <ArrowRight style={{ width: 14, height: 14, color: "hsl(var(--muted-foreground))", flexShrink: 0 }} />
+        </div>
+
+        {/* Big sales count */}
+        <div>
+          <span
+            style={{
+              fontFamily: "'Fraunces', 'Georgia', serif",
+              fontWeight: 900,
+              fontSize: 36,
+              color: COPPER,
+              letterSpacing: "-0.03em",
+              lineHeight: 1,
+            }}
+          >
+            {vendeur.sales_count}
+          </span>
+          <span style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", marginLeft: 6 }}>
+            ventes
+          </span>
+        </div>
+
+        {/* Revenue */}
+        <div
+          style={{
+            background: `${COPPER}0d`,
+            borderRadius: 10,
+            padding: "8px 12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span style={{ fontSize: 11, color: COPPER, fontWeight: 500 }}>Chiffre d'affaires</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: COPPER }}>
+            {formatFCFA(vendeur.total_revenue)}
+          </span>
+        </div>
+
+        {/* Actions count + last action */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Activity style={{ width: 12, height: 12, color: FOREST }} />
+            <span style={{ fontSize: 12, color: FOREST, fontWeight: 600 }}>
+              {vendeur.action_count} actions
+            </span>
+          </div>
+          {vendeur.last_action && (
+            <p
+              style={{
+                fontSize: 11,
+                color: "hsl(var(--muted-foreground))",
+                margin: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+              title={vendeur.last_action}
+            >
+              {vendeur.last_action}
+            </p>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/** Activity feed item */
+function ActivityItem({ entry, isLast }: { entry: ActivityLog; isLast: boolean }) {
+  const type = resolveActivityType(entry.action, entry.target_model);
+  const { icon: Icon, bg, color } = ACTIVITY_CONFIG[type];
+  const isSale = type === "sale";
+
+  return (
+    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+      {/* Timeline line + icon */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: bg,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon style={{ width: 14, height: 14, color }} />
+        </div>
+        {!isLast && (
+          <div
+            style={{
+              width: 1,
+              flex: 1,
+              background: "hsl(var(--border))",
+              minHeight: 12,
+              marginTop: 2,
+            }}
+          />
+        )}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0, paddingBottom: isLast ? 0 : 12 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
+          <p style={{ fontSize: 13, fontWeight: 500, margin: 0, flex: 1, minWidth: 0 }}>
+            {entry.description}
+          </p>
+          {isSale && entry.sale_amount != null && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: FOREST,
+                background: `${FOREST}14`,
+                borderRadius: 6,
+                padding: "1px 8px",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              {formatFCFA(entry.sale_amount)}
+            </span>
+          )}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: COPPER,
+              background: `${COPPER}14`,
+              borderRadius: 5,
+              padding: "1px 7px",
+            }}
+          >
+            {entry.user_name ?? "Système"}
+          </span>
+          <span style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", flexShrink: 0 }}>
+            {formatTime(entry.created_at)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Leaderboard rank item */
+function LeaderboardItem({ stat, rank }: { stat: DailyStat; rank: number }) {
+  const medals = [
+    { icon: Trophy, color: "#c9a227", bg: "#c9a22718", label: "Or" },
+    { icon: Medal,  color: "#9e9e9e", bg: "#9e9e9e18", label: "Argent" },
+    { icon: Award,  color: "#a0522d", bg: "#a0522d18", label: "Bronze" },
+  ];
+  const medal = medals[rank - 1];
+  const Icon = medal?.icon ?? TrendingUp;
+  const medColor = medal?.color ?? COPPER;
+  const medBg = medal?.bg ?? `${COPPER}14`;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "14px 16px",
+        borderRadius: 12,
+        background: rank === 1 ? "#c9a22708" : "transparent",
+        border: rank === 1 ? `1px solid #c9a22730` : "1px solid transparent",
+      }}
+    >
+      {/* Rank badge */}
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          background: medBg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Icon style={{ width: 16, height: 16, color: medColor }} />
+      </div>
+
+      {/* Name */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {stat.cashier_name}
+        </p>
+        <p style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", margin: 0 }}>
+          {stat.sales_count} vente{stat.sales_count > 1 ? "s" : ""}
+        </p>
+      </div>
+
+      {/* Revenue */}
+      <span
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: medColor,
+          flexShrink: 0,
+        }}
+      >
+        {formatFCFA(stat.total_revenue)}
+      </span>
+    </div>
+  );
+}
+
+// ─── Skeleton loader ──────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  return (
+    <div
+      style={{
+        background: "hsl(var(--card))",
+        border: "1px solid hsl(var(--border))",
+        borderRadius: 16,
+        padding: 20,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+      }}
+    >
+      {[60, 40, 80, 50].map((w, i) => (
+        <div
+          key={i}
+          style={{
+            height: i === 0 ? 16 : 12,
+            width: `${w}%`,
+            borderRadius: 6,
+            background: "hsl(var(--muted))",
+            animation: "pulse 1.5s ease-in-out infinite",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
@@ -164,49 +467,49 @@ export default function AdminOverviewPage() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: dashboardService.getStats,
-  });
-
-  const { data: activityData, isLoading: activityLoading } = useQuery({
-    queryKey: ["activity"],
-    queryFn: () => activityService.getAll({ page_size: "10" }),
-  });
-
-  const recentActivity: ActivityLog[] = activityData?.results ?? [];
-
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [disablingUser, setDisablingUser] = useState<AdminUser | null>(null);
-  const [resetUser, setResetUser] = useState<AdminUser | null>(null);
+  const [period, setPeriod] = useState<Period>("today");
   const [mounted, setMounted] = useState(false);
   const accentBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Trigger stagger + accent bar on mount
     const raf = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  if (currentUser?.role !== 'admin') {
+  if (currentUser?.role !== "admin") {
     return <Navigate to="/dashboard" replace />;
   }
 
-  function handleRoleChange(userId: number, newRole: UserRole) {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-    );
-  }
+  // ── Queries ─────────────────────────────────────────────────────────────────
 
-  function handleDisable() {
-    if (!disablingUser) return;
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === disablingUser.id ? { ...u, status: "inactive" as UserStatus } : u
-      )
-    );
-    setDisablingUser(null);
-  }
+  const { data: vendeurSummaries, isLoading: summaryLoading } = useQuery({
+    queryKey: ["vendeur-summary", period],
+    queryFn: () => activityService.getVendeurSummary(period),
+  });
+
+  // Activity feed — auto-refreshed every 30s
+  const activityParams: Record<string, string> = { page_size: "15" };
+  if (period === "today") activityParams.date = "today";
+  else if (period === "week") activityParams.date = "week";
+  else activityParams.date = "month";
+
+  const { data: activityData, isLoading: activityLoading } = useQuery({
+    queryKey: ["activity-feed", period],
+    queryFn: () => activityService.getAll(activityParams),
+    refetchInterval: 30_000,
+  });
+
+  const { data: dailyStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["daily-stats", period],
+    queryFn: () => salesService.getDailyStats(period),
+  });
+
+  const recentActivity: ActivityLog[] = activityData?.results ?? [];
+  const vendeurs: VendeurActivitySummary[] = vendeurSummaries ?? [];
+  const leaderboard: DailyStat[] = (dailyStats ?? [])
+    .slice()
+    .sort((a, b) => b.total_revenue - a.total_revenue)
+    .slice(0, 3);
 
   return (
     <>
@@ -215,502 +518,314 @@ export default function AdminOverviewPage() {
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
       `}</style>
+
       <Topbar
         title="Administration"
-        subtitle="Vue d'ensemble du système"
+        subtitle="Surveillance vendeurs"
         onMenuClick={onMenuClick}
       />
 
-      <div className="page-container animate-slide-in space-y-6">
+      <div className="page-container animate-slide-in" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
-        {/* ── Hero header : statut système ────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div
-                ref={accentBarRef}
-                className="flex-shrink-0"
-                style={{
-                  width: "3px",
-                  height: "28px",
-                  borderRadius: "2px",
-                  background: 'linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))',
-                  transformOrigin: 'top',
-                  transform: mounted ? 'scaleY(1)' : 'scaleY(0)',
-                  transition: 'transform 0.3s ease-out',
-                }}
-              />
-              <h1
-                className="text-2xl font-heading"
-                style={{ fontWeight: 800, letterSpacing: '-0.02em' }}
-              >Vue d&apos;ensemble Admin</h1>
+        {/* ── 1. Header ────────────────────────────────────────────────── */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Accent bar */}
+            <div
+              ref={accentBarRef}
+              style={{
+                width: 3,
+                height: 32,
+                borderRadius: 2,
+                background: `linear-gradient(to bottom, ${COPPER}, ${AMBER})`,
+                transformOrigin: "top",
+                transform: mounted ? "scaleY(1)" : "scaleY(0)",
+                transition: "transform 0.3s ease-out",
+                flexShrink: 0,
+              }}
+            />
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h1
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 800,
+                    letterSpacing: "-0.02em",
+                    margin: 0,
+                    fontFamily: "'Fraunces', 'Georgia', serif",
+                    color: "hsl(var(--foreground))",
+                  }}
+                >
+                  Surveillance vendeurs
+                </h1>
+                <LiveDot />
+              </div>
+              <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", margin: 0, marginTop: 2 }}>
+                Activité en temps réel · mise à jour toutes les 30 s
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5 pl-3">
-              Supervision et gestion de l&apos;application NAOSERVICES INVENTORY
-            </p>
           </div>
-          <SystemStatusBadge />
+
+          {/* Period selector */}
+          <PeriodTabs value={period} onChange={setPeriod} />
         </div>
 
-        {/* ── Section : Santé du système ───────────────────────────────── */}
+        {/* ── 2. Vendeur performance grid ──────────────────────────────── */}
         <section>
-          <SectionHeader icon={CheckCircle2} title="Santé du système" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {HEALTH_ITEMS.map(({ icon: Icon, label, status, variant }, index) => (
-              <div
-                key={label}
-                className="card-premium p-4 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5"
-                style={{
-                  borderRadius: "20px",
-                  boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)',
-                  opacity: 0,
-                  animation: mounted ? 'adminFadeUp 0.35s ease forwards' : 'none',
-                  animationDelay: `${index * 60}ms`,
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px hsl(22 30% 15% / 0.12)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)'; }}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-8 h-8 flex items-center justify-center shrink-0"
-                    style={{
-                      borderRadius: "14px",
-                      background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
-                      transition: 'transform 0.2s ease',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
-                  >
-                    <Icon className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <span className="text-xs text-muted-foreground leading-tight font-medium">{label}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {(variant === "success") && (
-                    <span className="relative flex h-2 w-2 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "hsl(var(--success, 142 71% 45%))" }} />
-                      <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "hsl(var(--success, 142 71% 45%))" }} />
-                    </span>
-                  )}
-                  <StatusBadge label={status} variant={variant} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Section : Stats rapides ──────────────────────────────────── */}
-        <section>
-          <SectionHeader icon={Activity} title="Statistiques rapides" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Users,
-                label: "Clients enregistrés",
-                value: statsLoading ? "—" : String(stats?.clients.total ?? 0),
-                accentColor: "hsl(22 72% 48%)",
-              },
-              {
-                icon: Package,
-                label: "Produits en catalogue",
-                value: statsLoading ? "—" : String(stats?.stock.total_products ?? 0),
-                accentColor: "hsl(210 70% 52%)",
-              },
-              {
-                icon: ShoppingCart,
-                label: "Transactions ce mois",
-                value: statsLoading ? "—" : String(stats?.month.sales_count ?? 0),
-                accentColor: "hsl(142 71% 40%)",
-              },
-            ].map(({ icon: Icon, label, value, accentColor }, index) => (
-              <div
-                key={label}
-                className="card-premium p-5 flex flex-col gap-2 transition-all duration-200 hover:-translate-y-0.5"
-                style={{
-                  borderTop: `3px solid ${accentColor}`,
-                  boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)',
-                  opacity: 0,
-                  animation: mounted ? 'adminFadeUp 0.35s ease forwards' : 'none',
-                  animationDelay: `${300 + index * 70}ms`,
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px hsl(22 30% 15% / 0.12)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)'; }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    {label}
-                  </span>
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${accentColor}, ${accentColor})`,
-                      opacity: 0.9,
-                      transition: 'transform 0.2s ease',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
-                  >
-                    <Icon className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-                <span
-                  className="text-2xl tabular-nums text-foreground"
-                  style={{
-                    fontFamily: "'Fraunces', 'Georgia', serif",
-                    fontWeight: 900,
-                    letterSpacing: '-0.02em',
-                  }}
-                >{value}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Section : Gestion des accès ─────────────────────────────── */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                <UserCog className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <h2 className="text-sm font-semibold text-foreground">Gestion des accès</h2>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate("/users")}
-              className="flex items-center gap-1.5"
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: `${COPPER}18`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              <Users className="w-3.5 h-3.5" />
-              Gérer les utilisateurs
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
+              <Activity style={{ width: 14, height: 14, color: COPPER }} />
+            </div>
+            <h2 style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Performance vendeurs</h2>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-hidden">
-            {/* Mobile cards */}
-            <div className="md:hidden">
-              {users.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground text-sm px-4">
-                  Gérez les utilisateurs depuis la page dédiée.
-                </p>
-              ) : (
-                <div className="space-y-2 p-4">
-                  {users.map((user) => (
-                    <div
-                      key={user.id}
-                      className="bg-card border rounded-xl p-4 flex flex-col gap-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <Users className="w-4 h-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{user.name}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                              {user.email}
-                            </p>
-                          </div>
-                        </div>
-                        <StatusBadge
-                          label={user.status === "active" ? "Actif" : "Inactif"}
-                          variant={user.status === "active" ? "success" : "default"}
-                        />
-                      </div>
+          {summaryLoading ? (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                gap: 16,
+              }}
+            >
+              {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : vendeurs.length === 0 ? (
+            <div
+              style={{
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: 16,
+                padding: "40px 24px",
+                textAlign: "center",
+                color: "hsl(var(--muted-foreground))",
+                fontSize: 13,
+              }}
+            >
+              Aucune activité vendeur pour cette période.
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                gap: 16,
+              }}
+            >
+              {vendeurs.map((v, i) => (
+                <VendeurCard key={v.user_id} vendeur={v} delay={i * 60} />
+              ))}
+            </div>
+          )}
+        </section>
 
-                      <div className="flex items-center justify-between gap-3">
-                        <Select
-                          value={user.role}
-                          onValueChange={(val) => handleRoleChange(user.id, val as UserRole)}
-                        >
-                          <SelectTrigger className="h-8 w-32 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="vendeur">Vendeur</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <span className="text-xs text-muted-foreground truncate">
-                          {user.lastLogin}
-                        </span>
-                      </div>
+        {/* ── 3 + 4. Activity feed + Leaderboard side by side ──────────── */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)",
+            gap: 20,
+            alignItems: "start",
+          }}
+          className="admin-split-grid"
+        >
+          <style>{`
+            @media (max-width: 768px) {
+              .admin-split-grid {
+                grid-template-columns: 1fr !important;
+              }
+            }
+          `}</style>
 
-                      <div className="flex items-center gap-2 pt-1 border-t">
-                        <button
-                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50"
-                          onClick={() => setDisablingUser(user)}
-                          disabled={user.status === "inactive"}
-                        >
-                          <UserX className="w-3.5 h-3.5" />
-                          Désactiver
-                        </button>
-                        <button
-                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                          onClick={() => setResetUser(user)}
-                        >
-                          <RefreshCcw className="w-3.5 h-3.5" />
-                          MDP
-                        </button>
+          {/* ── Activity feed ─────────────────────────────── */}
+          <section>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    background: `${FOREST}18`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Clock style={{ width: 14, height: 14, color: FOREST }} />
+                </div>
+                <h2 style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Journal d'activité</h2>
+                <LiveDot />
+              </div>
+              <button
+                onClick={() => navigate("/admin/activity")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: COPPER,
+                  background: `${COPPER}12`,
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                Voir tout
+                <ArrowRight style={{ width: 12, height: 12 }} />
+              </button>
+            </div>
+
+            <div
+              style={{
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: 16,
+                padding: "16px 20px",
+                boxShadow: "0 1px 4px hsl(22 30% 15% / 0.05)",
+              }}
+            >
+              {activityLoading ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "hsl(var(--muted))", flexShrink: 0, animation: "pulse 1.5s ease-in-out infinite" }} />
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ height: 12, width: "75%", borderRadius: 6, background: "hsl(var(--muted))", animation: "pulse 1.5s ease-in-out infinite" }} />
+                        <div style={{ height: 10, width: "45%", borderRadius: 6, background: "hsl(var(--muted))", animation: "pulse 1.5s ease-in-out infinite" }} />
                       </div>
                     </div>
+                  ))}
+                </div>
+              ) : recentActivity.length === 0 ? (
+                <p style={{ textAlign: "center", color: "hsl(var(--muted-foreground))", fontSize: 13, padding: "24px 0" }}>
+                  Aucune activité pour cette période.
+                </p>
+              ) : (
+                <div>
+                  {recentActivity.map((entry, idx) => (
+                    <ActivityItem key={entry.id} entry={entry} isLast={idx === recentActivity.length - 1} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* ── Leaderboard ───────────────────────────────── */}
+          <section>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: "#c9a22718",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Trophy style={{ width: 14, height: 14, color: "#c9a227" }} />
+              </div>
+              <h2 style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Classement ventes</h2>
+            </div>
+
+            <div
+              style={{
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: 16,
+                padding: "8px",
+                boxShadow: "0 1px 4px hsl(22 30% 15% / 0.05)",
+              }}
+            >
+              {statsLoading ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 8 }}>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 8px" }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "hsl(var(--muted))", flexShrink: 0, animation: "pulse 1.5s ease-in-out infinite" }} />
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ height: 12, width: "60%", borderRadius: 6, background: "hsl(var(--muted))", animation: "pulse 1.5s ease-in-out infinite" }} />
+                        <div style={{ height: 10, width: "40%", borderRadius: 6, background: "hsl(var(--muted))", animation: "pulse 1.5s ease-in-out infinite" }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : leaderboard.length === 0 ? (
+                <p style={{ textAlign: "center", color: "hsl(var(--muted-foreground))", fontSize: 13, padding: "32px 16px" }}>
+                  Aucune vente pour cette période.
+                </p>
+              ) : (
+                <div>
+                  {leaderboard.map((stat, idx) => (
+                    <LeaderboardItem key={stat.cashier_id} stat={stat} rank={idx + 1} />
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Desktop table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Utilisateur</th>
-                    <th>Email</th>
-                    <th>Rôle</th>
-                    <th>Statut</th>
-                    <th>Dernière connexion</th>
-                    <th className="w-48">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-8 text-muted-foreground text-sm">
-                        Gérez les utilisateurs depuis la page dédiée.
-                      </td>
-                    </tr>
-                  ) : (
-                    users.map((user) => (
-                      <tr key={user.id}>
-                        <td>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <Users className="w-4 h-4 text-primary" />
-                            </div>
-                            <span className="font-medium">{user.name}</span>
-                          </div>
-                        </td>
-                        <td className="text-muted-foreground">{user.email}</td>
-                        <td>
-                          <Select
-                            value={user.role}
-                            onValueChange={(val) => handleRoleChange(user.id, val as UserRole)}
-                          >
-                            <SelectTrigger className="h-7 w-28 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="vendeur">Vendeur</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td>
-                          <StatusBadge
-                            label={user.status === "active" ? "Actif" : "Inactif"}
-                            variant={user.status === "active" ? "success" : "default"}
-                          />
-                        </td>
-                        <td className="text-muted-foreground text-xs">{user.lastLogin}</td>
-                        <td>
-                          <div className="flex items-center gap-1">
-                            <button
-                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                              onClick={() => setDisablingUser(user)}
-                              disabled={user.status === "inactive"}
-                            >
-                              <UserX className="w-3.5 h-3.5" />
-                              Désactiver
-                            </button>
-                            <button
-                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                              onClick={() => setResetUser(user)}
-                            >
-                              <RefreshCcw className="w-3.5 h-3.5" />
-                              MDP
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Section : Journal d'activité ─────────────────────────────── */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                <Activity className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <h2 className="text-sm font-semibold text-foreground">Journal d'activité</h2>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate("/admin/activity")}
-              className="flex items-center gap-1.5"
+            {/* Quick nav to users */}
+            <button
+              onClick={() => navigate("/users")}
+              style={{
+                marginTop: 12,
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                padding: "9px 0",
+                borderRadius: 10,
+                border: `1px solid hsl(var(--border))`,
+                background: "hsl(var(--card))",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "hsl(var(--muted-foreground))",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = COPPER;
+                (e.currentTarget as HTMLButtonElement).style.borderColor = `${COPPER}40`;
+                (e.currentTarget as HTMLButtonElement).style.background = `${COPPER}08`;
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--muted-foreground))";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "hsl(var(--border))";
+                (e.currentTarget as HTMLButtonElement).style.background = "hsl(var(--card))";
+              }}
             >
-              Voir tout
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-
-          <div className="bg-card rounded-lg border p-4">
-            {activityLoading ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Chargement…</p>
-            ) : recentActivity.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Aucune activité récente.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {recentActivity.map((entry, idx) => {
-                  const type = resolveActivityType(entry.action, entry.target_model);
-                  return (
-                    <div key={entry.id} className="flex items-start gap-3">
-                      <div className="flex flex-col items-center">
-                        <ActivityIcon type={type} />
-                        {idx < recentActivity.length - 1 && (
-                          <div className="w-px flex-1 bg-border mt-1 min-h-[12px]" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 pb-1">
-                        <p className="text-sm font-medium leading-snug">{entry.description}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-muted-foreground">{entry.user_name}</span>
-                          <span className="text-muted-foreground/40 text-xs">·</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatActivityDate(entry.created_at)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ── Section : Configuration avancée ─────────────────────────── */}
-        <section>
-          <SectionHeader icon={Settings} title="Configuration avancée" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            {/* Paramètres de l'application */}
-            <div className="card-premium p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <Settings className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Paramètres de l'application</p>
-                  <p className="text-xs text-muted-foreground">Nom de l'entreprise, adresse, NIF</p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Configurez les informations de votre commerce : raison sociale, coordonnées, numéro fiscal.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/settings")}
-                className="self-start flex items-center gap-1.5"
-              >
-                Ouvrir les paramètres
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-
-            {/* Panel Django Admin */}
-            <div className="card-premium p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                  <Database className="w-4 h-4 text-warning" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Panel Django Admin</p>
-                  <p className="text-xs text-muted-foreground">Accès réservé à l'administrateur système</p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Pour les opérations de base de données et la gestion des données techniques.
-                Contactez votre administrateur système (Naoservices).
-              </p>
-              <div className="flex items-start gap-2 p-2.5 rounded-md bg-warning/5 border border-warning/20">
-                <KeyRound className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
-                <p className="text-xs text-warning/80">
-                  Accès réservé à l'équipe technique Naoservices / MPJ HIGH-TECH.
-                  Ne partagez jamais vos identifiants super-admin.
-                </p>
-              </div>
-              <a
-                href="#"
-                className="self-start flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-input bg-background hover:bg-secondary transition-colors"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                Ouvrir le panel Django
-              </a>
-            </div>
-
-          </div>
-        </section>
+              Gérer les utilisateurs
+              <ArrowRight style={{ width: 12, height: 12 }} />
+            </button>
+          </section>
+        </div>
 
       </div>
-
-      {/* ── AlertDialog : Désactiver utilisateur ── */}
-      <AlertDialog
-        open={!!disablingUser}
-        onOpenChange={(open) => { if (!open) setDisablingUser(null); }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Désactiver le compte ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Le compte de <strong>{disablingUser?.name}</strong> sera désactivé.
-              L'utilisateur ne pourra plus se connecter. Vous pourrez le réactiver depuis la page Utilisateurs.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleDisable}
-            >
-              Désactiver
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* ── AlertDialog : Réinitialiser mot de passe ── */}
-      <AlertDialog
-        open={!!resetUser}
-        onOpenChange={(open) => { if (!open) setResetUser(null); }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Réinitialiser le mot de passe ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Un mot de passe temporaire sera envoyé à <strong>{resetUser?.email}</strong>.
-              Cette fonctionnalité nécessite une connexion au backend. (Non disponible en V1.)
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Fermer</AlertDialogCancel>
-            <AlertDialogAction onClick={() => setResetUser(null)}>
-              Compris
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

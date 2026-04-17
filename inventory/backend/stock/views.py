@@ -6,6 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from users.permissions import IsAdminRole, IsAdminOrReadOnly
 from .models import Stock, StockMovement
 from .serializers import StockSerializer, StockAdjustmentSerializer, StockMovementSerializer
+from activity.utils import log_activity
 
 
 class StockViewSet(viewsets.ReadOnlyModelViewSet):
@@ -83,6 +84,47 @@ class StockViewSet(viewsets.ReadOnlyModelViewSet):
                 note=data.get('note', ''),
                 performed_by=request.user,
             )
+
+        product_name = stock.product.name
+        quantity = data['quantity']
+        movement_type = data['movement_type']
+
+        if movement_type == 'entry':
+            try:
+                log_activity(
+                    user=request.user,
+                    action='stock_in',
+                    target_model='Stock',
+                    target_id=stock.pk,
+                    description=f"Entrée stock : {product_name} +{quantity} unités (stock total: {stock.quantity})",
+                    request=request,
+                )
+            except Exception:
+                pass
+        elif movement_type == 'exit':
+            try:
+                log_activity(
+                    user=request.user,
+                    action='stock_out',
+                    target_model='Stock',
+                    target_id=stock.pk,
+                    description=f"Sortie stock : {product_name} -{quantity} unités (stock total: {stock.quantity})",
+                    request=request,
+                )
+            except Exception:
+                pass
+        else:  # adjustment
+            try:
+                log_activity(
+                    user=request.user,
+                    action='update',
+                    target_model='Stock',
+                    target_id=stock.pk,
+                    description=f"Ajustement stock : {product_name} → {stock.quantity} unités",
+                    request=request,
+                )
+            except Exception:
+                pass
 
         return Response(StockSerializer(stock).data)
 
