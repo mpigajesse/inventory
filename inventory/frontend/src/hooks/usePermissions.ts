@@ -12,22 +12,6 @@ export type Permission =
   | 'view_invoices'
   | 'manage_clients';
 
-const ADMIN_ONLY_PERMISSIONS: Permission[] = [
-  'manage_users',
-  'manage_products',
-  'manage_stock',
-  'view_reports',
-  'manage_settings',
-  'manage_suppliers',
-  'view_barcodes',
-];
-
-const ALL_ROLES_PERMISSIONS: Permission[] = [
-  'make_sales',
-  'view_invoices',
-  'manage_clients',
-];
-
 interface UsePermissionsReturn {
   can: (permission: Permission) => boolean;
 }
@@ -44,7 +28,8 @@ export function usePermissions(): UsePermissionsReturn {
       return true;
     }
 
-    return ALL_ROLES_PERMISSIONS.includes(permission);
+    // Vendeur: use real permissions stored on the user profile
+    return (currentUser.permissions ?? []).includes(permission);
   }
 
   return { can };

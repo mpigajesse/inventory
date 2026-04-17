@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import type { AuthUser } from './authService';
+import type { Permission } from '@/hooks/usePermissions';
 
 export interface UserListItem {
   id: number;
@@ -9,6 +10,7 @@ export interface UserListItem {
   last_name: string;
   full_name: string;
   is_active: boolean;
+  permissions?: string[];
   profile: {
     role: 'admin' | 'vendeur';
     phone: string;
@@ -63,4 +65,7 @@ export const userService = {
         refresh: localStorage.getItem('refresh_token'),
       })
       .then((r) => r.data),
+
+  setPermissions: (id: number, permissions: Permission[]): Promise<void> =>
+    api.patch(`/users/${id}/set-permissions/`, { permissions }).then(() => undefined),
 };

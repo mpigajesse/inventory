@@ -9,7 +9,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active']
+        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions']
 
     def get_avatar_url(self, obj):
         return obj.avatar.url if obj.avatar else None
@@ -63,10 +63,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         source='profile.is_active',
         required=False,
     )
+    permissions = serializers.ListField(
+        child=serializers.CharField(),
+        source='profile.permissions',
+        required=False,
+    )
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'username', 'role', 'phone', 'profile_is_active']
+        fields = ['first_name', 'last_name', 'email', 'username', 'role', 'phone', 'profile_is_active', 'permissions']
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})
@@ -87,13 +92,13 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class MeProfileSerializer(serializers.ModelSerializer):
-    """Only phone and avatar are writable for self-update — role/is_active are read-only."""
+    """Only phone and avatar are writable for self-update — role/is_active/permissions are read-only."""
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active']
-        read_only_fields = ['role', 'is_active']
+        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions']
+        read_only_fields = ['role', 'is_active', 'permissions']
 
     def get_avatar_url(self, obj):
         return obj.avatar.url if obj.avatar else None

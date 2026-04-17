@@ -44,6 +44,7 @@ import {
   Pencil,
   UserX,
   UserCheck,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { useTableManager } from "@/hooks/useTableManager";
@@ -57,7 +58,7 @@ import {
   type UserUpdatePayload,
 } from "@/services/userService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePermissions, type Permission } from "@/hooks/usePermissions";
 import { AccessDenied } from "@/components/ui/AccessDenied";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -69,7 +70,8 @@ type ModalState =
   | { type: "none" }
   | { type: "create" }
   | { type: "edit"; user: UserListItem }
-  | { type: "delete"; user: UserListItem };
+  | { type: "delete"; user: UserListItem }
+  | { type: "permissions"; user: UserListItem };
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
@@ -568,6 +570,133 @@ function StatusFilterPills({ value, onChange, counts }: StatusFilterPillsProps) 
   );
 }
 
+// ─── Permissions modal ────────────────────────────────────────────────────────
+
+const ALL_PERMISSIONS: Permission[] = [
+  'manage_users',
+  'manage_products',
+  'manage_stock',
+  'manage_suppliers',
+  'manage_clients',
+  'view_reports',
+  'view_barcodes',
+  'view_invoices',
+  'make_sales',
+  'manage_settings',
+];
+
+const PERMISSION_LABELS: Record<Permission, string> = {
+  manage_users: 'Gérer les utilisateurs',
+  manage_products: 'Gérer les produits',
+  manage_stock: 'Gérer le stock',
+  manage_suppliers: 'Gérer les fournisseurs',
+  manage_clients: 'Gérer les clients',
+  view_reports: 'Consulter les rapports',
+  view_barcodes: 'Consulter les codes-barres',
+  view_invoices: 'Consulter les factures',
+  make_sales: 'Effectuer des ventes',
+  manage_settings: 'Gérer les paramètres',
+};
+
+const PERMISSION_GROUPS: { label: string; permissions: Permission[] }[] = [
+  {
+    label: 'Gestion',
+    permissions: [
+      'manage_users',
+      'manage_products',
+      'manage_stock',
+      'manage_suppliers',
+      'manage_clients',
+    ],
+  },
+  {
+    label: 'Consultation',
+    permissions: [
+      'view_reports',
+      'view_barcodes',
+      'view_invoices',
+      'make_sales',
+      'manage_settings',
+    ],
+  },
+];
+
+interface PermissionsModalProps {
+  user: UserListItem;
+  onSave: (permissions: Permission[]) => void;
+  onCancel: () => void;
+  isSaving: boolean;
+}
+
+function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModalProps) {
+  const initial = (user.permissions ?? []) as Permission[];
+  const [selected, setSelected] = useState<Set<Permission>>(new Set(initial));
+
+  function toggle(p: Permission) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(p)) {
+        next.delete(p);
+      } else {
+        next.add(p);
+      }
+      return next;
+    });
+  }
+
+  const displayName = user.full_name || user.username;
+
+  return (
+    <div className="space-y-5">
+      {PERMISSION_GROUPS.map((group) => (
+        <div key={group.label}>
+          <p className={[FIELD_LABEL_CLASSES, "mb-2"].join(" ")}>{group.label}</p>
+          <div className="space-y-2">
+            {group.permissions.map((p) => {
+              const checked = selected.has(p);
+              return (
+                <label
+                  key={p}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle(p)}
+                    className="h-4 w-4 rounded border-input accent-primary cursor-pointer shrink-0"
+                  />
+                  <span className="text-sm text-foreground">{PERMISSION_LABELS[p]}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      <DialogFooter className="gap-2 sm:gap-3 pt-1">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isSaving}
+          className="min-h-[44px] rounded-lg"
+        >
+          Annuler
+        </Button>
+        <Button
+          type="button"
+          disabled={isSaving}
+          className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+          onClick={() => onSave(Array.from(selected))}
+        >
+          {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Enregistrer
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const ROLE_FILTER_OPTIONS = [
@@ -652,6 +781,19 @@ export default function UsersPage() {
     },
     onError: () => {
       toast.error("Erreur lors de la révocation.");
+    },
+  });
+
+  const permissionsMutation = useMutation({
+    mutationFn: ({ id, permissions }: { id: number; permissions: Permission[] }) =>
+      userService.setPermissions(id, permissions),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setModal({ type: "none" });
+      toast.success("Permissions mises à jour.");
+    },
+    onError: () => {
+      toast.error("Erreur lors de la mise à jour des permissions.");
     },
   });
 
@@ -917,6 +1059,16 @@ export default function UsersPage() {
                               >
                                 <Pencil className="w-4 h-4" />
                               </button>
+                              {user.profile.role === "vendeur" && (
+                                <button
+                                  className="inline-flex items-center justify-center w-9 h-9 rounded-md text-indigo-500/70 hover:text-indigo-600 hover:bg-indigo-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40"
+                                  title="Gérer les permissions"
+                                  aria-label={`Gérer les permissions de ${displayName}`}
+                                  onClick={() => setModal({ type: "permissions", user })}
+                                >
+                                  <ShieldCheck className="w-4 h-4" />
+                                </button>
+                              )}
                               <button
                                 className={[
                                   "inline-flex items-center justify-center w-9 h-9 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2",
@@ -1016,6 +1168,16 @@ export default function UsersPage() {
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
+                      {user.profile.role === "vendeur" && (
+                        <button
+                          className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-indigo-500/70 hover:text-indigo-600 hover:bg-indigo-500/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40"
+                          title="Gérer les permissions"
+                          aria-label={`Gérer les permissions de ${displayName}`}
+                          onClick={() => setModal({ type: "permissions", user })}
+                        >
+                          <ShieldCheck className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         className={[
                           "inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2",
@@ -1112,6 +1274,50 @@ export default function UsersPage() {
                 onSubmit={handleEdit}
                 onCancel={() => setModal({ type: "none" })}
                 isSubmitting={updateMutation.isPending}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Modal : Gérer les permissions ── */}
+      <Dialog
+        open={modal.type === "permissions"}
+        onOpenChange={(open) => {
+          if (!permissionsMutation.isPending && !open) setModal({ type: "none" });
+        }}
+      >
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both]">
+          <DialogHeader className="pb-2 border-b border-border/60">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 shrink-0">
+                <ShieldCheck className="w-4 h-4" />
+              </span>
+              <div>
+                <DialogTitle className="text-base font-semibold">
+                  Permissions de{" "}
+                  {modal.type === "permissions"
+                    ? modal.user.full_name || modal.user.username
+                    : ""}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Cochez les accès à accorder à cet utilisateur
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="pt-1 max-h-[70vh] overflow-y-auto pr-1">
+            {modal.type === "permissions" && (
+              <PermissionsModal
+                user={modal.user}
+                onSave={(permissions) =>
+                  permissionsMutation.mutate({
+                    id: modal.user.id,
+                    permissions,
+                  })
+                }
+                onCancel={() => setModal({ type: "none" })}
+                isSaving={permissionsMutation.isPending}
               />
             )}
           </div>

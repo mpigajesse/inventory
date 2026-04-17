@@ -51,6 +51,30 @@ class UserViewSet(viewsets.ModelViewSet):
         user.profile.save()
         return Response({'status': 'activated'})
 
+    @action(detail=True, methods=['patch'], url_path='set-permissions')
+    def set_permissions(self, request, pk=None):
+        VALID_PERMISSIONS = [
+            'manage_users', 'manage_products', 'manage_stock', 'view_reports',
+            'manage_settings', 'manage_suppliers', 'view_barcodes',
+            'make_sales', 'view_invoices', 'manage_clients',
+        ]
+        user = self.get_object()
+        permissions = request.data.get('permissions', None)
+        if permissions is None or not isinstance(permissions, list):
+            return Response(
+                {'detail': '`permissions` doit être une liste.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        invalid = [p for p in permissions if p not in VALID_PERMISSIONS]
+        if invalid:
+            return Response(
+                {'detail': f'Permissions invalides : {invalid}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user.profile.permissions = permissions
+        user.profile.save(update_fields=['permissions'])
+        return Response({'permissions': permissions}, status=status.HTTP_200_OK)
+
 
 class MeView(generics.RetrieveUpdateAPIView):
     serializer_class = MeSerializer

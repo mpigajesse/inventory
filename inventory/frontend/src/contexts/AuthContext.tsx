@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authService, AuthUser } from '@/services/authService';
+import type { Permission } from '@/hooks/usePermissions';
 
 export type UserRole = 'admin' | 'vendeur';
 
@@ -9,6 +10,7 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
+  permissions?: Permission[];
 }
 
 interface AuthContextValue {
@@ -26,6 +28,7 @@ function mapApiUserToUser(apiUser: AuthUser): User {
     email: apiUser.email,
     role: apiUser.profile.role,
     avatar: apiUser.profile.avatar_url || undefined,
+    permissions: (apiUser as AuthUser & { permissions?: Permission[] }).permissions ?? [],
   };
 }
 
