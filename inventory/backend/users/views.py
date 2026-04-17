@@ -1,7 +1,11 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -24,6 +28,11 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             try:
                 from django.contrib.auth.models import User as DjangoUser
                 user = DjangoUser.objects.get(username=username)
+                # Track last_seen on successful login
+                profile = getattr(user, 'profile', None)
+                if profile:
+                    profile.last_seen = timezone.now()
+                    profile.save(update_fields=['last_seen'])
                 from activity.utils import log_activity
                 log_activity(
                     user=user,
@@ -154,6 +163,29 @@ class UserViewSet(viewsets.ModelViewSet):
         from activity.serializers import ActivityLogSerializer
         logs = ActivityLog.objects.filter(user=user).order_by('-created_at')[:20]
         return Response(ActivityLogSerializer(logs, many=True).data)
+
+
+class OnlineUsersView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdminRole]
+
+    def get(self, request):
+        threshold = timezone.now() - timedelta(minutes=5)
+        profiles = (
+            UserProfile.objects.filter(last_seen__gte=threshold)
+            .select_related('user')
+        )
+        data = [
+            {
+                'user_id': p.user.pk,
+                'username': p.user.username,
+                'full_name': p.user.get_full_name(),
+                'last_seen': p.last_seen,
+                'is_online': True,
+                'role': p.role,
+            }
+            for p in profiles
+        ]
+        return Response(data)
 
 
 class MeView(generics.RetrieveUpdateAPIView):

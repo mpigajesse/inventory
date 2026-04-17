@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 
 from django.db.models import Count, Max
 from django.utils import timezone
@@ -12,6 +13,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django_filters.rest_framework import DjangoFilterBackend
 
+from users.models import UserProfile
 from .models import ActivityLog
 from .serializers import ActivityLogSerializer
 
@@ -141,3 +143,185 @@ class VendeurSummaryView(APIView):
             })
 
         return Response(result)
+
+
+class ActivityRealtimeView(APIView):
+    """
+    Polling endpoint for real-time activity feed and online-user presence.
+
+    GET /api/activity/realtime/?since_id=<last_seen_id>
+
+    Returns new ActivityLog entries since `since_id` (last 10 if omitted),
+    the current highest log ID, and the list of users active in the last 5 min.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        since_id_param = request.query_params.get('since_id')
+
+        if since_id_param is not None:
+            try:
+                since_id = int(since_id_param)
+            except ValueError:
+                since_id = None
+        else:
+            since_id = None
+
+        if since_id is not None:
+            new_logs_qs = (
+                ActivityLog.objects
+                .filter(id__gt=since_id)
+                .select_related('user')
+                .order_by('-created_at')[:20]
+            )
+        else:
+            new_logs_qs = (
+                ActivityLog.objects
+                .select_related('user')
+                .order_by('-created_at')[:10]
+            )
+
+        new_logs = list(new_logs_qs)
+        serialized_logs = ActivityLogSerializer(new_logs, many=True).data
+
+        latest = ActivityLog.objects.order_by('-id').values_list('id', flat=True).first()
+        latest_id = latest if latest is not None else 0
+
+        cutoff = timezone.now() - timedelta(minutes=5)
+        online_profiles = (
+            UserProfile.objects
+            .filter(last_seen__gte=cutoff)
+            .select_related('user')
+        )
+
+        online_users = [
+            {
+                'user_id': p.user.id,
+                'username': p.user.username,
+                'full_name': p.user.get_full_name() or p.user.username,
+            }
+            for p in online_profiles
+        ]
+
+        return Response({
+            'new_logs': serialized_logs,
+            'latest_id': latest_id,
+            'online_count': len(online_users),
+            'online_users': online_users,
+        })
+
+
+class SmartAlertsView(APIView):
+    """
+    Admin-only endpoint that detects behavioural patterns and returns actionable alerts.
+
+    GET /api/activity/alerts/
+
+    Alert types:
+      - inactivity  : vendeur logged in today but last_seen > 30 min ago
+      - big_sale    : sale with total_amount > 50 000 FCFA in the last hour
+      - high_velocity: vendeur with > 20 sales in the last hour
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _require_admin(self, request: Request) -> None:
+        profile = getattr(request.user, 'profile', None)
+        if profile is None or profile.role != 'admin':
+            raise PermissionDenied("Accès réservé aux administrateurs.")
+
+    def get(self, request: Request) -> Response:
+        self._require_admin(request)
+
+        from sales.models import Sale
+
+        now = timezone.now()
+        today_start = timezone.make_aware(
+            datetime.datetime.combine(now.date(), datetime.time.min)
+        )
+        one_hour_ago = now - timedelta(hours=1)
+        thirty_min_ago = now - timedelta(minutes=30)
+
+        alerts = []
+        alert_id = 1
+
+        # --- 1. Inactivity alert ---
+        inactive_profiles = (
+            UserProfile.objects
+            .filter(
+                role='vendeur',
+                last_seen__gte=today_start,
+                last_seen__lt=thirty_min_ago,
+            )
+            .select_related('user')
+        )
+        for profile in inactive_profiles:
+            elapsed_minutes = int((now - profile.last_seen).total_seconds() // 60)
+            full_name = profile.user.get_full_name() or profile.user.username
+            alerts.append({
+                'id': alert_id,
+                'type': 'inactivity',
+                'severity': 'warning',
+                'title': 'Vendeur inactif',
+                'message': f"{full_name} est inactif depuis {elapsed_minutes} min",
+                'user_id': profile.user.id,
+                'user_name': full_name,
+                'created_at': now,
+            })
+            alert_id += 1
+
+        # --- 2. Big sale alert ---
+        big_sales = (
+            Sale.objects
+            .filter(created_at__gte=one_hour_ago, total_amount__gt=50000)
+            .select_related('cashier')
+            .order_by('-created_at')
+        )
+        for sale in big_sales:
+            cashier = sale.cashier
+            cashier_name = cashier.get_full_name() or cashier.username if cashier else 'Inconnu'
+            cashier_id = cashier.id if cashier else None
+            alerts.append({
+                'id': alert_id,
+                'type': 'big_sale',
+                'severity': 'info',
+                'title': 'Vente importante',
+                'message': (
+                    f"Vente de {sale.total_amount:,} FCFA enregistrée"
+                    f" par {cashier_name}"
+                ).replace(',', ' '),
+                'user_id': cashier_id,
+                'user_name': cashier_name,
+                'created_at': sale.created_at,
+            })
+            alert_id += 1
+
+        # --- 3. High-velocity alert ---
+        from django.db.models import Count as _Count
+        high_velocity_rows = (
+            Sale.objects
+            .filter(created_at__gte=one_hour_ago)
+            .values('cashier__id', 'cashier__username', 'cashier__first_name', 'cashier__last_name')
+            .annotate(sale_count=_Count('id'))
+            .filter(sale_count__gt=20)
+            .order_by('-sale_count')
+        )
+        for row in high_velocity_rows:
+            first = row['cashier__first_name'] or ''
+            last = row['cashier__last_name'] or ''
+            full_name = f"{first} {last}".strip() or row['cashier__username']
+            alerts.append({
+                'id': alert_id,
+                'type': 'high_velocity',
+                'severity': 'warning',
+                'title': 'Activité intense',
+                'message': (
+                    f"{full_name} a réalisé {row['sale_count']} ventes"
+                    f" en moins d'une heure"
+                ),
+                'user_id': row['cashier__id'],
+                'user_name': full_name,
+                'created_at': now,
+            })
+            alert_id += 1
+
+        return Response(alerts)

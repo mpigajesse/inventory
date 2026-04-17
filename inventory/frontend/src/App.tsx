@@ -193,9 +193,13 @@ const App = () => (
             <Route element={<VendeurLayout />}>
               <Route path="/vendeur" element={<Navigate to="/vendeur/dashboard" replace />} />
               <Route path="/vendeur/dashboard" element={<VendeurDashboardPage />} />
-              <Route path="/vendeur/pos" element={<VendeurPosPage />} />
-              <Route path="/vendeur/settings" element={<SettingsPage />} />
-              <Route path="/vendeur/profile" element={<ProfilePage />} />
+              <Route path="/vendeur/pos"       element={<VendeurPosPage />} />
+              <Route path="/vendeur/invoices"  element={<InvoicesPage />} />
+              <Route path="/vendeur/clients"   element={<ClientsPage />} />
+              <Route path="/vendeur/clients/new"       element={<ClientFormPage />} />
+              <Route path="/vendeur/clients/:id/edit"  element={<ClientFormPage />} />
+              <Route path="/vendeur/settings"  element={<SettingsPage />} />
+              <Route path="/vendeur/profile"   element={<ProfilePage />} />
             </Route>
 
             {/* Admin — routes /admin/* */}

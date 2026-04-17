@@ -18,8 +18,16 @@ class UserProfile(models.Model):
         blank=True,
         help_text="Liste des permissions accordées à cet utilisateur",
     )
+    last_seen = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def is_online(self) -> bool:
+        if not self.last_seen:
+            return False
+        from django.utils import timezone
+        return (timezone.now() - self.last_seen).total_seconds() < 300  # 5 min
 
     class Meta:
         verbose_name = 'Profil utilisateur'

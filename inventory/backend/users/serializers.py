@@ -6,13 +6,17 @@ from .models import UserProfile
 
 class UserProfileSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
+    is_online = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions']
+        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions', 'last_seen', 'is_online']
 
     def get_avatar_url(self, obj):
         return obj.avatar.url if obj.avatar else None
+
+    def get_is_online(self, obj) -> bool:
+        return obj.is_online
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -94,14 +98,18 @@ class ChangePasswordSerializer(serializers.Serializer):
 class MeProfileSerializer(serializers.ModelSerializer):
     """Only phone and avatar are writable for self-update — role/is_active/permissions are read-only."""
     avatar_url = serializers.SerializerMethodField()
+    is_online = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions']
-        read_only_fields = ['role', 'is_active', 'permissions']
+        fields = ['role', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions', 'last_seen', 'is_online']
+        read_only_fields = ['role', 'is_active', 'permissions', 'last_seen', 'is_online']
 
     def get_avatar_url(self, obj):
         return obj.avatar.url if obj.avatar else None
+
+    def get_is_online(self, obj) -> bool:
+        return obj.is_online
 
 
 class MeSerializer(serializers.ModelSerializer):

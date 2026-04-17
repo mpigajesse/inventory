@@ -178,7 +178,7 @@ function VendeurCard({ vendeur, delay }: { vendeur: VendeurActivitySummary; dela
 
   return (
     <Link
-      to={`/admin/users/${vendeur.user_id}`}
+      to={`/users/${vendeur.user_id}`}
       style={{ textDecoration: "none", color: "inherit" }}
     >
       <div

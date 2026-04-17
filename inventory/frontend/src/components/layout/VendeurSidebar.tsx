@@ -27,8 +27,8 @@ interface NavItem {
  */
 const coreItems: NavItem[] = [
   { label: "Tableau de bord", path: "/vendeur/dashboard", icon: Home },
-  { label: "Factures", path: "/invoices", icon: FileText },
-  { label: "Clients", path: "/clients", icon: Users },
+  { label: "Factures",        path: "/vendeur/invoices",  icon: FileText },
+  { label: "Clients",         path: "/vendeur/clients",   icon: Users },
 ];
 
 const accountItems: NavItem[] = [
@@ -137,10 +137,10 @@ export function VendeurSidebar({
 
   // Mobile bottom-nav: dashboard, pos, invoices, clients
   const mobileBottomItems: NavItem[] = [
-    { label: "Accueil", path: "/vendeur/dashboard", icon: Home },
-    { label: "Caisse", path: "/vendeur/pos", icon: ShoppingCart },
-    { label: "Factures", path: "/invoices", icon: FileText },
-    { label: "Clients", path: "/clients", icon: Users },
+    { label: "Accueil",  path: "/vendeur/dashboard", icon: Home },
+    { label: "Caisse",   path: "/vendeur/pos",       icon: ShoppingCart },
+    { label: "Factures", path: "/vendeur/invoices",  icon: FileText },
+    { label: "Clients",  path: "/vendeur/clients",   icon: Users },
   ];
 
   return (

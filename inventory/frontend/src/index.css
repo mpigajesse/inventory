@@ -1816,6 +1816,58 @@ html.theme-couchant {
   50%       { transform: translateY(-12px); }
 }
 
+/* ── Login page ─────────────────────────────────────────────────────────── */
+@keyframes loginPanelReveal {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes loginFormReveal {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes loginCardFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes loginShine {
+  from { left: -80px; opacity: 0; }
+  20%  { opacity: 1; }
+  to   { left: calc(100% + 80px); opacity: 0; }
+}
+
+@keyframes loginInputFocus {
+  0%   { box-shadow: 0 0 0 0 hsl(22 72% 48% / 0.4); }
+  100% { box-shadow: 0 0 0 4px hsl(22 72% 48% / 0); }
+}
+
+@keyframes loginOrbDrift {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  33%  { transform: translate(15px, -20px) scale(1.05); }
+  66%  { transform: translate(-10px, 10px) scale(0.97); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes loginCountUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loginGlassCard {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.login-hero-panel {
+  animation: loginPanelReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.login-form-panel {
+  animation: loginFormReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
 @layer utilities {
   .animate-count-up-new   { animation: count-up-new 0.5s var(--ease-out-expo) both; }
   .animate-slide-in-up    { animation: slide-in-up 0.4s var(--ease-out-expo) both; }

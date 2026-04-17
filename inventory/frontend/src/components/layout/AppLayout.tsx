@@ -2,6 +2,7 @@ import { Outlet, Navigate } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { PageTransition } from "./PageTransition";
+import { AdminActivityToast } from "./AdminActivityToast";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -87,6 +88,7 @@ export function AppLayout() {
         </main>
       </div>
 
+      {currentUser?.role === "admin" && <AdminActivityToast />}
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
     </div>
   );
