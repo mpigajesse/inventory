@@ -515,17 +515,17 @@ export default function PosPage() {
             <div
               className="mb-5 overflow-hidden"
               style={{
-                background: "#fff",
+                background: "hsl(var(--card))",
                 borderRadius: "8px",
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10), 0 1.5px 6px 0 rgba(0,0,0,0.06)",
+                border: "1px solid hsl(var(--border))",
+                boxShadow: "var(--shadow-md)",
                 padding: "16px 18px",
                 position: "relative",
               }}
             >
               <div style={{
                 position: "absolute", top: 0, left: 0, right: 0, height: "6px",
-                background: "repeating-linear-gradient(90deg, #fff 0px, #fff 5px, #f3f4f6 5px, #f3f4f6 10px)",
+                background: "repeating-linear-gradient(90deg, hsl(var(--card)) 0px, hsl(var(--card)) 5px, hsl(var(--muted)) 5px, hsl(var(--muted)) 10px)",
               }} />
               <div style={{ paddingTop: "8px" }}>
                 <Receipt
@@ -540,7 +540,7 @@ export default function PosPage() {
               </div>
               <div style={{
                 position: "absolute", bottom: 0, left: 0, right: 0, height: "6px",
-                background: "repeating-linear-gradient(90deg, #fff 0px, #fff 5px, #f3f4f6 5px, #f3f4f6 10px)",
+                background: "repeating-linear-gradient(90deg, hsl(var(--card)) 0px, hsl(var(--card)) 5px, hsl(var(--muted)) 5px, hsl(var(--muted)) 10px)",
               }} />
             </div>
 
@@ -647,9 +647,9 @@ export default function PosPage() {
                 className="w-full pl-10 pr-24 py-3 text-sm font-medium outline-none transition-all text-foreground placeholder:text-muted-foreground/60"
                 style={{
                   borderRadius: "12px",
-                  background: "hsl(0 0% 100%)",
+                  background: "hsl(var(--card))",
                   border: "1.5px solid hsl(var(--border))",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  boxShadow: "var(--shadow-sm)",
                   fontFamily: "Inter, sans-serif",
                 }}
                 onFocus={e => {
@@ -822,7 +822,7 @@ export default function PosPage() {
             mobileTab === "cart" ? "flex-1" : "hidden md:flex"
           )}
           style={{
-            background: "linear-gradient(160deg, hsl(20 30% 7%), hsl(18 22% 10%))",
+            background: "hsl(var(--sidebar-bg))",
             position: "relative",
           }}
         >
@@ -843,7 +843,7 @@ export default function PosPage() {
           {/* Ticket header */}
           <div
             className="p-5 shrink-0"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ borderBottom: "1px solid hsl(var(--sidebar-border))" }}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -855,7 +855,7 @@ export default function PosPage() {
                 </div>
                 <div>
                   <h2 className="text-white font-bold text-base leading-tight">Ticket en cours</h2>
-                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  <p className="text-[11px]" style={{ color: "hsl(var(--sidebar-fg) / 0.55)" }}>
                     {totalItems === 0 ? "Panier vide" : `${totalItems} article${totalItems > 1 ? "s" : ""}`}
                   </p>
                 </div>
@@ -866,9 +866,9 @@ export default function PosPage() {
                   onClick={() => setCart([])}
                   className="text-xs font-semibold uppercase tracking-wider transition-all px-3 py-1.5 rounded-lg"
                   style={{
-                    color: "rgba(255,255,255,0.35)",
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "hsl(var(--sidebar-fg) / 0.5)",
+                    background: "transparent",
+                    border: "1px solid hsl(var(--sidebar-border))",
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.color = "rgba(239,68,68,0.9)";
@@ -876,9 +876,9 @@ export default function PosPage() {
                     e.currentTarget.style.background = "rgba(239,68,68,0.08)";
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.color = "rgba(255,255,255,0.35)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                    e.currentTarget.style.color = "hsl(var(--sidebar-fg) / 0.5)";
+                    e.currentTarget.style.borderColor = "hsl(var(--sidebar-border))";
+                    e.currentTarget.style.background = "transparent";
                   }}
                 >
                   Vider
@@ -912,14 +912,14 @@ export default function PosPage() {
               <div className="flex flex-col items-center justify-center h-full px-6 text-center py-16">
                 <div
                   className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{ background: "hsl(var(--sidebar-border) / 0.35)", border: "1px solid hsl(var(--sidebar-border))" }}
                 >
-                  <Package className="w-9 h-9" style={{ color: "rgba(255,255,255,0.2)" }} />
+                  <Package className="w-9 h-9" style={{ color: "hsl(var(--sidebar-fg) / 0.35)" }} />
                 </div>
-                <p className="text-sm font-semibold mb-1" style={{ color: "rgba(255,255,255,0.6)" }}>
+                <p className="text-sm font-semibold mb-1" style={{ color: "hsl(var(--sidebar-fg))" }}>
                   Ticket vide
                 </p>
-                <p className="text-xs leading-relaxed max-w-[200px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                <p className="text-xs leading-relaxed max-w-[200px]" style={{ color: "hsl(var(--sidebar-fg) / 0.45)" }}>
                   Scannez ou sélectionnez un produit pour démarrer
                 </p>
               </div>
@@ -942,12 +942,12 @@ export default function PosPage() {
                           ? "hsl(22 72% 48% / 0.15)"
                           : hasWarning
                           ? "rgba(234,179,8,0.08)"
-                          : "rgba(255,255,255,0.05)",
+                          : "hsl(var(--sidebar-border) / 0.3)",
                         border: flashItem === item.id
                           ? "1px solid hsl(22 72% 48% / 0.4)"
                           : hasWarning
                           ? "1px solid rgba(234,179,8,0.25)"
-                          : "1px solid rgba(255,255,255,0.07)",
+                          : "1px solid hsl(var(--sidebar-border))",
                         transition: "opacity 200ms ease-out, transform 200ms ease-out, background 200ms ease, border-color 200ms ease",
                         opacity: isRemoving ? 0 : 1,
                         transform: isNew
@@ -963,18 +963,18 @@ export default function PosPage() {
                       {/* Icon */}
                       <div
                         className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center overflow-hidden"
-                        style={{ background: "rgba(255,255,255,0.08)" }}
+                        style={{ background: "hsl(var(--sidebar-border) / 0.5)" }}
                       >
                         <ProductIcon name={item.name} category={item.category} size="sm" imageUrl={item.imageUrl} />
                       </div>
 
                       {/* Name + price */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold truncate leading-tight" style={{ color: "rgba(255,255,255,0.9)" }}>
+                        <p className="text-xs font-semibold truncate leading-tight" style={{ color: "hsl(var(--sidebar-fg-active))" }}>
                           {item.name}
                         </p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] tabular-nums" style={{ color: "rgba(255,255,255,0.35)" }}>
+                          <span className="text-[10px] tabular-nums" style={{ color: "hsl(var(--sidebar-fg) / 0.5)" }}>
                             {item.price.toLocaleString("fr-FR")} F
                           </span>
                           {hasWarning && (
@@ -991,21 +991,21 @@ export default function PosPage() {
                         <button
                           onClick={() => updateQty(item.id, -1)}
                           className="w-6 h-6 rounded-md flex items-center justify-center transition-all touch-manipulation"
-                          style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "white"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+                          style={{ background: "hsl(var(--sidebar-border) / 0.5)", color: "hsl(var(--sidebar-fg))" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "hsl(var(--sidebar-border))"; e.currentTarget.style.color = "white"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "hsl(var(--sidebar-border) / 0.5)"; e.currentTarget.style.color = "hsl(var(--sidebar-fg))"; }}
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="text-xs font-bold w-5 text-center tabular-nums" style={{ color: "white" }}>
+                        <span className="text-xs font-bold w-5 text-center tabular-nums" style={{ color: "hsl(var(--sidebar-fg-active))" }}>
                           {item.qty}
                         </span>
                         <button
                           onClick={() => updateQty(item.id, 1)}
                           className="w-6 h-6 rounded-md flex items-center justify-center transition-all touch-manipulation"
-                          style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "white"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+                          style={{ background: "hsl(var(--sidebar-border) / 0.5)", color: "hsl(var(--sidebar-fg))" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "hsl(var(--sidebar-border))"; e.currentTarget.style.color = "white"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "hsl(var(--sidebar-border) / 0.5)"; e.currentTarget.style.color = "hsl(var(--sidebar-fg))"; }}
                         >
                           <Plus className="w-3 h-3" />
                         </button>
@@ -1014,7 +1014,7 @@ export default function PosPage() {
                       {/* Line total */}
                       <p
                         className="text-xs font-bold w-16 text-right shrink-0 tabular-nums"
-                        style={{ fontFamily: "Fraunces, Georgia, serif", color: "rgba(255,255,255,0.85)" }}
+                        style={{ fontFamily: "Fraunces, Georgia, serif", color: "hsl(var(--sidebar-fg-active))" }}
                       >
                         {lineTotal.toLocaleString("fr-FR")}
                       </p>
@@ -1040,16 +1040,16 @@ export default function PosPage() {
           {cart.length > 0 && (
             <div
               className="p-5 shrink-0"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
+              style={{ borderTop: "1px solid hsl(var(--sidebar-border))" }}
             >
               {!showPayment ? (
                 <>
                   {/* Sous-total */}
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span style={{ color: "rgba(255,255,255,0.4)" }}>Sous-total</span>
+                    <span style={{ color: "hsl(var(--sidebar-fg) / 0.55)" }}>Sous-total</span>
                     <span
                       className="font-medium tabular-nums"
-                      style={{ fontFamily: "Fraunces, Georgia, serif", color: "rgba(255,255,255,0.6)" }}
+                      style={{ fontFamily: "Fraunces, Georgia, serif", color: "hsl(var(--sidebar-fg))" }}
                     >
                       {subtotal.toLocaleString("fr-FR")} FCFA
                     </span>
@@ -1067,7 +1067,7 @@ export default function PosPage() {
 
                   {/* Total */}
                   <div className="flex justify-between items-center mb-5">
-                    <span className="text-white font-bold text-lg">Total</span>
+                    <span className="font-bold text-lg" style={{ color: "hsl(var(--sidebar-fg-active))" }}>Total</span>
                     <span
                       className="font-black tabular-nums leading-none"
                       style={{
@@ -1143,7 +1143,7 @@ export default function PosPage() {
 
                   {/* Montant reçu */}
                   <div>
-                    <label className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    <label className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: "hsl(var(--sidebar-fg) / 0.55)" }}>
                       Montant reçu
                     </label>
                     <Input
@@ -1162,7 +1162,7 @@ export default function PosPage() {
 
                   {/* Montants rapides */}
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-1.5" style={{ color: "hsl(var(--sidebar-fg) / 0.45)" }}>
                       Montant rapide
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -1172,9 +1172,9 @@ export default function PosPage() {
                           onClick={() => setAmountGiven(String(amt))}
                           className="min-h-[34px] px-2.5 py-1 text-[11px] rounded-lg transition-all font-bold tabular-nums active:scale-95"
                           style={{
-                            color: "rgba(255,255,255,0.6)",
-                            background: "rgba(255,255,255,0.07)",
-                            border: "1px solid rgba(255,255,255,0.1)",
+                            color: "hsl(var(--sidebar-fg))",
+                            background: "hsl(var(--sidebar-border) / 0.4)",
+                            border: "1px solid hsl(var(--sidebar-border))",
                           }}
                           onMouseEnter={e => {
                             e.currentTarget.style.color = "white";
@@ -1182,9 +1182,9 @@ export default function PosPage() {
                             e.currentTarget.style.background = "hsl(22 72% 48% / 0.15)";
                           }}
                           onMouseLeave={e => {
-                            e.currentTarget.style.color = "rgba(255,255,255,0.6)";
-                            e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                            e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+                            e.currentTarget.style.color = "hsl(var(--sidebar-fg))";
+                            e.currentTarget.style.borderColor = "hsl(var(--sidebar-border))";
+                            e.currentTarget.style.background = "hsl(var(--sidebar-border) / 0.4)";
                           }}
                         >
                           {amt.toLocaleString("fr-FR")}
@@ -1232,9 +1232,9 @@ export default function PosPage() {
                       disabled={saleMutation.isPending}
                       className="flex-1 h-12 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
                       style={{
-                        color: "rgba(255,255,255,0.6)",
-                        background: "rgba(255,255,255,0.07)",
-                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "hsl(var(--sidebar-fg))",
+                        background: "hsl(var(--sidebar-border) / 0.4)",
+                        border: "1px solid hsl(var(--sidebar-border))",
                       }}
                     >
                       <X className="w-4 h-4" />

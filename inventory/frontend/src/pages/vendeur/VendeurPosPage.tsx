@@ -816,11 +816,10 @@ export default function VendeurPosPage() {
             <div
               className="mb-5 overflow-hidden"
               style={{
-                background: "#fff",
+                background: "hsl(var(--card))",
                 borderRadius: "8px",
-                border: "1px solid #e5e7eb",
-                boxShadow:
-                  "0 4px 24px 0 rgba(0,0,0,0.10), 0 1.5px 6px 0 rgba(0,0,0,0.06)",
+                border: "1px solid hsl(var(--border))",
+                boxShadow: "var(--shadow-md)",
                 padding: "16px 18px",
                 position: "relative",
               }}
@@ -833,7 +832,7 @@ export default function VendeurPosPage() {
                   right: 0,
                   height: "6px",
                   background:
-                    "repeating-linear-gradient(90deg, #fff 0px, #fff 5px, #f3f4f6 5px, #f3f4f6 10px)",
+                    "repeating-linear-gradient(90deg, hsl(var(--card)) 0px, hsl(var(--card)) 5px, hsl(var(--muted)) 5px, hsl(var(--muted)) 10px)",
                 }}
               />
               <div style={{ paddingTop: "8px" }}>
@@ -855,7 +854,7 @@ export default function VendeurPosPage() {
                   right: 0,
                   height: "6px",
                   background:
-                    "repeating-linear-gradient(90deg, #fff 0px, #fff 5px, #f3f4f6 5px, #f3f4f6 10px)",
+                    "repeating-linear-gradient(90deg, hsl(var(--card)) 0px, hsl(var(--card)) 5px, hsl(var(--muted)) 5px, hsl(var(--muted)) 10px)",
                 }}
               />
             </div>
@@ -1130,8 +1129,7 @@ export default function VendeurPosPage() {
           <div
             className="px-4 md:px-5 py-4 border-b flex items-center justify-between shrink-0 relative overflow-hidden"
             style={{
-              background:
-                "linear-gradient(135deg, hsl(20 32% 8%), hsl(22 28% 11%), hsl(18 24% 7%))",
+              background: "hsl(var(--sidebar-bg))",
             }}
           >
             {/* Diagonal stripe pattern */}
@@ -1365,7 +1363,7 @@ export default function VendeurPosPage() {
                     className="rounded-2xl p-4"
                     style={{
                       background:
-                        "linear-gradient(135deg, hsl(20 30% 8%), hsl(22 26% 12%))",
+                        "hsl(var(--sidebar-bg))",
                       border: "1px solid hsl(22 72% 48% / 0.2)",
                     }}
                   >
