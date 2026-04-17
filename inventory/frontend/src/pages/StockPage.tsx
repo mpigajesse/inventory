@@ -215,6 +215,30 @@ function TableSkeleton() {
   );
 }
 
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className="rounded-xl bg-card border p-3 flex flex-col gap-2 animate-pulse">
+          <div className="flex items-start gap-2">
+            <div className="w-8 h-8 rounded-lg bg-muted shrink-0" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3 bg-muted rounded w-3/4" />
+              <div className="h-2.5 bg-muted/60 rounded w-1/2" />
+            </div>
+          </div>
+          <div className="h-7 bg-muted rounded w-1/3" />
+          <div className="h-1.5 bg-muted rounded-full" />
+          <div className="flex justify-between">
+            <div className="h-3 bg-muted/60 rounded w-1/4" />
+            <div className="h-5 bg-muted rounded-full w-1/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
 function StatusPill({ status }: { status: StockItem["status"] }) {
@@ -1154,13 +1178,13 @@ export default function StockPage() {
 
         {/* ── Table toolbar (category filter + bulk actions + export) ───────── */}
         <TableToolbar
-          showCheckbox
+          showCheckbox={viewMode === "list"}
           isAllSelected={isAllSelected(allPageIds)}
           isIndeterminate={isIndeterminate(allPageIds)}
           onToggleAll={() => toggleAll(allPageIds)}
           selectedCount={selectedIds.size}
           bulkActions={
-            can("manage_stock") ? (
+            viewMode === "list" && can("manage_stock") ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -1192,6 +1216,7 @@ export default function StockPage() {
         )}
 
         {/* ── Vue grille ─────────────────────────────────────────────────────── */}
+        {viewMode === "grid" && isLoading && <GridSkeleton />}
         {viewMode === "grid" && !isLoading && (
           <div key={tableKey}>
             {typedPaginated.length === 0 && (
@@ -1310,12 +1335,10 @@ export default function StockPage() {
             </div>
           </div>
         )}
-        {viewMode === "grid" && isLoading && <TableSkeleton />}
-
         {/* ── Vue liste — Desktop ────────────────────────────────────────────── */}
-        {viewMode === "list" && isLoading ? (
+        {viewMode === "list" && (isLoading ? (
           <TableSkeleton />
-        ) : viewMode === "list" ? (
+        ) : (
           <div key={tableKey} className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
             <div className="overflow-x-auto max-h-[70vh]">
               <table className="data-table">
@@ -1451,11 +1474,11 @@ export default function StockPage() {
               </table>
             </div>
           </div>
-        ) : null}
+        ))}
 
         {/* ── Mobile : card list ─────────────────────────────────────────────── */}
         {viewMode === "list" && !isLoading && (
-          <div key={tableKey} className="md:hidden space-y-2">
+          <div key={tableKey + "-m"} className="md:hidden space-y-2">
             {typedPaginated.length === 0 && (
               <div className="text-center py-8 text-muted-foreground text-sm">
                 Aucun produit trouvé.
