@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,7 +9,12 @@
   /* Direction visuelle : Afrique contemporaine — chaleur terracotta/cuivre comme couleur primaire,
      vert forêt gabonaise en accent, neutrals ivoire chaud (jamais gris froid).
      Sidebar sombre dans les deux thèmes pour ancrage professionnel et lisibilité en caisse.
-     Inspiré des marchés, de l'artisanat et de la lumière naturelle d'Afrique centrale. */
+     Inspiré des marchés, de l'artisanat et de la lumière naturelle d'Afrique centrale.
+
+     Typographie : Plus Jakarta Sans (titres — moderne, ouverte, légèrement humaniste)
+                   + Inter (corps — lisibilité maximale sur écrans et impression facture)
+                   + Fraunces (accents éditoriaux — chiffres KPI, montants FCFA).
+  */
   :root {
     --background: 30 20% 97%;
     --foreground: 20 25% 12%;
@@ -45,6 +51,85 @@
     --ring: 22 72% 48%;
 
     --radius: 0.5rem;
+
+    /* ── Typographie premium ──────────────────────────────────────────── */
+    --font-heading: 'Plus Jakarta Sans', 'Sora', system-ui, -apple-system, sans-serif;
+    --font-body: 'Inter', 'Instrument Sans', system-ui, -apple-system, sans-serif;
+    --font-editorial: 'Fraunces', 'Plus Jakarta Sans', Georgia, serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+
+    /* Échelle typographique fluide (clamp pour responsivité naturelle) */
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.875rem;    /* 14px */
+    --text-base: 1rem;      /* 16px */
+    --text-lg: 1.125rem;    /* 18px */
+    --text-xl: 1.25rem;     /* 20px */
+    --text-2xl: 1.5rem;     /* 24px */
+    --text-3xl: clamp(1.75rem, 1.45rem + 1vw, 2rem);
+    --text-4xl: clamp(2rem, 1.65rem + 1.3vw, 2.5rem);
+    --text-hero: clamp(2.5rem, 1.8rem + 2.5vw, 3.75rem);
+
+    /* ── Rayons arrondis harmonieux ──────────────────────────────────── */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-pill: 999px;
+
+    /* ── Transitions standards ───────────────────────────────────────── */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* ── Shadows teintées cuivre / brun chaud (pas de gris froid) ────── */
+    --shadow-color-warm: 22 40% 20%;
+    --shadow-sm: 0 1px 2px 0 hsl(var(--shadow-color-warm) / 0.06),
+                 0 1px 3px -1px hsl(var(--shadow-color-warm) / 0.04);
+    --shadow-md: 0 2px 4px -1px hsl(var(--shadow-color-warm) / 0.08),
+                 0 4px 12px -2px hsl(var(--shadow-color-warm) / 0.07);
+    --shadow-lg: 0 4px 10px -2px hsl(var(--shadow-color-warm) / 0.09),
+                 0 12px 28px -6px hsl(var(--shadow-color-warm) / 0.12);
+    --shadow-xl: 0 8px 16px -4px hsl(var(--shadow-color-warm) / 0.12),
+                 0 24px 48px -12px hsl(var(--shadow-color-warm) / 0.18);
+    --shadow-inner: inset 0 1px 2px 0 hsl(var(--shadow-color-warm) / 0.06);
+    --shadow-focus: 0 0 0 3px hsl(var(--primary) / 0.18);
+
+    /* ── Gradients utilitaires ───────────────────────────────────────── */
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(22 72% 48%) 0%,
+      hsl(30 82% 55%) 60%,
+      hsl(36 88% 60%) 100%
+    );
+    --gradient-primary-hover: linear-gradient(
+      135deg,
+      hsl(22 78% 44%) 0%,
+      hsl(30 85% 52%) 60%,
+      hsl(36 90% 58%) 100%
+    );
+    --gradient-dark: linear-gradient(
+      140deg,
+      hsl(20 30% 8%) 0%,
+      hsl(22 26% 13%) 55%,
+      hsl(24 22% 16%) 100%
+    );
+    --gradient-subtle: linear-gradient(
+      180deg,
+      hsl(30 25% 99%) 0%,
+      hsl(30 18% 96%) 100%
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(152 38% 38%) 0%,
+      hsl(145 42% 32%) 100%
+    );
+    --gradient-mesh:
+      radial-gradient(at 12% 8%, hsl(22 72% 48% / 0.12) 0, transparent 45%),
+      radial-gradient(at 92% 18%, hsl(36 88% 60% / 0.10) 0, transparent 50%),
+      radial-gradient(at 20% 92%, hsl(152 38% 38% / 0.08) 0, transparent 55%);
 
     --sidebar-bg: 20 30% 10%;
     --sidebar-fg: 28 20% 72%;
@@ -95,8 +180,48 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-body);
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-feature-settings: 'ss01', 'cv11';
+    letter-spacing: -0.011em;
+    color: hsl(var(--foreground));
+  }
+
+  /* Chiffres tabulaires par défaut pour colonnes de données, prix, timers */
+  .tabular-nums,
+  .data-table td,
+  .data-table th,
+  .stat-value,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  /* Focus-visible cohérent sur toute l'app */
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Respect de prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -208,6 +333,346 @@
     content: '';
     @apply absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r;
     background: hsl(var(--sidebar-accent));
+  }
+
+  /* ── Composants premium ─────────────────────────────────────────────── */
+
+  /* Bouton primaire — gradient terracotta avec hover lift subtil */
+  .btn-primary {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.125rem;
+    min-height: 44px;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    letter-spacing: -0.005em;
+    color: hsl(var(--primary-foreground));
+    background: var(--gradient-primary);
+    border: 1px solid hsl(22 72% 42% / 0.4);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm),
+                inset 0 1px 0 hsl(0 0% 100% / 0.18);
+    cursor: pointer;
+    transition:
+      transform var(--transition-fast),
+      box-shadow var(--transition-fast),
+      background var(--transition-base);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-primary-hover);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    z-index: -1;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md),
+                inset 0 1px 0 hsl(0 0% 100% / 0.22);
+  }
+
+  .btn-primary:hover::after {
+    opacity: 1;
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm),
+                inset 0 1px 2px hsl(22 40% 20% / 0.18);
+  }
+
+  .btn-primary:disabled,
+  .btn-primary[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Bouton secondaire — surface ivoire avec bordure chaude */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.125rem;
+    min-height: 44px;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: hsl(var(--foreground));
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition:
+      transform var(--transition-fast),
+      border-color var(--transition-fast),
+      box-shadow var(--transition-fast),
+      background var(--transition-base);
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-1px);
+    border-color: hsl(var(--primary) / 0.55);
+    background: hsl(var(--secondary));
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-secondary:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-inner);
+  }
+
+  /* Carte premium — shadow chaude, border subtile, hover lift */
+  .card-premium {
+    position: relative;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition:
+      transform var(--transition-base),
+      box-shadow var(--transition-base),
+      border-color var(--transition-base);
+    overflow: hidden;
+  }
+
+  .card-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-subtle);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-base);
+  }
+
+  .card-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: hsl(var(--primary) / 0.25);
+  }
+
+  .card-premium:hover::before {
+    opacity: 0.6;
+  }
+
+  .card-premium > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Pill status — système cohérent pour badges de statut */
+  .badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition: background var(--transition-fast);
+  }
+
+  .badge-status::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  .badge-status[data-variant='success'] {
+    color: hsl(var(--success));
+    background: hsl(var(--success) / 0.1);
+    border-color: hsl(var(--success) / 0.22);
+  }
+
+  .badge-status[data-variant='warning'] {
+    color: hsl(36 72% 38%);
+    background: hsl(var(--warning) / 0.14);
+    border-color: hsl(var(--warning) / 0.32);
+  }
+
+  .badge-status[data-variant='danger'] {
+    color: hsl(var(--destructive));
+    background: hsl(var(--destructive) / 0.1);
+    border-color: hsl(var(--destructive) / 0.22);
+  }
+
+  .badge-status[data-variant='info'] {
+    color: hsl(var(--badge-blue));
+    background: hsl(var(--badge-blue) / 0.1);
+    border-color: hsl(var(--badge-blue) / 0.22);
+  }
+
+  .badge-status[data-variant='default'] {
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--muted));
+    border-color: hsl(var(--border));
+  }
+
+  /* Input premium — focus ring cuivre */
+  .input-premium {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    min-height: 44px;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    color: hsl(var(--foreground));
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-inner);
+    transition:
+      border-color var(--transition-fast),
+      box-shadow var(--transition-fast),
+      background var(--transition-fast);
+  }
+
+  .input-premium::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .input-premium:hover {
+    border-color: hsl(var(--primary) / 0.45);
+  }
+
+  .input-premium:focus,
+  .input-premium:focus-visible {
+    outline: none;
+    border-color: hsl(var(--primary));
+    background: hsl(var(--card));
+    box-shadow:
+      var(--shadow-inner),
+      0 0 0 3px hsl(var(--primary) / 0.18);
+  }
+
+  .input-premium:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: hsl(var(--muted));
+  }
+
+  .input-premium[aria-invalid='true'] {
+    border-color: hsl(var(--destructive));
+    box-shadow:
+      var(--shadow-inner),
+      0 0 0 3px hsl(var(--destructive) / 0.15);
+  }
+
+  /* Header de page premium — underline couleur primaire, typo éditoriale */
+  .page-header-premium {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .page-header-premium::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 56px;
+    height: 3px;
+    border-radius: var(--radius-pill);
+    background: var(--gradient-primary);
+    box-shadow: 0 1px 4px hsl(22 72% 48% / 0.35);
+  }
+
+  .page-header-premium .page-header-eyebrow {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: hsl(var(--primary));
+  }
+
+  .page-header-premium .page-header-title {
+    font-family: var(--font-heading);
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.15;
+    color: hsl(var(--foreground));
+  }
+
+  .page-header-premium .page-header-subtitle {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    color: hsl(var(--muted-foreground));
+    max-width: 60ch;
+  }
+
+  /* Chiffres éditoriaux pour montants FCFA et KPI */
+  .amount-editorial {
+    font-family: var(--font-editorial);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Surface mesh — fond décoratif subtil pour pages vides ou hero interne */
+  .surface-mesh {
+    background-color: hsl(var(--background));
+    background-image: var(--gradient-mesh);
+  }
+
+  /* Texte en gradient — pour titres hero éditoriaux (usage parcimonieux) */
+  .text-gradient-primary {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Divider premium — séparateur avec accent cuivre au centre */
+  .divider-premium {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .divider-premium::before,
+  .divider-premium::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--border)) 50%,
+      transparent 100%
+    );
   }
 }
 
@@ -727,6 +1192,140 @@ html.theme-couchant {
 @keyframes featureIn {
   from { opacity: 0; transform: translateX(-14px); }
   to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Animations premium — affinées et additionnelles ─────────────────── */
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeScaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+/* countUp : fade discret + léger lift — l'animation de valeur numérique
+   elle-même doit être pilotée côté JS (requestAnimationFrame ou lib) ; ce
+   keyframe gère l'arrivée visuelle de la carte KPI. */
+@keyframes countUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(2px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes pulseSoft {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+  }
+}
+
+@keyframes shimmerBar {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@layer utilities {
+  .animate-slide-in-right { animation: slideInRight 0.35s var(--ease-out-expo) both; }
+  .animate-slide-in-left  { animation: slideInLeft 0.35s var(--ease-out-expo) both; }
+  .animate-slide-in-down  { animation: slideInDown 0.25s var(--ease-out-quart) both; }
+  .animate-fade-scale     { animation: fadeScale 0.3s var(--ease-out-expo) both; }
+  .animate-fade-scale-out { animation: fadeScaleOut 0.2s ease-in both; }
+  .animate-count-up       { animation: countUp 0.55s var(--ease-out-expo) both; }
+  .animate-pulse-soft     { animation: pulseSoft 2s ease-out infinite; }
+
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.6) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmerBar 1.6s linear infinite;
+  }
+
+  /* Gradient helpers — disponibles partout via @apply ou className */
+  .bg-gradient-primary { background: var(--gradient-primary); }
+  .bg-gradient-dark    { background: var(--gradient-dark); }
+  .bg-gradient-subtle  { background: var(--gradient-subtle); }
+  .bg-gradient-accent  { background: var(--gradient-accent); }
+
+  /* Shadow helpers alignés sur les tokens warm */
+  .shadow-warm-sm { box-shadow: var(--shadow-sm); }
+  .shadow-warm-md { box-shadow: var(--shadow-md); }
+  .shadow-warm-lg { box-shadow: var(--shadow-lg); }
+  .shadow-warm-xl { box-shadow: var(--shadow-xl); }
+
+  /* Radius helpers harmonieux */
+  .rounded-premium-sm { border-radius: var(--radius-sm); }
+  .rounded-premium-md { border-radius: var(--radius-md); }
+  .rounded-premium-lg { border-radius: var(--radius-lg); }
+  .rounded-premium-xl { border-radius: var(--radius-xl); }
+
+  /* Font-family helpers */
+  .font-heading   { font-family: var(--font-heading); }
+  .font-body      { font-family: var(--font-body); }
+  .font-editorial { font-family: var(--font-editorial); }
 }
 
 @layer utilities {

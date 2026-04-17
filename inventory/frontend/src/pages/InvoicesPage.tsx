@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Printer, Download, Package } from "lucide-react";
+import { Eye, Printer, Download, Package, FileText, Plus, Receipt } from "lucide-react";
 import { useState } from "react";
 import { useTableManager } from "@/hooks/useTableManager";
 import { invoiceService } from "@/services/invoiceService";
@@ -223,44 +223,82 @@ export default function InvoicesPage() {
   const countByStatus = (status: Invoice["status"]) =>
     allInvoices.filter((inv) => inv.status === status).length;
 
+  // Total général (sur l'ensemble filtré actuel)
+  const grandTotal = invoices.reduce(
+    (acc, inv) => acc + Number(inv.total_amount || 0),
+    0
+  );
+
   return (
     <>
       <Topbar title="Factures" subtitle="Historique des factures générées" onMenuClick={onMenuClick} />
       <div className="page-container animate-slide-in">
 
-        {/* Toolbar */}
-        <PageHeader
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Rechercher une facture..."
-          action={
-            <Button variant="outline">
+        {/* ── Premium Header ─────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
+              <Receipt className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-tight">Factures</h1>
+                <span className="inline-flex items-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold">
+                  {allInvoices.length}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Historique des factures générées
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
               Exporter
             </Button>
-          }
-        />
-
-        {/* Onglets filtre statut */}
-        <div className="flex flex-wrap items-center gap-1 mb-4 bg-muted/40 rounded-lg p-1 w-fit">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setStatusFilter(f.value)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                statusFilter === f.value
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground shadow-sm hover:shadow-md transition-shadow"
+              onClick={() => { window.location.href = "/pos"; }}
             >
-              {f.label}
-              {f.value !== "all" && !isLoading && (
-                <span className="ml-1.5 text-xs opacity-60">
-                  ({countByStatus(f.value as Invoice["status"])})
-                </span>
-              )}
-            </button>
-          ))}
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle facture
+            </Button>
+          </div>
+        </div>
+
+        {/* ── Filtres : search + statut — ligne horizontale ─────────── */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
+          <div className="flex-1 min-w-0">
+            <PageHeader
+              search={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Rechercher par numéro ou client..."
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1 bg-muted/40 rounded-lg p-1 w-fit shrink-0">
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setStatusFilter(f.value)}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  statusFilter === f.value
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f.label}
+                {f.value !== "all" && !isLoading && (
+                  <span className="ml-1.5 text-[11px] opacity-60 font-mono">
+                    {countByStatus(f.value as Invoice["status"])}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Loading state */}
@@ -273,7 +311,7 @@ export default function InvoicesPage() {
         {/* Desktop : tableau normal */}
         {!isLoading && (
           <>
-            <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
+            <div className="hidden md:block bg-card rounded-xl border overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="data-table">
                   <thead>
@@ -281,44 +319,59 @@ export default function InvoicesPage() {
                       <th>N° Facture</th>
                       <SortableHeader label="Date" sortKey="issued_at" currentSort={sort} onSort={toggleSort} />
                       <th>Client</th>
-                      <th>Articles</th>
+                      <th className="text-center">Articles</th>
                       <SortableHeader label="Total" sortKey="total_amount" currentSort={sort} onSort={toggleSort} />
                       <th>Statut</th>
-                      <th className="w-20">Actions</th>
+                      <th className="w-24 text-right pr-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {typedPaginated.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                          Aucune facture trouvée.
+                        <td colSpan={7} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <FileText className="w-8 h-8 opacity-40" />
+                            <p className="text-sm">Aucune facture trouvée.</p>
+                          </div>
                         </td>
                       </tr>
                     )}
                     {typedPaginated.map((inv) => (
-                      <tr key={inv.id}>
-                        <td className="font-medium font-mono text-xs">{inv.invoice_number}</td>
-                        <td>{formatDate(inv.issued_at)}</td>
-                        <td>{inv.client_name ?? "Client comptoir"}</td>
-                        <td>{inv.items?.length ?? 0}</td>
-                        <td className="font-medium">{formatFCFA(inv.total_amount)}</td>
+                      <tr key={inv.id} className="group">
+                        <td className="font-mono text-xs text-muted-foreground tracking-tight">
+                          {inv.invoice_number}
+                        </td>
+                        <td className="text-sm tabular-nums">{formatDate(inv.issued_at)}</td>
+                        <td className="font-medium text-sm">
+                          {inv.client_name ?? (
+                            <span className="text-muted-foreground italic font-normal">Client comptoir</span>
+                          )}
+                        </td>
+                        <td className="text-center text-sm tabular-nums text-muted-foreground">
+                          {inv.items?.length ?? 0}
+                        </td>
+                        <td>
+                          <span className="font-mono font-bold text-primary tabular-nums">
+                            {formatFCFA(inv.total_amount)}
+                          </span>
+                        </td>
                         <td>
                           <StatusBadge
                             label={STATUS_LABELS[inv.status]}
                             variant={STATUS_VARIANTS[inv.status]}
                           />
                         </td>
-                        <td>
-                          <div className="flex items-center gap-1">
+                        <td className="pr-4">
+                          <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                             <button
-                              className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                              className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
                               title="Voir la facture"
                               onClick={() => setViewingInvoice(inv)}
                             >
                               <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                             </button>
                             <button
-                              className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                              className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
                               title="Imprimer"
                               onClick={() => {
                                 setViewingInvoice(inv);
@@ -332,34 +385,52 @@ export default function InvoicesPage() {
                       </tr>
                     ))}
                   </tbody>
+                  {typedPaginated.length > 0 && (
+                    <tfoot>
+                      <tr className="bg-muted/30 border-t-2 border-primary/20">
+                        <td colSpan={4} className="text-right text-xs uppercase tracking-wider font-semibold text-muted-foreground py-3">
+                          Total général
+                        </td>
+                        <td className="py-3">
+                          <span className="font-mono font-bold text-lg text-primary tabular-nums">
+                            {formatFCFA(grandTotal)}
+                          </span>
+                        </td>
+                        <td colSpan={2} />
+                      </tr>
+                    </tfoot>
+                  )}
                 </table>
               </div>
             </div>
 
             {/* Mobile : card list — md:hidden */}
-            <div className="md:hidden space-y-2">
+            <div className="md:hidden space-y-2.5">
               {typedPaginated.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  Aucune facture trouvée.
+                <div className="bg-card border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
+                  <FileText className="w-8 h-8 opacity-40" />
+                  <p className="text-sm">Aucune facture trouvée.</p>
                 </div>
               )}
               {typedPaginated.map((inv) => (
                 <div
                   key={inv.id}
-                  className="bg-card border rounded-xl p-4 flex flex-col gap-3"
+                  className="bg-card border rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
                 >
                   {/* Header row : numéro + statut */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-mono text-xs font-semibold text-foreground truncate">
+                      <p className="font-mono text-[11px] text-muted-foreground truncate tracking-tight">
                         {inv.invoice_number}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                        {inv.client_name ?? "Client comptoir"}
+                      <p className="text-sm font-semibold mt-0.5 truncate">
+                        {inv.client_name ?? (
+                          <span className="text-muted-foreground italic font-normal">Client comptoir</span>
+                        )}
                       </p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">
                         {formatDate(inv.issued_at)}
-                        <span className="mx-1 opacity-40">•</span>
+                        <span className="mx-1.5 opacity-40">·</span>
                         {inv.items?.length ?? 0} article
                         {(inv.items?.length ?? 0) > 1 ? "s" : ""}
                       </p>
@@ -371,23 +442,25 @@ export default function InvoicesPage() {
                   </div>
 
                   {/* Footer row : total + actions */}
-                  <div className="flex items-center justify-between gap-3 pt-2 border-t">
-                    <span
-                      className="font-bold text-base"
-                      style={{ color: "hsl(var(--primary))" }}
-                    >
-                      {formatFCFA(inv.total_amount)}
-                    </span>
+                  <div className="flex items-center justify-between gap-3 pt-3 border-t">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                        Total
+                      </span>
+                      <span className="font-mono font-bold text-lg text-primary tabular-nums leading-tight">
+                        {formatFCFA(inv.total_amount)}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
-                        className="p-2 rounded-md hover:bg-secondary transition-colors"
+                        className="p-2 rounded-md hover:bg-primary/10 transition-colors"
                         title="Voir la facture"
                         onClick={() => setViewingInvoice(inv)}
                       >
                         <Eye className="w-4 h-4 text-muted-foreground" />
                       </button>
                       <button
-                        className="p-2 rounded-md hover:bg-secondary transition-colors"
+                        className="p-2 rounded-md hover:bg-primary/10 transition-colors"
                         title="Imprimer"
                         onClick={() => {
                           setViewingInvoice(inv);

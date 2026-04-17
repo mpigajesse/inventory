@@ -30,6 +30,7 @@ import {
   Trash2,
   Eye,
   Loader2,
+  Package,
 } from "lucide-react";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { useState } from "react";
@@ -174,20 +175,45 @@ export default function ProductsPage() {
         onMenuClick={onMenuClick}
       />
       <div className="page-container animate-slide-in">
-        {/* Actions bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-          <SearchInput
-            placeholder="Rechercher un produit ou code-barres..."
-            value={search}
-            onChange={setSearch}
-          />
+        {/* Header de page premium */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          <div className="border-l-4 border-primary pl-3">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
+              Catalogue produits
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isLoading ? (
+                <span className="opacity-60">Chargement…</span>
+              ) : (
+                <>
+                  <span className="font-medium text-foreground">
+                    {products.length}
+                  </span>{" "}
+                  produit{products.length !== 1 ? "s" : ""} référencé
+                  {products.length !== 1 ? "s" : ""}
+                </>
+              )}
+            </p>
+          </div>
           <Button
-            className="shrink-0 sm:ml-auto"
+            size="lg"
+            className="shrink-0 rounded-lg shadow-md shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
             onClick={() => navigate("/products/new")}
           >
             <Plus className="w-4 h-4 mr-2" />
             Ajouter un produit
           </Button>
+        </div>
+
+        {/* Barre de filtres — card horizontale */}
+        <div className="bg-card border rounded-xl shadow-sm p-3 sm:p-4 mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <SearchInput
+              placeholder="Rechercher un produit ou code-barres..."
+              value={search}
+              onChange={setSearch}
+            />
+          </div>
         </div>
 
         {/* Barre d'outils tableau */}
@@ -226,8 +252,9 @@ export default function ProductsPage() {
             </div>
           )}
           {!isLoading && typedPaginated.length === 0 && (
-            <div className="bg-card border rounded-xl py-8 text-center text-sm text-muted-foreground">
-              Aucun produit trouvé.
+            <div className="bg-card border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
+              <Package className="w-8 h-8 opacity-40" />
+              <p className="text-sm">Aucun produit trouvé.</p>
             </div>
           )}
           {!isLoading &&
@@ -318,10 +345,10 @@ export default function ProductsPage() {
         </div>
 
         {/* Desktop table — hidden md:block */}
-        <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
+          <div className="overflow-x-auto max-h-[70vh]">
             <table className="data-table">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
                 <tr>
                   <th className="w-10 px-4">
                     <span className="sr-only">Sélection</span>
@@ -350,10 +377,16 @@ export default function ProductsPage() {
                     </td>
                   </tr>
                 )}
-                {!isLoading && typedPaginated.map((product) => (
+                {!isLoading && typedPaginated.map((product, idx) => (
                   <tr
                     key={product.id}
-                    className={isSelected(product.id) ? "bg-primary/5" : undefined}
+                    className={
+                      isSelected(product.id)
+                        ? "bg-primary/5"
+                        : idx % 2 === 1
+                          ? "bg-muted/20"
+                          : undefined
+                    }
                   >
                     <td className="w-10">
                       <input

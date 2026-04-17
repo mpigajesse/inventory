@@ -11,9 +11,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-import { User, Shield, KeyRound, Settings2, Save, Eye, EyeOff, Loader2 } from "lucide-react";
-import { useState } from "react";
+import {
+  User,
+  Shield,
+  KeyRound,
+  Settings2,
+  Save,
+  Eye,
+  EyeOff,
+  Loader2,
+  Camera,
+  Mail,
+  BadgeCheck,
+} from "lucide-react";
+import { useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -53,12 +64,158 @@ type PreferencesFormValues = z.infer<typeof preferencesSchema>;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "?"
+  );
+}
+
+// ─── Shared UI primitives ─────────────────────────────────────────────────────
+
+const SECTION_CARD_CLASSES =
+  "relative bg-card rounded-xl border border-border/70 shadow-[0_1px_2px_rgba(120,60,20,0.04),0_8px_24px_-12px_rgba(120,60,20,0.10)] overflow-hidden mb-6";
+
+const FIELD_LABEL_CLASSES =
+  "text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em]";
+
+interface SectionHeaderProps {
+  icon: React.ReactNode;
+  title: string;
+  description?: string;
+}
+
+function SectionHeader({ icon, title, description }: SectionHeaderProps) {
+  return (
+    <header className="flex items-start gap-3 mb-5">
+      <span className="mt-0.5 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 text-primary shrink-0">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <h2 className="text-base sm:text-lg font-semibold leading-tight text-foreground">
+          {title}
+        </h2>
+        {description ? (
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{description}</p>
+        ) : null}
+      </div>
+    </header>
+  );
+}
+
+// ─── Avatar header (identity card) ───────────────────────────────────────────
+
+function IdentityCard() {
+  const { currentUser } = useAuth();
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const initials = getInitials(currentUser?.name ?? "");
+  const isAdmin = currentUser?.role === "admin";
+
+  function handleAvatarClick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarPreview(reader.result as string);
+      toast({ title: "Photo de profil chargée (non envoyée au serveur)." });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <section
+      className={`${SECTION_CARD_CLASSES}`}
+      aria-labelledby="profile-identity-title"
+    >
+      <div
+        className="h-20 sm:h-24"
+        style={{
+          background:
+            "linear-gradient(135deg, hsl(var(--primary) / 0.18) 0%, hsl(var(--accent) / 0.14) 55%, hsl(var(--primary) / 0.08) 100%)",
+        }}
+        aria-hidden="true"
+      />
+      <div className="px-5 sm:px-6 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10 sm:-mt-12">
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={handleAvatarClick}
+              className="group relative block w-24 h-24 sm:w-28 sm:h-28 rounded-full ring-4 ring-card shadow-[0_8px_28px_-12px_rgba(120,60,20,0.45)] overflow-hidden focus-visible:outline-none focus-visible:ring-primary"
+              aria-label="Changer la photo de profil"
+            >
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span
+                  className="flex items-center justify-center w-full h-full text-3xl sm:text-4xl font-bold text-primary-foreground"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.75) 100%)",
+                  }}
+                >
+                  {initials}
+                </span>
+              )}
+              <span className="absolute inset-0 flex items-center justify-center bg-foreground/55 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-200">
+                <Camera className="w-6 h-6 text-background" />
+              </span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleFileChange}
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* Identity */}
+          <div className="flex-1 min-w-0 pb-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1
+                id="profile-identity-title"
+                className="text-xl sm:text-2xl font-semibold text-foreground leading-tight truncate"
+              >
+                {currentUser?.name || "Utilisateur"}
+              </h1>
+              <span
+                className={[
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider",
+                  isAdmin
+                    ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+                    : "bg-accent/15 text-accent ring-1 ring-accent/25",
+                ].join(" ")}
+              >
+                <BadgeCheck className="w-3 h-3" />
+                {isAdmin ? "Admin" : "Vendeur"}
+              </span>
+            </div>
+            <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+              <Mail className="w-3.5 h-3.5" />
+              {currentUser?.email || "—"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 // ─── Profile section ──────────────────────────────────────────────────────────
@@ -89,7 +246,6 @@ function ProfileSection() {
     },
   });
 
-  // Derive first/last name from currentUser.name as best-effort default
   const nameParts = (currentUser?.name ?? "").split(" ");
   const defaultFirstName = nameParts[0] ?? "";
   const defaultLastName = nameParts.slice(1).join(" ");
@@ -97,7 +253,8 @@ function ProfileSection() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
+    reset,
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -112,88 +269,91 @@ function ProfileSection() {
   }
 
   return (
-    <div className="bg-card rounded-lg border p-5 sm:p-6 mb-6">
-      {/* Avatar + identity */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold shrink-0">
-          {getInitials(currentUser?.name ?? "?")}
+    <section className={SECTION_CARD_CLASSES} aria-labelledby="profile-account-title">
+      <div className="border-l-4 border-primary pl-5 pr-5 sm:pl-6 sm:pr-6 py-5 sm:py-6">
+        <div id="profile-account-title">
+          <SectionHeader
+            icon={<User className="w-5 h-5" />}
+            title="Informations personnelles"
+            description="Mettez à jour votre nom et votre email pour identifier vos actions."
+          />
         </div>
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <p className="font-semibold">{currentUser?.name}</p>
-            <StatusBadge
-              label={currentUser?.role === "admin" ? "Admin" : "Vendeur"}
-              variant={currentUser?.role === "admin" ? "info" : "default"}
-            />
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="profile-first-name" className={FIELD_LABEL_CLASSES}>
+                Prénom <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="profile-first-name"
+                placeholder="Ex : Jean"
+                className="h-11 rounded-lg focus-visible:ring-primary/60"
+                {...register("first_name")}
+              />
+              {errors.first_name && (
+                <p className="text-xs text-destructive mt-1">{errors.first_name.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="profile-last-name" className={FIELD_LABEL_CLASSES}>
+                Nom <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="profile-last-name"
+                placeholder="Ex : Mouloungui"
+                className="h-11 rounded-lg focus-visible:ring-primary/60"
+                {...register("last_name")}
+              />
+              {errors.last_name && (
+                <p className="text-xs text-destructive mt-1">{errors.last_name.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="profile-email" className={FIELD_LABEL_CLASSES}>
+                Email <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="profile-email"
+                type="email"
+                placeholder="exemple@naoservices.ga"
+                className="h-11 rounded-lg focus-visible:ring-primary/60"
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
-        </div>
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!isDirty || updateMutation.isPending}
+              onClick={() => reset()}
+              className="min-h-[44px] rounded-lg"
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={updateMutation.isPending}
+              className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              {updateMutation.isPending ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </div>
+        </form>
       </div>
-
-      {/* Form header */}
-      <div className="flex items-center gap-3 mb-4">
-        <User className="w-5 h-5 text-primary" />
-        <h2 className="text-base font-semibold">Mon compte</h2>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="profile-first-name">
-              Prénom <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="profile-first-name"
-              placeholder="Ex : Jean"
-              {...register("first_name")}
-            />
-            {errors.first_name && (
-              <p className="text-xs text-destructive">{errors.first_name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="profile-last-name">
-              Nom <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="profile-last-name"
-              placeholder="Ex : Mouloungui"
-              {...register("last_name")}
-            />
-            {errors.last_name && (
-              <p className="text-xs text-destructive">{errors.last_name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="profile-email">
-              Email <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="profile-email"
-              type="email"
-              placeholder="exemple@naoservices.ga"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button type="submit" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            {updateMutation.isPending ? "Enregistrement…" : "Enregistrer"}
-          </Button>
-        </div>
-      </form>
-    </div>
+    </section>
   );
 }
 
@@ -235,100 +395,129 @@ function SecuritySection() {
   }
 
   return (
-    <div className="bg-card rounded-lg border p-5 sm:p-6 mb-6">
-      <div className="flex items-center gap-3 mb-5">
-        <KeyRound className="w-5 h-5 text-primary" />
-        <h2 className="text-base font-semibold">Sécurité</h2>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="pwd-current">
-            Mot de passe actuel <span className="text-destructive">*</span>
-          </Label>
-          <div className="relative">
-            <Input
-              id="pwd-current"
-              type={showCurrentPassword ? "text" : "password"}
-              placeholder="••••••••"
-              {...register("current")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={showCurrentPassword ? "Masquer" : "Afficher"}
-            >
-              {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-          {errors.current && (
-            <p className="text-xs text-destructive">{errors.current.message}</p>
-          )}
+    <section className={SECTION_CARD_CLASSES} aria-labelledby="profile-security-title">
+      <div className="border-l-4 border-primary pl-5 pr-5 sm:pl-6 sm:pr-6 py-5 sm:py-6">
+        <div id="profile-security-title">
+          <SectionHeader
+            icon={<KeyRound className="w-5 h-5" />}
+            title="Sécurité"
+            description="Changez votre mot de passe régulièrement pour protéger votre compte."
+          />
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="pwd-next">
-            Nouveau mot de passe <span className="text-destructive">*</span>
-          </Label>
-          <div className="relative">
-            <Input
-              id="pwd-next"
-              type={showNewPassword ? "text" : "password"}
-              placeholder="••••••••"
-              {...register("next")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowNewPassword(!showNewPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={showNewPassword ? "Masquer" : "Afficher"}
-            >
-              {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-          {errors.next && (
-            <p className="text-xs text-destructive">{errors.next.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="pwd-confirm">
-            Confirmer le nouveau mot de passe <span className="text-destructive">*</span>
-          </Label>
-          <div className="relative">
-            <Input
-              id="pwd-confirm"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="••••••••"
-              {...register("confirm")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={showConfirmPassword ? "Masquer" : "Afficher"}
-            >
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-          {errors.confirm && (
-            <p className="text-xs text-destructive">{errors.confirm.message}</p>
-          )}
-        </div>
-
-        <div className="flex justify-end">
-          <Button type="submit" variant="outline" disabled={changePasswordMutation.isPending}>
-            {changePasswordMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Shield className="w-4 h-4 mr-2" />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="space-y-1.5">
+            <Label htmlFor="pwd-current" className={FIELD_LABEL_CLASSES}>
+              Mot de passe actuel <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <Input
+                id="pwd-current"
+                type={showCurrentPassword ? "text" : "password"}
+                placeholder="••••••••"
+                className="h-11 rounded-lg pr-11 focus-visible:ring-primary/60"
+                {...register("current")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                aria-label={showCurrentPassword ? "Masquer" : "Afficher"}
+              >
+                {showCurrentPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+            {errors.current && (
+              <p className="text-xs text-destructive mt-1">{errors.current.message}</p>
             )}
-            {changePasswordMutation.isPending ? "Modification…" : "Changer le mot de passe"}
-          </Button>
-        </div>
-      </form>
-    </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="pwd-next" className={FIELD_LABEL_CLASSES}>
+                Nouveau mot de passe <span className="text-destructive">*</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="pwd-next"
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="h-11 rounded-lg pr-11 focus-visible:ring-primary/60"
+                  {...register("next")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  aria-label={showNewPassword ? "Masquer" : "Afficher"}
+                >
+                  {showNewPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              {errors.next && (
+                <p className="text-xs text-destructive mt-1">{errors.next.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="pwd-confirm" className={FIELD_LABEL_CLASSES}>
+                Confirmer <span className="text-destructive">*</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="pwd-confirm"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="h-11 rounded-lg pr-11 focus-visible:ring-primary/60"
+                  {...register("confirm")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  aria-label={showConfirmPassword ? "Masquer" : "Afficher"}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              {errors.confirm && (
+                <p className="text-xs text-destructive mt-1">{errors.confirm.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={changePasswordMutation.isPending}
+              className="min-h-[44px] rounded-lg border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
+            >
+              {changePasswordMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Shield className="w-4 h-4 mr-2" />
+              )}
+              {changePasswordMutation.isPending
+                ? "Modification…"
+                : "Changer le mot de passe"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </section>
   );
 }
 
@@ -346,66 +535,79 @@ function PreferencesSection() {
   });
 
   function onSubmit(_values: PreferencesFormValues) {
-    // Preferences are UI-only (no backend endpoint). Persist locally if needed.
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
 
   return (
-    <div className="bg-card rounded-lg border p-5 sm:p-6 mb-6">
-      <div className="flex items-center gap-3 mb-5">
-        <Settings2 className="w-5 h-5 text-primary" />
-        <h2 className="text-base font-semibold">Préférences</h2>
+    <section className={SECTION_CARD_CLASSES} aria-labelledby="profile-preferences-title">
+      <div className="border-l-4 border-primary pl-5 pr-5 sm:pl-6 sm:pr-6 py-5 sm:py-6">
+        <div id="profile-preferences-title">
+          <SectionHeader
+            icon={<Settings2 className="w-5 h-5" />}
+            title="Préférences"
+            description="Langue de l'interface et fuseau horaire par défaut."
+          />
+        </div>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-5"
+        >
+          <div className="space-y-1.5">
+            <Label className={FIELD_LABEL_CLASSES}>Langue de l'interface</Label>
+            <Controller
+              control={control}
+              name="language"
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger className="h-11 rounded-lg">
+                    <SelectValue placeholder="Langue" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fr">Français</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className={FIELD_LABEL_CLASSES}>Fuseau horaire</Label>
+            <Controller
+              control={control}
+              name="timezone"
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger className="h-11 rounded-lg">
+                    <SelectValue placeholder="Fuseau horaire" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Africa/Libreville">
+                      Africa/Libreville (UTC+1)
+                    </SelectItem>
+                    <SelectItem value="Africa/Lagos">Africa/Lagos (UTC+1)</SelectItem>
+                    <SelectItem value="Europe/Paris">Europe/Paris (UTC+1/+2)</SelectItem>
+                    <SelectItem value="UTC">UTC</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          <div className="sm:col-span-2 flex justify-end pt-2">
+            <Button
+              type="submit"
+              variant="outline"
+              className="min-h-[44px] rounded-lg border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saved ? "Préférences sauvegardées !" : "Sauvegarder"}
+            </Button>
+          </div>
+        </form>
       </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label>Langue de l'interface</Label>
-          <Controller
-            control={control}
-            name="language"
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Langue" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fr">Français</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Fuseau horaire</Label>
-          <Controller
-            control={control}
-            name="timezone"
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Fuseau horaire" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Africa/Libreville">Africa/Libreville (UTC+1)</SelectItem>
-                  <SelectItem value="Africa/Lagos">Africa/Lagos (UTC+1)</SelectItem>
-                  <SelectItem value="Europe/Paris">Europe/Paris (UTC+1/+2)</SelectItem>
-                  <SelectItem value="UTC">UTC</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-
-        <div className="flex justify-end">
-          <Button type="submit" variant="outline">
-            <Save className="w-4 h-4 mr-2" />
-            {saved ? "Préférences sauvegardées !" : "Sauvegarder"}
-          </Button>
-        </div>
-      </form>
-    </div>
+    </section>
   );
 }
 
@@ -422,6 +624,7 @@ export default function ProfilePage() {
         onMenuClick={onMenuClick}
       />
       <div className="page-container animate-slide-in">
+        <IdentityCard />
         <ProfileSection />
         <SecuritySection />
         <PreferencesSection />

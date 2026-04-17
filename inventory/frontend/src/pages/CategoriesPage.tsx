@@ -213,15 +213,29 @@ export default function CategoriesPage() {
       />
       <div className="page-container animate-slide-in">
 
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-          <SearchInput
-            placeholder="Rechercher une catégorie…"
-            value={search}
-            onChange={setSearch}
-          />
+        {/* Header de page premium */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          <div className="border-l-4 border-primary pl-3">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
+              Catégories
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isLoading ? (
+                <span className="opacity-60">Chargement…</span>
+              ) : (
+                <>
+                  <span className="font-medium text-foreground">
+                    {categories.length}
+                  </span>{" "}
+                  catégorie{categories.length !== 1 ? "s" : ""} · organisez votre
+                  catalogue
+                </>
+              )}
+            </p>
+          </div>
           <Button
-            className="shrink-0 sm:ml-auto"
+            size="lg"
+            className="shrink-0 rounded-lg shadow-md shadow-primary/20 bg-gradient-to-br from-primary to-primary/85 hover:from-primary hover:to-primary text-primary-foreground"
             onClick={() => setModal({ type: "form", category: null })}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -229,15 +243,24 @@ export default function CategoriesPage() {
           </Button>
         </div>
 
-        {/* Mobile cards — md:hidden */}
-        <div className="md:hidden space-y-2">
+        {/* Toolbar — search seul */}
+        <div className="bg-card border rounded-xl shadow-sm p-3 sm:p-4 mb-5">
+          <SearchInput
+            placeholder="Rechercher une catégorie…"
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
+
+        {/* Mobile cards — grid 2 cols — md:hidden */}
+        <div className="md:hidden grid grid-cols-2 gap-3">
           {isLoading && (
-            <div className="flex items-center justify-center py-10">
+            <div className="col-span-2 flex items-center justify-center py-10">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           )}
           {!isLoading && filtered.length === 0 && (
-            <div className="bg-card border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
+            <div className="col-span-2 bg-card border rounded-xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
               <Tag className="w-8 h-8 opacity-40" />
               <p className="text-sm">Aucune catégorie trouvée.</p>
             </div>
@@ -246,45 +269,48 @@ export default function CategoriesPage() {
             filtered.map((category) => (
               <div
                 key={category.id}
-                className="bg-card border rounded-xl p-4 flex items-start justify-between gap-3"
+                className="group relative bg-card border rounded-xl p-3 flex flex-col gap-2 hover:shadow-md hover:border-primary/30 transition-all"
               >
-                <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 shrink-0 mt-0.5">
-                    <Tag className="w-4 h-4 text-primary" />
+                {/* Header : icône + badge count */}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15 shrink-0">
+                    <Tag className="w-5 h-5" />
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{category.name}</p>
-                    {category.description ? (
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                        {category.description}
-                      </p>
-                    ) : (
-                      <p className="text-xs italic opacity-50 mt-0.5">
-                        Aucune description
-                      </p>
-                    )}
-                    <div className="mt-2">
-                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                        {category.product_count} produit
-                        {category.product_count !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
+                  <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
+                    {category.product_count}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+
+                {/* Nom + description */}
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm truncate">{category.name}</p>
+                  {category.description ? (
+                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                      {category.description}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] italic opacity-50 mt-0.5">
+                      Aucune description
+                    </p>
+                  )}
+                </div>
+
+                {/* Actions visibles */}
+                <div className="flex items-center gap-1 pt-1.5 border-t mt-auto">
                   <button
-                    className="p-2 rounded-md hover:bg-secondary transition-colors"
+                    className="flex-1 p-1.5 rounded-md hover:bg-secondary transition-colors flex items-center justify-center gap-1 text-[11px] text-muted-foreground font-medium"
                     title="Modifier"
                     onClick={() => setModal({ type: "form", category })}
                   >
-                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                    <Pencil className="w-3.5 h-3.5" />
+                    Modifier
                   </button>
                   <button
-                    className="p-2 rounded-md hover:bg-destructive/10 transition-colors"
+                    className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
                     title="Supprimer"
                     onClick={() => setModal({ type: "delete", category })}
                   >
-                    <Trash2 className="w-4 h-4 text-destructive" />
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </button>
                 </div>
               </div>
@@ -292,10 +318,10 @@ export default function CategoriesPage() {
         </div>
 
         {/* Desktop table — hidden md:block */}
-        <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
+        <div className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="data-table">
-              <thead>
+              <thead className="bg-muted/60">
                 <tr>
                   <th>Nom</th>
                   <th>Description</th>
@@ -328,8 +354,8 @@ export default function CategoriesPage() {
                     <tr key={category.id}>
                       <td>
                         <div className="flex items-center gap-2.5">
-                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-primary/10 shrink-0">
-                            <Tag className="w-3.5 h-3.5 text-primary" />
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15 shrink-0">
+                            <Tag className="w-4 h-4" />
                           </span>
                           <span className="font-medium">{category.name}</span>
                         </div>
@@ -338,7 +364,7 @@ export default function CategoriesPage() {
                         {category.description || <span className="italic opacity-50">—</span>}
                       </td>
                       <td className="text-center">
-                        <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                        <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
                           {category.product_count}
                         </span>
                       </td>

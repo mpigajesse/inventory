@@ -612,6 +612,34 @@ export default function StockPage() {
         onMenuClick={onMenuClick}
       />
       <div className="page-container animate-slide-in">
+        {/* Header de page premium avec badge d'alerte */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          <div className="border-l-4 border-primary pl-3">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2 flex-wrap">
+              Gestion du stock
+              {!isLoading && criticalCount > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 px-2.5 py-0.5 text-xs font-semibold animate-pulse">
+                  <AlertTriangle className="w-3 h-3" />
+                  {criticalCount} article{criticalCount > 1 ? "s" : ""} en rupture
+                </span>
+              )}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isLoading ? (
+                <span className="opacity-60">Chargement…</span>
+              ) : (
+                <>
+                  <span className="font-medium text-foreground">
+                    {stockItems.length}
+                  </span>{" "}
+                  produit{stockItems.length !== 1 ? "s" : ""} suivi
+                  {stockItems.length !== 1 ? "s" : ""}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+
         {/* Stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
@@ -653,8 +681,8 @@ export default function StockPage() {
           </div>
         )}
 
-        {/* Search bar */}
-        <div className="mb-4">
+        {/* Barre de filtres — card horizontale */}
+        <div className="bg-card border rounded-xl shadow-sm p-3 sm:p-4 mb-4">
           <SearchInput
             placeholder="Rechercher un produit ou catégorie..."
             value={search}
@@ -720,10 +748,10 @@ export default function StockPage() {
         {isLoading ? (
           <TableSkeleton />
         ) : (
-          <div className="hidden md:block bg-card rounded-lg border overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
+            <div className="overflow-x-auto max-h-[70vh]">
               <table className="data-table">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
                   <tr>
                     <th className="w-10 px-4">
                       <span className="sr-only">Sélection</span>
@@ -746,14 +774,20 @@ export default function StockPage() {
                       </td>
                     </tr>
                   )}
-                  {typedPaginated.map((item) => {
+                  {typedPaginated.map((item, idx) => {
                     const pct = item.max > 0
                       ? Math.min(100, Math.round((item.stock / item.max) * 100))
                       : 0;
                     return (
                       <tr
                         key={item.id}
-                        className={isSelected(item.id) ? "bg-primary/5" : undefined}
+                        className={
+                          isSelected(item.id)
+                            ? "bg-primary/5"
+                            : idx % 2 === 1
+                              ? "bg-muted/20"
+                              : undefined
+                        }
                       >
                         <td className="w-10">
                           <input
@@ -765,34 +799,52 @@ export default function StockPage() {
                           />
                         </td>
                         <td className="font-medium">{item.name}</td>
-                        <td>{item.category}</td>
-                        <td className="font-medium">{item.stock}</td>
-                        <td>{item.min}</td>
-                        <td>{item.max}</td>
+                        <td className="text-muted-foreground">{item.category}</td>
                         <td>
-                          <div className="w-16 sm:w-24 h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{
-                                width: `${pct}%`,
-                                background: progressColor(item.status),
-                              }}
-                            />
+                          <span
+                            className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold tabular-nums ${
+                              item.status === "critique"
+                                ? "bg-destructive/10 text-destructive border-destructive/20"
+                                : item.status === "bas"
+                                  ? "bg-warning/10 text-warning border-warning/20"
+                                  : "bg-success/10 text-success border-success/20"
+                            }`}
+                          >
+                            {item.stock}
+                          </span>
+                        </td>
+                        <td className="tabular-nums text-muted-foreground">{item.min}</td>
+                        <td className="tabular-nums text-muted-foreground">{item.max}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 sm:w-24 h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${pct}%`,
+                                  background: progressColor(item.status),
+                                }}
+                              />
+                            </div>
+                            <span className="text-[11px] text-muted-foreground tabular-nums">
+                              {pct}%
+                            </span>
                           </div>
                         </td>
                         <td>{renderStatusBadge(item.status)}</td>
                         <td>
-                          <div className="flex items-center justify-end gap-1 pr-2">
-                            <button
-                              className="p-2 rounded-md hover:bg-secondary flex items-center gap-1 text-xs text-muted-foreground"
-                              title="Ajuster le stock"
+                          <div className="flex items-center justify-end gap-1.5 pr-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2.5 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
                               onClick={() => setModal({ type: "adjust", item })}
                             >
-                              <ArrowUpDown className="w-4 h-4" />
+                              <ArrowUpDown className="w-3.5 h-3.5 lg:mr-1" />
                               <span className="hidden lg:inline">Ajuster</span>
-                            </button>
+                            </Button>
                             <button
-                              className="p-2 rounded-md hover:bg-secondary flex items-center gap-1 text-xs text-muted-foreground"
+                              className="p-2 rounded-md hover:bg-secondary flex items-center gap-1 text-xs text-muted-foreground transition-colors"
                               title="Définir les seuils"
                               onClick={() => setModal({ type: "threshold", item })}
                             >
@@ -881,23 +933,23 @@ export default function StockPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-end gap-1 pt-2 border-t">
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
                     <button
-                      className="p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-1 text-xs text-muted-foreground"
-                      title="Ajuster le stock"
-                      onClick={() => setModal({ type: "adjust", item })}
-                    >
-                      <ArrowUpDown className="w-4 h-4" />
-                      <span>Ajuster</span>
-                    </button>
-                    <button
-                      className="p-2 rounded-md hover:bg-secondary transition-colors flex items-center gap-1 text-xs text-muted-foreground"
+                      className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors flex items-center gap-1.5 text-xs text-muted-foreground font-medium"
                       title="Définir les seuils"
                       onClick={() => setModal({ type: "threshold", item })}
                     >
-                      <SlidersHorizontal className="w-4 h-4" />
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
                       <span>Seuils</span>
                     </button>
+                    <Button
+                      size="sm"
+                      className="h-8 rounded-md bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/20"
+                      onClick={() => setModal({ type: "adjust", item })}
+                    >
+                      <ArrowUpDown className="w-3.5 h-3.5 mr-1.5" />
+                      Ajuster
+                    </Button>
                   </div>
                 </div>
               );

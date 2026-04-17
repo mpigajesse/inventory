@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Plus, Phone, Mail, Edit, Trash2, History, Users } from "lucide-react";
+import { Plus, Phone, Mail, Edit, Trash2, History, Users, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -179,17 +179,42 @@ export default function ClientsPage() {
       <Topbar title="Clients" subtitle="Gestion de la base clients" onMenuClick={onMenuClick} />
       <div className="page-container animate-slide-in">
 
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+        {/* ── Premium Header ─────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/15">
+              <Users className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
+                <span className="inline-flex items-center h-6 px-2 rounded-full bg-primary/10 text-primary text-xs font-mono font-semibold">
+                  {clients.length}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Gestion de la base clients
+              </p>
+            </div>
+          </div>
+
+          <Button
+            size="sm"
+            className="shrink-0 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm hover:shadow-md hover:brightness-105 transition-all"
+            onClick={() => navigate("/clients/new")}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Nouveau client
+          </Button>
+        </div>
+
+        {/* ── Search bar ─────────────────────────────────────────── */}
+        <div className="mb-5">
           <SearchInput
-            placeholder="Rechercher un client..."
+            placeholder="Rechercher un client par nom, téléphone ou email..."
             value={search}
             onChange={setSearch}
           />
-          <Button className="shrink-0 sm:ml-auto" onClick={() => navigate("/clients/new")}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouveau client
-          </Button>
         </div>
 
         {/* Loading skeleton */}
@@ -207,37 +232,43 @@ export default function ClientsPage() {
             {clients.map((client) => (
               <div
                 key={client.id}
-                className="bg-card rounded-lg border p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                className="group bg-card rounded-xl border p-5 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200"
               >
                 {/* Header row */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all"
+                    style={{
+                      background: "hsl(var(--primary) / 0.12)",
+                      color: "hsl(var(--primary))",
+                    }}
+                  >
                     {initials(client.name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{client.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-semibold text-sm truncate">{client.name}</p>
+                    <p className="text-[11px] text-muted-foreground tabular-nums">
                       {client.purchases_count} achat{client.purchases_count !== 1 ? "s" : ""}
                     </p>
                   </div>
                   {/* Action buttons */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
                     <button
-                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
                       title="Voir historique"
                       onClick={() => setHistoryClient(client)}
                     >
                       <History className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
                     <button
-                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
                       title="Modifier"
                       onClick={() => navigate(`/clients/${client.id}/edit`)}
                     >
                       <Edit className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
                     <button
-                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
                       title="Supprimer"
                       onClick={() => setDeletingClient(client)}
                     >
@@ -247,11 +278,11 @@ export default function ClientsPage() {
                 </div>
 
                 {/* Contact info */}
-                <div className="space-y-2 text-xs">
+                <div className="space-y-1.5 text-xs">
                   {client.phone && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Phone className="w-3.5 h-3.5 shrink-0" />
-                      <span>{client.phone}</span>
+                      <span className="font-mono tabular-nums">{client.phone}</span>
                     </div>
                   )}
                   {client.email && (
@@ -263,14 +294,22 @@ export default function ClientsPage() {
                 </div>
 
                 {/* Footer stats */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total achats</p>
-                    <p className="text-sm font-semibold">{formatFcfa(client.total_purchases)}</p>
+                <div className="flex items-end justify-between mt-4 pt-4 border-t gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                      Total achats
+                    </p>
+                    <p className="font-mono font-bold text-primary text-sm tabular-nums leading-tight mt-0.5">
+                      {formatFcfa(client.total_purchases)}
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Membre depuis</p>
-                    <p className="text-sm">{formatDate(client.created_at)}</p>
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                      Depuis
+                    </p>
+                    <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                      {formatDate(client.created_at)}
+                    </p>
                   </div>
                 </div>
               </div>
