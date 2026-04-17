@@ -32,6 +32,7 @@ import { salesService } from "@/services/salesService";
 import type { SaleCreatePayload } from "@/services/salesService";
 import type { Product as ApiProduct } from "@/services/productService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Local types ─────────────────────────────────────────────────────────────
 
@@ -48,6 +49,12 @@ interface CartItem {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function getCaisseLabel(username?: string | null): string {
+  const match = username?.match(/\d+/);
+  const num = match ? parseInt(match[0], 10) : 1;
+  return `CAISSE ${String(num).padStart(2, "0")}`;
+}
+
 function formatDateTime(): { date: string; time: string } {
   const now = new Date();
   const date = now.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -59,6 +66,8 @@ function formatDateTime(): { date: string; time: string } {
 
 export default function PosPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
+  const { currentUser } = useAuth();
+  const caisseLabel = currentUser?.role === "admin" ? "CAISSE PRINCIPAL" : getCaisseLabel(currentUser?.username);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
   const [showPayment, setShowPayment] = useState(false);
@@ -511,7 +520,7 @@ export default function PosPage() {
                 <Sparkles className="w-3 h-3" style={{ color: "hsl(22 72% 48% / 0.7)" }} />
                 <span>{catalog.length} produit{catalog.length !== 1 ? "s" : ""} disponible{catalog.length !== 1 ? "s" : ""}</span>
               </div>
-              <span className="font-mono tracking-wider opacity-60">CAISSE 01</span>
+              <span className="font-mono tracking-wider opacity-60">{caisseLabel}</span>
             </div>
           </div>
 

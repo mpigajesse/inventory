@@ -63,6 +63,12 @@ function formatDateTime(): { date: string; time: string } {
   return { date, time };
 }
 
+function getCaisseLabel(username?: string | null): string {
+  const match = username?.match(/\d+/);
+  const num = match ? parseInt(match[0], 10) : 1;
+  return `CAISSE ${String(num).padStart(2, "0")}`;
+}
+
 function getFirstName(fullName: string | undefined): string {
   if (!fullName) return "Vendeur";
   const trimmed = fullName.trim();
@@ -221,6 +227,7 @@ export default function VendeurPosPage() {
 
   const vendeurName = getFirstName(currentUser?.name);
   const vendeurInitials = getInitials(currentUser?.name);
+  const caisseLabel = getCaisseLabel(currentUser?.username);
 
   const handlePrint = useReactToPrint({
     contentRef: receiptRef,
@@ -676,6 +683,14 @@ export default function VendeurPosPage() {
                   <span className="tracking-wide">Scanner prêt</span>
                 </div>
               </div>
+            </div>
+            {/* Meta bar */}
+            <div className="hidden md:flex items-center justify-between mt-2.5 px-0.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" style={{ color: "hsl(22 72% 48% / 0.7)" }} />
+                <span>{catalog.length} produit{catalog.length !== 1 ? "s" : ""} disponible{catalog.length !== 1 ? "s" : ""}</span>
+              </div>
+              <span className="font-mono tracking-wider opacity-60">{caisseLabel}</span>
             </div>
           </div>
 
