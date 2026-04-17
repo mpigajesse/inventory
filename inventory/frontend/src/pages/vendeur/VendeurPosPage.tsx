@@ -498,7 +498,7 @@ export default function VendeurPosPage() {
               />
             </div>
 
-            <div ref={receiptRef} style={{ display: "none" }}>
+            <div ref={receiptRef} style={{ position: "absolute", left: "-9999px", top: 0, width: "80mm" }}>
               <Receipt
                 items={cart}
                 total={total}
