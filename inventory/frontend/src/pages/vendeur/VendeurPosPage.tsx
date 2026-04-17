@@ -474,7 +474,7 @@ export default function VendeurPosPage() {
                     "repeating-linear-gradient(90deg, hsl(var(--card)) 0px, hsl(var(--card)) 5px, hsl(var(--muted)) 5px, hsl(var(--muted)) 10px)",
                 }}
               />
-              <div style={{ paddingTop: "8px" }}>
+              <div ref={receiptRef} style={{ paddingTop: "8px" }}>
                 <Receipt
                   items={cart}
                   total={total}
@@ -495,18 +495,6 @@ export default function VendeurPosPage() {
                   background:
                     "repeating-linear-gradient(90deg, hsl(var(--card)) 0px, hsl(var(--card)) 5px, hsl(var(--muted)) 5px, hsl(var(--muted)) 10px)",
                 }}
-              />
-            </div>
-
-            <div ref={receiptRef} style={{ position: "absolute", left: "-9999px", top: 0, width: "80mm" }}>
-              <Receipt
-                items={cart}
-                total={total}
-                amountGiven={Number(amountGiven)}
-                change={change}
-                ticketNumber={currentTicket.number}
-                date={currentTicket.date}
-                time={currentTicket.time}
               />
             </div>
 
