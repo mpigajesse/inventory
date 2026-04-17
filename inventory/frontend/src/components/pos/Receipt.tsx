@@ -53,10 +53,13 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         <div style={{ fontSize: "15px", fontWeight: "900", letterSpacing: "0.12em", marginBottom: "2px" }}>
           NAOSERVICES INVENTORY
         </div>
-        <div style={{ fontSize: "10px", letterSpacing: "0.08em", opacity: 0.7, marginBottom: "4px" }}>
+        <div style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "0.16em", marginBottom: "2px" }}>
+          TICKET DE CAISSE
+        </div>
+        <div style={{ fontSize: "10px", letterSpacing: "0.06em", opacity: 0.65, marginBottom: "2px" }}>
           Votre commerce de confiance
         </div>
-        <div style={{ fontSize: "10px", opacity: 0.6 }}>Libreville, Gabon  |  +241 07 40 13 02</div>
+        <div style={{ fontSize: "10px", opacity: 0.55 }}>Libreville, Gabon  |  +241 07 40 13 02</div>
       </div>
 
       <div style={{ textAlign: "center", letterSpacing: "0.05em", fontSize: "11px", margin: "4px 0" }}>
@@ -147,10 +150,13 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         <div style={{ fontSize: "12px", fontWeight: "700", letterSpacing: "0.08em", marginBottom: "2px" }}>
           Merci de votre visite !
         </div>
-        <div style={{ fontSize: "10px", opacity: 0.65, letterSpacing: "0.04em", marginBottom: "6px" }}>
+        <div style={{ fontSize: "10px", opacity: 0.65, letterSpacing: "0.04em", marginBottom: "4px" }}>
           Conservez ce ticket comme preuve d&apos;achat
         </div>
-        <div style={{ fontSize: "9px", opacity: 0.5 }}>Imprimé le {printedAt}</div>
+        <div style={{ fontSize: "9px", opacity: 0.45, marginBottom: "3px" }}>Imprimé le {printedAt}</div>
+        <div style={{ fontSize: "9px", opacity: 0.4, letterSpacing: "0.06em" }}>
+          © NAOSERVICES · MPJ HIGH-TECH
+        </div>
       </div>
       <div style={{ textAlign: "center", fontSize: "11px", margin: "4px 0" }}>{"─".repeat(38)}</div>
     </div>

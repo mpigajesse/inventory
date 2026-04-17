@@ -60,3 +60,8 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.barcode is not None:
+            self.barcode = self.barcode.strip() or None
+        super().save(*args, **kwargs)

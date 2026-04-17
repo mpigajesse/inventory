@@ -58,6 +58,9 @@ export const productService = {
   getByBarcode: (code: string) =>
     api.get<Product>(`/products/barcode/${code}/`).then(r => r.data),
 
+  generateBarcode: (id: number) =>
+    api.post<Product>(`/products/${id}/generate-barcode/`).then(r => r.data),
+
   getCategories: () =>
     api.get<Category[]>('/products/categories/').then(r => r.data),
 

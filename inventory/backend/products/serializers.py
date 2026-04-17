@@ -1,5 +1,20 @@
+import random
+
 from rest_framework import serializers
 from .models import Category, Product
+
+
+def _generate_unique_ean13() -> str:
+    """Generate a unique EAN-13 barcode not already in the database."""
+    from .models import Product as _Product
+    for _ in range(20):
+        digits = [random.randint(0, 9) for _ in range(12)]
+        total = sum(d * (1 if i % 2 == 0 else 3) for i, d in enumerate(digits))
+        check = (10 - (total % 10)) % 10
+        code = ''.join(map(str, digits)) + str(check)
+        if not _Product.objects.filter(barcode=code).exists():
+            return code
+    raise ValueError("Impossible de générer un code-barres unique après 20 essais.")
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -56,8 +71,15 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
+        if not validated_data.get('barcode'):
+            validated_data['barcode'] = _generate_unique_ean13()
         product = super().create(validated_data)
         # Auto-create stock entry
         from stock.models import Stock
         Stock.objects.get_or_create(product=product)
         return product
+
+    def update(self, instance, validated_data):
+        if 'barcode' in validated_data and not validated_data['barcode']:
+            validated_data['barcode'] = _generate_unique_ean13()
+        return super().update(instance, validated_data)

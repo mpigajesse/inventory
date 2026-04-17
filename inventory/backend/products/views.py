@@ -98,3 +98,26 @@ class ProductViewSet(viewsets.ModelViewSet):
             return Response(ProductListSerializer(product).data)
         except Product.DoesNotExist:
             return Response({'detail': 'Produit non trouvé.'}, status=404)
+
+    @action(detail=True, methods=['post'], url_path='generate-barcode')
+    def generate_barcode(self, request, pk=None):
+        """Generate or regenerate an EAN-13 barcode for a product."""
+        import random
+
+        def _gen_ean13():
+            for _ in range(20):
+                digits = [random.randint(0, 9) for _ in range(12)]
+                total = sum(d * (1 if i % 2 == 0 else 3) for i, d in enumerate(digits))
+                check = (10 - (total % 10)) % 10
+                code = ''.join(map(str, digits)) + str(check)
+                if not Product.objects.filter(barcode=code).exclude(pk=pk).exists():
+                    return code
+            return None
+
+        product = self.get_object()
+        new_code = _gen_ean13()
+        if not new_code:
+            return Response({'detail': 'Impossible de générer un code unique.'}, status=500)
+        product.barcode = new_code
+        product.save(update_fields=['barcode', 'updated_at'])
+        return Response(ProductListSerializer(product).data)

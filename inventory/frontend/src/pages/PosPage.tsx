@@ -69,6 +69,7 @@ export default function PosPage() {
   const [flashItem, setFlashItem] = useState<number | null>(null);
   const [newlyAdded, setNewlyAdded] = useState<Set<number>>(new Set());
   const [removing, setRemoving] = useState<Set<number>>(new Set());
+  const [scanFlash, setScanFlash] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -164,6 +165,8 @@ export default function PosPage() {
     });
     setFlashItem(product.id);
     setTimeout(() => setFlashItem(null), 600);
+    setScanFlash(true);
+    setTimeout(() => setScanFlash(false), 400);
     // Entrance animation: mark as newly added then remove after 300ms
     setNewlyAdded(prev => new Set(prev).add(product.id));
     setTimeout(() => {
@@ -212,9 +215,7 @@ export default function PosPage() {
             description: `Code-barres : ${code}`,
             variant: "destructive",
           });
-          sonnerToast.error("Produit non trouvé", {
-            description: `Code-barres : ${code}`,
-          });
+          sonnerToast.error(`Produit non trouvé : ${code}`, { duration: 2000 });
         }
         return;
       }
@@ -655,8 +656,9 @@ export default function PosPage() {
             mobileTab === "cart" ? "flex-1" : "hidden md:flex"
           )}
           style={{
-            background: "hsl(var(--sidebar-bg))",
+            background: scanFlash ? "hsl(152 52% 20% / 0.9)" : "hsl(var(--sidebar-bg))",
             position: "relative",
+            transition: "background 150ms ease",
           }}
         >
           {/* Noise texture overlay */}

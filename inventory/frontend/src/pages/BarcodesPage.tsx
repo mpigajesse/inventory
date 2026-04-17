@@ -24,7 +24,9 @@ interface ProductBarcode {
   id: number;
   name: string;
   category: string;
+  category_name?: string;
   barcode: string | null;
+  selling_price?: number;
   image_url: string | null;
 }
 
@@ -56,38 +58,49 @@ function BarcodeLabel({ product }: BarcodeLabelProps) {
     <div
       style={{
         width: "58mm",
-        minHeight: "38mm",
+        minHeight: "40mm",
         background: "#fff",
-        border: "1px solid #ccc",
+        border: "1px solid #bbb",
         borderRadius: 4,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "4mm 3mm 3mm",
+        padding: "3mm 2mm 2mm",
         boxSizing: "border-box",
-        gap: 2,
+        gap: 1,
+        fontFamily: "sans-serif",
       }}
     >
+      {/* Barcode graphic */}
       <Barcode
         value={product.barcode}
-        width={1.2}
-        height={48}
-        fontSize={10}
+        width={1.3}
+        height={44}
+        fontSize={0}
         margin={0}
+        displayValue={false}
       />
-      <div
-        style={{
-          fontSize: 10,
-          fontFamily: "sans-serif",
-          color: "#111",
-          textAlign: "center",
-          marginTop: 2,
-          lineHeight: 1.3,
-        }}
-      >
+      {/* Barcode number */}
+      <div style={{ fontSize: 9, color: "#333", letterSpacing: "0.08em", fontFamily: "monospace", marginTop: 1 }}>
+        {product.barcode}
+      </div>
+      {/* Product name */}
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#111", textAlign: "center", lineHeight: 1.2, marginTop: 2, maxWidth: "52mm" }}>
         {product.name}
       </div>
+      {/* Price */}
+      {product.selling_price != null && (
+        <div style={{ fontSize: 12, fontWeight: 900, color: "#111", marginTop: 2, letterSpacing: "0.02em" }}>
+          {product.selling_price.toLocaleString("fr-FR")} FCFA
+        </div>
+      )}
+      {/* Category */}
+      {product.category && (
+        <div style={{ fontSize: 8, color: "#666", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 1 }}>
+          {product.category}
+        </div>
+      )}
     </div>
   );
 }
@@ -333,7 +346,9 @@ export default function BarcodesPage() {
       id: p.id,
       name: p.name,
       category: p.category_name,
+      category_name: p.category_name,
       barcode: generatedBarcodes[p.id] ?? p.barcode,
+      selling_price: p.selling_price,
       image_url: p.image_url,
     }));
   }, [data, generatedBarcodes]);

@@ -26,6 +26,7 @@ import { ProductIcon } from "@/components/ui/ProductIcon";
 import { toast } from "sonner";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { productService } from "@/services/productService";
 
 interface Product {
   id: number;
@@ -266,9 +267,29 @@ export default function VendeurPosPage() {
       if (document.activeElement === searchRef.current) return;
 
       if (e.key === "Enter" && buffer.length > 3) {
-        const found = catalog.find((p) => p.barcode === buffer);
-        if (found) addToCart(found);
+        const scanned = buffer;
         buffer = "";
+        // Try API barcode lookup first (works for all products regardless of catalog state)
+        productService.getByBarcode(scanned).then((apiProduct) => {
+          // Adapter: map API Product fields → local Product shape
+          const product: Product = {
+            id: apiProduct.id,
+            name: apiProduct.name,
+            barcode: apiProduct.barcode,
+            price: apiProduct.selling_price,
+            category: apiProduct.category_name ?? "",
+            image_url: apiProduct.image_url ?? null,
+          };
+          addToCart(product);
+        }).catch(() => {
+          // Fallback: search in local catalog
+          const found = catalog.find((p) => p.barcode === scanned);
+          if (found) {
+            addToCart(found);
+          } else {
+            toast.error(`Produit non trouvé : ${scanned}`);
+          }
+        });
         return;
       }
 
@@ -286,7 +307,7 @@ export default function VendeurPosPage() {
       window.removeEventListener("keydown", handleKeyDown);
       clearTimeout(timeout);
     };
-  }, [showPayment, saleComplete, addToCart]);
+  }, [showPayment, saleComplete, addToCart, catalog]);
 
   const updateQty = (id: number, delta: number) => {
     setCart((prev) =>

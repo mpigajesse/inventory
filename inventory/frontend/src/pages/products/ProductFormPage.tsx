@@ -11,10 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProductIcon } from "@/components/ui/ProductIcon";
-import { ArrowLeft, Package, Camera, X, Loader2, Image as ImageIcon, DollarSign, Barcode } from "lucide-react";
+import { ArrowLeft, Package, Camera, X, Loader2, Image as ImageIcon, DollarSign, Barcode as BarcodeIcon, RefreshCw } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
+import BarcodeDisplay from "react-barcode";
+import { generateEAN13 } from "@/lib/barcode";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -302,6 +304,7 @@ export default function ProductFormPage() {
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -333,6 +336,9 @@ export default function ProductFormPage() {
       toast.success("Produit enregistré", {
         description: `${product.name} a été ajouté au catalogue.`,
       });
+      if (product.barcode) {
+        setValue("barcode", product.barcode);
+      }
       navigate("/products");
     },
     onError: () => {
@@ -436,6 +442,7 @@ export default function ProductFormPage() {
 
   // ── Mount animation ────────────────────────────────────────────────────────
   const [isMounted, setIsMounted] = useState(false);
+  const watchedBarcode = watch("barcode");
   useEffect(() => {
     const t = requestAnimationFrame(() => setIsMounted(true));
     return () => cancelAnimationFrame(t);
@@ -550,28 +557,43 @@ export default function ProductFormPage() {
                     <Field
                       label="Code-barres"
                       htmlFor="barcode"
-                      hint="Scannable avec un lecteur USB ou saisie manuelle."
+                      hint="Généré automatiquement à la création. Scannable avec un lecteur USB."
                     >
-                      <div className="relative">
-                        <Barcode
-                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                          style={{ color: 'hsl(var(--muted-foreground))', transition: 'color 0.2s ease' }}
-                          data-barcode-icon
-                        />
-                        <Input
-                          id="barcode"
-                          placeholder="Ex : 6001068002802"
-                          className="h-11 rounded-lg focus-visible:ring-primary/50 font-mono pl-9"
-                          onFocus={(e) => {
-                            const icon = e.currentTarget.parentElement?.querySelector('[data-barcode-icon]') as HTMLElement | null;
-                            if (icon) icon.style.color = 'hsl(22 72% 48%)';
-                          }}
-                          onBlur={(e) => {
-                            const icon = e.currentTarget.parentElement?.querySelector('[data-barcode-icon]') as HTMLElement | null;
-                            if (icon) icon.style.color = '';
-                          }}
-                          {...register("barcode")}
-                        />
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <BarcodeIcon
+                              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                              style={{ color: 'hsl(var(--muted-foreground))' }}
+                            />
+                            <Input
+                              id="barcode"
+                              placeholder="Auto-généré à la création"
+                              className="h-11 rounded-lg focus-visible:ring-primary/50 font-mono pl-9"
+                              {...register("barcode")}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setValue("barcode", generateEAN13())}
+                            className="h-11 px-3 rounded-lg border border-border flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+                            title="Générer un code EAN-13 aléatoire"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Générer
+                          </button>
+                        </div>
+                        {watchedBarcode && watchedBarcode.length >= 8 && (
+                          <div className="flex justify-center p-3 rounded-lg border border-border bg-card">
+                            <BarcodeDisplay
+                              value={watchedBarcode}
+                              width={1.4}
+                              height={50}
+                              fontSize={11}
+                              margin={4}
+                            />
+                          </div>
+                        )}
                       </div>
                     </Field>
 
