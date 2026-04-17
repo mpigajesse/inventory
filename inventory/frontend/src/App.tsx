@@ -195,9 +195,20 @@ const App = () => (
               <Route path="/vendeur/dashboard" element={<VendeurDashboardPage />} />
               <Route path="/vendeur/pos"       element={<VendeurPosPage />} />
               <Route path="/vendeur/invoices"  element={<InvoicesPage />} />
-              <Route path="/vendeur/clients"   element={<ClientsPage />} />
-              <Route path="/vendeur/clients/new"       element={<ClientFormPage />} />
-              <Route path="/vendeur/clients/:id/edit"  element={<ClientFormPage />} />
+              <Route path="/vendeur/clients"              element={<ClientsPage />} />
+              <Route path="/vendeur/clients/new"          element={<ClientFormPage />} />
+              <Route path="/vendeur/clients/:id/edit"     element={<ClientFormPage />} />
+              <Route path="/vendeur/products"             element={<ProductsPage />} />
+              <Route path="/vendeur/products/new"         element={<ProductFormPage />} />
+              <Route path="/vendeur/products/:id/edit"    element={<ProductFormPage />} />
+              <Route path="/vendeur/stock"                element={<StockPage />} />
+              <Route path="/vendeur/suppliers"            element={<SuppliersPage />} />
+              <Route path="/vendeur/suppliers/new"        element={<SupplierFormPage />} />
+              <Route path="/vendeur/suppliers/:id/edit"   element={<SupplierFormPage />} />
+              <Route path="/vendeur/reports"              element={<ReportsPage />} />
+              <Route path="/vendeur/barcodes"             element={<BarcodesPage />} />
+              <Route path="/vendeur/users"                element={<UsersPage />} />
+              <Route path="/vendeur/users/:id"            element={<UserDetailPage />} />
               <Route path="/vendeur/settings"  element={<SettingsPage />} />
               <Route path="/vendeur/profile"   element={<ProfilePage />} />
             </Route>

@@ -11,29 +11,38 @@ import {
   Settings,
   Package,
   Home,
+  BarChart2,
+  Barcode,
+  Truck,
+  Archive,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions, Permission } from "@/hooks/usePermissions";
 
 interface NavItem {
   label: string;
   path: string;
   icon: React.ElementType;
+  permission?: Permission;
 }
-
-/**
- * Vendor sidebar — 3 core items + account section.
- * "Caisse POS" is a CTA-style button, not a plain nav item.
- */
-const coreItems: NavItem[] = [
-  { label: "Tableau de bord", path: "/vendeur/dashboard", icon: Home },
-  { label: "Factures",        path: "/vendeur/invoices",  icon: FileText },
-  { label: "Clients",         path: "/vendeur/clients",   icon: Users },
-];
 
 const accountItems: NavItem[] = [
   { label: "Mon profil", path: "/vendeur/profile", icon: UserCircle },
-  { label: "Paramètres", path: "/vendeur/settings", icon: Settings },
+  { label: "Paramètres", path: "/vendeur/settings", icon: Settings, permission: "manage_settings" },
+];
+
+const ALL_CORE_ITEMS: NavItem[] = [
+  { label: "Tableau de bord", path: "/vendeur/dashboard",  icon: Home },
+  { label: "Factures",        path: "/vendeur/invoices",   icon: FileText,  permission: "view_invoices" },
+  { label: "Clients",         path: "/vendeur/clients",    icon: Users,     permission: "manage_clients" },
+  { label: "Produits",        path: "/vendeur/products",   icon: Package,   permission: "manage_products" },
+  { label: "Stock",           path: "/vendeur/stock",      icon: Archive,   permission: "manage_stock" },
+  { label: "Fournisseurs",    path: "/vendeur/suppliers",  icon: Truck,     permission: "manage_suppliers" },
+  { label: "Rapports",        path: "/vendeur/reports",    icon: BarChart2, permission: "view_reports" },
+  { label: "Code-barres",     path: "/vendeur/barcodes",   icon: Barcode,   permission: "view_barcodes" },
+  { label: "Utilisateurs",    path: "/vendeur/users",      icon: UserCog,   permission: "manage_users" },
 ];
 
 interface VendeurSidebarProps {
@@ -119,6 +128,7 @@ export function VendeurSidebar({
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const { can } = usePermissions();
 
   const handleNavClick = (): void => {
     onMobileOpenChange(false);
@@ -135,12 +145,19 @@ export function VendeurSidebar({
     location.pathname === "/vendeur/pos" ||
     location.pathname.startsWith("/vendeur/pos/");
 
-  // Mobile bottom-nav: dashboard, pos, invoices, clients
+  const coreItems = ALL_CORE_ITEMS.filter(
+    (item) => !item.permission || can(item.permission),
+  );
+
+  const visibleAccountItems = accountItems.filter(
+    (item) => !item.permission || can(item.permission),
+  );
+
+  // Mobile bottom-nav: dashboard, pos + up to 2 first permitted items
   const mobileBottomItems: NavItem[] = [
-    { label: "Accueil",  path: "/vendeur/dashboard", icon: Home },
-    { label: "Caisse",   path: "/vendeur/pos",       icon: ShoppingCart },
-    { label: "Factures", path: "/vendeur/invoices",  icon: FileText },
-    { label: "Clients",  path: "/vendeur/clients",   icon: Users },
+    { label: "Accueil", path: "/vendeur/dashboard", icon: Home },
+    { label: "Caisse",  path: "/vendeur/pos",       icon: ShoppingCart },
+    ...coreItems.filter((i) => i.permission).slice(0, 2),
   ];
 
   return (
@@ -390,7 +407,7 @@ export function VendeurSidebar({
               Mon compte
             </p>
             <ul className="space-y-0.5">
-              {accountItems.map((item) => (
+              {visibleAccountItems.map((item) => (
                 <NavLink
                   key={item.path}
                   item={item}
