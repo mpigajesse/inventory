@@ -53,13 +53,44 @@ interface SectionCardProps {
 function SectionCard({ icon, title, children, animStyle }: SectionCardProps) {
   return (
     <div
-      className="rounded-2xl p-5"
-      style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', ...animStyle }}
+      style={{
+        borderRadius: '20px',
+        padding: '20px',
+        background: 'hsl(var(--card))',
+        border: '1px solid hsl(var(--border))',
+        ...animStyle,
+      }}
     >
-      <h3 className="font-bold text-sm mb-5 flex items-center gap-2 text-foreground">
-        <span style={{ color: 'hsl(22 72% 48%)' }}>{icon}</span>
-        {title}
-      </h3>
+      {/* Section header avec fond muted/60% et icône gradient cuivre */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          marginBottom: '20px',
+          padding: '8px 12px',
+          borderRadius: '12px',
+          background: 'hsl(var(--muted) / 0.6)',
+        }}
+      >
+        <div
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ color: 'white', display: 'flex' }}>{icon}</span>
+        </div>
+        <h3 style={{ fontWeight: 700, fontSize: '0.875rem', color: 'hsl(var(--foreground))' }}>
+          {title}
+        </h3>
+      </div>
       {children}
     </div>
   );
@@ -125,11 +156,14 @@ function ImageUploadZone({
 }: ImageUploadZoneProps) {
   return (
     <div
-      className="relative rounded-2xl overflow-hidden border-2 border-dashed cursor-pointer"
       style={{
-        borderColor: isDragging ? 'hsl(22 72% 48% / 0.9)' : 'hsl(22 72% 48% / 0.4)',
-        background: isDragging ? 'hsl(22 72% 48% / 0.05)' : 'hsl(var(--muted) / 0.5)',
+        position: 'relative',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        border: `2px dashed ${isDragging ? 'hsl(22 72% 48% / 0.9)' : 'hsl(22 72% 48% / 0.3)'}`,
+        background: isDragging ? 'hsl(22 72% 48% / 0.06)' : 'hsl(22 72% 48% / 0.02)',
         minHeight: '200px',
+        cursor: 'pointer',
         transition: 'border-color 0.2s ease, background 0.2s ease',
       }}
       onClick={() => fileInputRef.current?.click()}
@@ -175,10 +209,19 @@ function ImageUploadZone({
         </>
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4">
-          {/* Smart icon: product icon if name/category, otherwise upload icon */}
+          {/* Icône centrale — container rond 64×64, fond cuivre/10% */}
           {watchedName || watchedCategoryName ? (
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                 style={{ background: 'hsl(22 72% 48% / 0.1)' }}>
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'hsl(22 72% 48% / 0.1)',
+              }}
+            >
               <ProductIcon
                 name={watchedName}
                 category={watchedCategoryName}
@@ -187,8 +230,15 @@ function ImageUploadZone({
             </div>
           ) : (
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center"
-              style={{ background: 'hsl(22 72% 48% / 0.1)' }}
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'hsl(22 72% 48% / 0.1)',
+              }}
             >
               <ImageIcon className="w-7 h-7" style={{ color: 'hsl(22 72% 48%)' }} />
             </div>
@@ -537,9 +587,10 @@ export default function ProductFormPage() {
                   </div>
                 </SectionCard>
 
-                {/* Section: tarification */}
+                {/* Section: tarification — prix côte à côte, vente mis en avant */}
                 <SectionCard icon={<DollarSign className="w-4 h-4" />} title="Tarification" animStyle={sectionStagger(1)}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {/* Prix de vente — plus mis en avant avec bordure cuivre */}
                     <Field
                       label="Prix de vente (FCFA)"
                       required
@@ -551,12 +602,20 @@ export default function ProductFormPage() {
                         type="number"
                         min={0}
                         placeholder="0"
-                        className="h-11 rounded-lg focus-visible:ring-primary/50"
+                        className="h-11 focus-visible:ring-primary/50"
                         aria-invalid={errors.selling_price ? "true" : undefined}
+                        style={{
+                          borderRadius: '12px',
+                          borderColor: errors.selling_price
+                            ? undefined
+                            : 'hsl(22 72% 48% / 0.4)',
+                          boxShadow: '0 0 0 1px hsl(22 72% 48% / 0.15)',
+                        }}
                         {...register("selling_price", { valueAsNumber: true })}
                       />
                     </Field>
 
+                    {/* Prix d'achat — secondaire */}
                     <Field
                       label="Prix d'achat (FCFA)"
                       required
@@ -568,8 +627,9 @@ export default function ProductFormPage() {
                         type="number"
                         min={0}
                         placeholder="0"
-                        className="h-11 rounded-lg focus-visible:ring-primary/50"
+                        className="h-11 focus-visible:ring-primary/50"
                         aria-invalid={errors.purchase_price ? "true" : undefined}
+                        style={{ borderRadius: '12px' }}
                         {...register("purchase_price", { valueAsNumber: true })}
                       />
                     </Field>
@@ -580,10 +640,44 @@ export default function ProductFormPage() {
               {/* ── Right column — image (1/3) ───────────────────────────── */}
               <div className="space-y-5">
                 <div
-                  className="rounded-2xl p-5"
-                  style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', ...sectionStagger(2) }}
+                  style={{
+                    borderRadius: '20px',
+                    padding: '20px',
+                    background: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    ...sectionStagger(2),
+                  }}
                 >
-                  <h3 className="font-bold text-sm mb-5 text-foreground">Photo du produit</h3>
+                  {/* Header cohérent avec SectionCard */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      marginBottom: '20px',
+                      padding: '8px 12px',
+                      borderRadius: '12px',
+                      background: 'hsl(var(--muted) / 0.6)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <ImageIcon className="w-4 h-4" style={{ color: 'white' }} />
+                    </div>
+                    <h3 style={{ fontWeight: 700, fontSize: '0.875rem', color: 'hsl(var(--foreground))' }}>
+                      Photo du produit
+                    </h3>
+                  </div>
 
                   <ImageUploadZone
                     previewUrl={currentImageSrc}
@@ -632,34 +726,46 @@ export default function ProductFormPage() {
               >
                 Annuler
               </button>
+
+              {/* Submit button — border-radius 14px, height 52px, shadow cuivre */}
               <button
                 type="submit"
                 disabled={isPending}
                 style={{
-                  background: isPending ? 'hsl(22 72% 48% / 0.6)' : 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+                  background: isPending
+                    ? 'hsl(22 72% 48% / 0.6)'
+                    : 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '10px',
-                  padding: '0.5rem 1.25rem',
+                  borderRadius: '14px',
+                  height: '52px',
+                  paddingLeft: '1.5rem',
+                  paddingRight: '1.5rem',
                   fontWeight: '600',
                   fontSize: '0.875rem',
-                  boxShadow: isPending ? 'none' : '0 4px 14px hsl(22 72% 48% / 0.3)',
+                  boxShadow: isPending
+                    ? 'none'
+                    : '0 4px 16px hsl(22 72% 48% / 0.35), 0 1px 4px hsl(22 72% 48% / 0.2)',
                   cursor: isPending ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.375rem',
                   transition: 'transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s',
                   opacity: isPending ? 0.7 : 1,
+                  whiteSpace: 'nowrap',
                 }}
                 onMouseEnter={(e) => {
                   if (!isPending) {
                     (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px hsl(22 72% 48% / 0.45)';
+                    (e.currentTarget as HTMLElement).style.boxShadow =
+                      '0 8px 24px hsl(22 72% 48% / 0.45), 0 2px 6px hsl(22 72% 48% / 0.25)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLElement).style.transform = '';
-                  (e.currentTarget as HTMLElement).style.boxShadow = isPending ? 'none' : '0 4px 14px hsl(22 72% 48% / 0.3)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = isPending
+                    ? 'none'
+                    : '0 4px 16px hsl(22 72% 48% / 0.35), 0 1px 4px hsl(22 72% 48% / 0.2)';
                 }}
                 onMouseDown={(e) => {
                   if (!isPending) (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';

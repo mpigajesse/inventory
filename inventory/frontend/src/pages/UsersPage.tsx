@@ -144,16 +144,15 @@ function UserAvatar({ name, username, role = "vendeur", size = "md" }: UserAvata
   return (
     <div
       className={[
-        "relative rounded-full flex items-center justify-center shrink-0 font-bold text-white",
+        "relative flex items-center justify-center shrink-0 font-bold text-white",
         dimensions,
       ].join(" ")}
       style={{
+        borderRadius: "12px",
         background: isAdmin
           ? "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))"
           : "linear-gradient(135deg, hsl(210 70% 48%), hsl(220 75% 58%))",
-        boxShadow: isAdmin
-          ? "0 4px 14px hsl(22 72% 48% / 0.35)"
-          : "0 4px 14px hsl(210 70% 48% / 0.25)",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
       }}
       aria-hidden="true"
     >
@@ -169,14 +168,26 @@ function RolePill({ role }: { role: UserRole }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider"
-      style={{
-        background: isAdmin ? "hsl(22 72% 48% / 0.12)" : "hsl(210 70% 52% / 0.12)",
-        color: isAdmin ? "hsl(22 72% 48%)" : "hsl(210 70% 52%)",
-        border: `1px solid ${isAdmin ? "hsl(22 72% 48% / 0.25)" : "hsl(210 70% 52% / 0.25)"}`,
-        transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
-      }}
+      style={
+        isAdmin
+          ? {
+              background: "linear-gradient(135deg, hsl(22 72% 48% / 0.14), hsl(36 88% 52% / 0.10))",
+              color: "hsl(22 60% 35%)",
+              border: "1px solid hsl(22 72% 48% / 0.28)",
+              transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
+            }
+          : {
+              background: "hsl(var(--muted))",
+              color: "hsl(var(--muted-foreground))",
+              border: "1px solid hsl(var(--border) / 0.5)",
+              transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
+            }
+      }
     >
-      {isAdmin ? <Crown className="w-3 h-3" aria-hidden="true" /> : <ShoppingBag className="w-3 h-3" aria-hidden="true" />}
+      {isAdmin
+        ? <Crown style={{ width: "12px", height: "12px" }} aria-hidden="true" />
+        : <ShoppingBag className="w-3 h-3" aria-hidden="true" />
+      }
       {isAdmin ? "Admin" : "Vendeur"}
     </span>
   );
@@ -189,14 +200,18 @@ function StatusDot({ active }: { active: boolean }) {
     <span
       className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold"
       style={{
-        background: active ? "hsl(152 38% 38% / 0.1)" : "hsl(var(--muted))",
-        color: active ? "hsl(152 38% 38%)" : "hsl(var(--muted-foreground))",
+        background: active ? "hsl(142 72% 38% / 0.1)" : "hsl(var(--muted))",
+        color: active ? "hsl(142 72% 38%)" : "hsl(var(--muted-foreground))",
         transition: "background-color 0.3s ease, color 0.3s ease",
       }}
     >
       <span
         className="w-1.5 h-1.5 rounded-full"
-        style={{ background: "currentColor", transition: "background-color 0.3s ease" }}
+        style={{
+          background: active ? "hsl(142 72% 38%)" : "currentColor",
+          boxShadow: active ? "0 0 0 3px hsl(142 72% 38% / 0.2)" : "none",
+          transition: "background-color 0.3s ease, box-shadow 0.3s ease",
+        }}
       />
       {active ? "Actif" : "Inactif"}
     </span>
@@ -979,7 +994,14 @@ export default function UsersPage() {
             <div className="flex items-center gap-2">
               <Link
                 to="/admin/permissions"
-                className="inline-flex items-center gap-2 text-sm font-semibold px-3.5 py-2 rounded-xl border border-border/70 bg-muted/40 hover:bg-muted/70 transition-colors text-foreground"
+                className="inline-flex items-center gap-2 text-sm font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-90"
+                style={{
+                  border: "1px solid hsl(22 72% 48% / 0.5)",
+                  color: "hsl(22 60% 35%)",
+                  background: "hsl(22 72% 48% / 0.06)",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "hsl(22 72% 48% / 0.12)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "hsl(22 72% 48% / 0.06)"; }}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
                 Matrice permissions
@@ -990,7 +1012,7 @@ export default function UsersPage() {
                   className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
                   style={{
                     background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                    boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+                    boxShadow: "0 4px 14px hsl(22 72% 48% / 0.4), 0 1px 3px rgba(0,0,0,0.1)",
                   }}
                 >
                   <Plus className="w-4 h-4" />
@@ -1049,7 +1071,7 @@ export default function UsersPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}>
+                  <tr style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)", background: "hsl(30 15% 95%)" }}>
                     <th className="w-10 px-4 py-3">
                       <span className="sr-only">Sélection</span>
                     </th>
@@ -1059,16 +1081,16 @@ export default function UsersPage() {
                       currentSort={sort}
                       onSort={toggleSort}
                     />
-                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">Email</th>
+                    <th className="text-left px-4 py-3" style={{ fontSize: "11px", fontWeight: 700, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>Email</th>
                     <SortableHeader
                       label="Rôle"
                       sortKey="profile.role"
                       currentSort={sort}
                       onSort={toggleSort}
                     />
-                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">Permissions</th>
-                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">Statut</th>
-                    <th className="w-36 px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">Actions</th>
+                    <th className="text-left px-4 py-3" style={{ fontSize: "11px", fontWeight: 700, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>Permissions</th>
+                    <th className="text-left px-4 py-3" style={{ fontSize: "11px", fontWeight: 700, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>Statut</th>
+                    <th className="w-36 px-4 py-3" style={{ fontSize: "11px", fontWeight: 700, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>

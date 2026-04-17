@@ -56,16 +56,25 @@ import {
 // ─── Color palette ────────────────────────────────────────────────────────────
 
 const COLOR = {
-  normal:   "hsl(152 38% 38%)",
-  normalBg: "hsl(152 38% 38% / 0.10)",
-  normalText: "hsl(152 38% 38%)",
-  low:      "hsl(36 88% 52%)",
-  lowBg:    "hsl(36 88% 52% / 0.12)",
-  lowText:  "hsl(36 62% 35%)",
-  critical: "hsl(4 72% 52%)",
-  criticalBg: "hsl(4 72% 52% / 0.10)",
-  criticalText: "hsl(4 72% 52%)",
-  copper:   "hsl(22 72% 48%)",
+  normal:        "hsl(142 72% 38%)",
+  normalGrad:    "linear-gradient(135deg, hsl(142 72% 38%), hsl(152 60% 44%))",
+  normalBg:      "hsl(142 72% 38% / 0.12)",
+  normalBorder:  "hsl(142 72% 38% / 0.30)",
+  normalText:    "hsl(142 72% 28%)",
+  low:           "hsl(36 88% 52%)",
+  lowGrad:       "linear-gradient(135deg, hsl(36 88% 52%), hsl(42 88% 58%))",
+  lowBg:         "hsl(36 88% 52% / 0.12)",
+  lowBorder:     "hsl(36 88% 52% / 0.30)",
+  lowText:       "hsl(36 72% 32%)",
+  critical:      "hsl(0 72% 52%)",
+  criticalGrad:  "linear-gradient(135deg, hsl(0 72% 52%), hsl(6 72% 58%))",
+  criticalBg:    "hsl(0 72% 52% / 0.06)",
+  criticalBorder:"hsl(0 72% 52% / 0.30)",
+  criticalText:  "hsl(0 72% 42%)",
+  barBg:         "hsl(0 0% 94%)",
+  copper:        "hsl(22 72% 48%)",
+  copperGrad:    "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+  copperGlow:    "0 4px 14px hsl(22 72% 48% / 0.35)",
 } as const;
 
 function statusColor(status: "normal" | "bas" | "critique"): string {
@@ -74,10 +83,22 @@ function statusColor(status: "normal" | "bas" | "critique"): string {
   return COLOR.normal;
 }
 
+function statusGrad(status: "normal" | "bas" | "critique"): string {
+  if (status === "critique") return COLOR.criticalGrad;
+  if (status === "bas") return COLOR.lowGrad;
+  return COLOR.normalGrad;
+}
+
 function statusBg(status: "normal" | "bas" | "critique"): string {
   if (status === "critique") return COLOR.criticalBg;
   if (status === "bas") return COLOR.lowBg;
   return COLOR.normalBg;
+}
+
+function statusBorder(status: "normal" | "bas" | "critique"): string {
+  if (status === "critique") return COLOR.criticalBorder;
+  if (status === "bas") return COLOR.lowBorder;
+  return COLOR.normalBorder;
 }
 
 function statusTextColor(status: "normal" | "bas" | "critique"): string {
@@ -229,13 +250,13 @@ function StockBarCell({ item, rowIndex = 0 }: { item: StockItem; rowIndex?: numb
       </div>
       <div
         className="h-1.5 rounded-full overflow-hidden"
-        style={{ background: "hsl(var(--muted))" }}
+        style={{ background: COLOR.barBg }}
       >
         <div
           className="h-full rounded-full"
           style={{
             width: `${pct}%`,
-            background: statusColor(item.status),
+            background: statusGrad(item.status),
             transformOrigin: "left",
             transform: "scaleX(1)",
             animation: `stockBarGrow 0.6s ease-out ${delay} both`,
@@ -537,15 +558,17 @@ function HealthBanner({
     <div
       className="mb-6 p-5 rounded-2xl"
       style={{
-        background: "hsl(var(--card))",
-        border: "1px solid hsl(var(--border))",
-        boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        background: "rgba(255,255,255,0.82)",
+        border: "1px solid hsl(var(--border) / 0.6)",
+        boxShadow: "0 4px 20px hsl(22 30% 15% / 0.07), 0 1px 4px hsl(22 30% 15% / 0.04)",
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(-10px)",
         transition: "opacity 0.4s ease-out, transform 0.4s ease-out",
       }}
     >
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <h3
             className="font-bold text-foreground"
@@ -565,60 +588,113 @@ function HealthBanner({
         </div>
         {criticalCount > 0 && (
           <span
-            className="text-xs font-bold px-3 py-1.5 rounded-full animate-pulse"
+            className="text-xs font-bold px-3 py-1.5 rounded-full animate-pulse inline-flex items-center gap-1.5"
             style={{
-              background: COLOR.criticalBg,
-              color: COLOR.critical,
+              background: "hsl(0 72% 52% / 0.10)",
+              color: "hsl(0 72% 42%)",
+              border: "1px solid hsl(0 72% 52% / 0.25)",
             }}
           >
-            <AlertTriangle className="w-4 h-4 inline-block mr-1" />{criticalCount} critique{criticalCount > 1 ? "s" : ""}
+            <AlertTriangle className="w-3.5 h-3.5" />
+            {criticalCount} critique{criticalCount > 1 ? "s" : ""}
           </span>
         )}
       </div>
 
-      {/* Barre tricolore */}
-      <div className="flex rounded-full overflow-hidden h-3 mb-3 gap-0.5">
+      {/* Barre tricolore — 6px, border-radius 100px */}
+      <div
+        className="flex overflow-hidden mb-4 gap-px"
+        style={{ height: "6px", borderRadius: "100px" }}
+      >
         {normalPct > 0 && (
           <div
-            className="h-full transition-all"
             style={{
               width: `${normalPct}%`,
-              background: COLOR.normal,
-              borderRadius: lowPct === 0 && criticalPct <= 0 ? "999px" : "999px 0 0 999px",
+              background: "hsl(142 72% 38%)",
+              borderRadius: lowPct === 0 && criticalPct <= 0 ? "100px" : "100px 0 0 100px",
+              transition: "width 0.5s ease-out",
             }}
           />
         )}
         {lowPct > 0 && (
           <div
-            className="h-full transition-all"
-            style={{ width: `${lowPct}%`, background: COLOR.low }}
+            style={{
+              width: `${lowPct}%`,
+              background: "hsl(36 88% 52%)",
+              transition: "width 0.5s ease-out",
+            }}
           />
         )}
         {criticalPct > 0 && (
           <div
-            className="h-full transition-all"
             style={{
               width: `${criticalPct}%`,
-              background: COLOR.critical,
-              borderRadius: "0 999px 999px 0",
+              background: "hsl(0 72% 52%)",
+              borderRadius: "0 100px 100px 0",
+              transition: "width 0.5s ease-out",
             }}
           />
         )}
       </div>
 
-      <div className="flex items-center gap-6 flex-wrap text-xs">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR.normal }} />
-          <span className="text-muted-foreground">Normal ({normalCount})</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR.low }} />
-          <span className="text-muted-foreground">Bas ({lowCount})</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ background: COLOR.critical }} />
-          <span className="text-muted-foreground">Critique ({criticalCount})</span>
-        </span>
+      {/* Counters avec indicateurs colorés enrichis */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+          style={{ background: "hsl(142 72% 38% / 0.09)", border: "1px solid hsl(142 72% 38% / 0.20)" }}
+        >
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ background: "hsl(142 72% 38%)", boxShadow: "0 0 0 3px hsl(142 72% 38% / 0.20)" }}
+          />
+          <span className="text-xs font-semibold" style={{ color: "hsl(142 72% 28%)" }}>
+            Normal
+          </span>
+          <span
+            className="text-xs font-black tabular-nums px-1.5 py-0.5 rounded-md"
+            style={{ background: "hsl(142 72% 38% / 0.15)", color: "hsl(142 72% 28%)" }}
+          >
+            {normalCount}
+          </span>
+        </div>
+
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+          style={{ background: "hsl(36 88% 52% / 0.09)", border: "1px solid hsl(36 88% 52% / 0.20)" }}
+        >
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ background: "hsl(36 88% 52%)", boxShadow: "0 0 0 3px hsl(36 88% 52% / 0.20)" }}
+          />
+          <span className="text-xs font-semibold" style={{ color: "hsl(36 72% 32%)" }}>
+            Bas
+          </span>
+          <span
+            className="text-xs font-black tabular-nums px-1.5 py-0.5 rounded-md"
+            style={{ background: "hsl(36 88% 52% / 0.15)", color: "hsl(36 72% 32%)" }}
+          >
+            {lowCount}
+          </span>
+        </div>
+
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+          style={{ background: "hsl(0 72% 52% / 0.08)", border: "1px solid hsl(0 72% 52% / 0.20)" }}
+        >
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ background: "hsl(0 72% 52%)", boxShadow: "0 0 0 3px hsl(0 72% 52% / 0.20)" }}
+          />
+          <span className="text-xs font-semibold" style={{ color: "hsl(0 72% 42%)" }}>
+            Critique
+          </span>
+          <span
+            className="text-xs font-black tabular-nums px-1.5 py-0.5 rounded-md"
+            style={{ background: "hsl(0 72% 52% / 0.15)", color: "hsl(0 72% 42%)" }}
+          >
+            {criticalCount}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -635,6 +711,17 @@ interface LevelFilterPillsProps {
   criticalCount: number;
 }
 
+type PillSpec = {
+  key: StockLevelFilter;
+  label: string;
+  count: number;
+  inactiveBg: string;
+  inactiveBorder: string;
+  inactiveText: string;
+  activeGrad: string;
+  activeShadow: string;
+};
+
 function LevelFilterPills({
   filter,
   onChange,
@@ -643,43 +730,81 @@ function LevelFilterPills({
   lowCount,
   criticalCount,
 }: LevelFilterPillsProps) {
-  const tabs: { key: StockLevelFilter; label: string; count: number; color?: string }[] = [
-    { key: "", label: "Tous", count: total },
-    { key: "critique", label: "Critiques", count: criticalCount, color: COLOR.critical },
-    { key: "bas", label: "Stock bas", count: lowCount, color: COLOR.low },
-    { key: "normal", label: "Normal", count: normalCount, color: COLOR.normal },
+  const tabs: PillSpec[] = [
+    {
+      key: "",
+      label: "Tous",
+      count: total,
+      inactiveBg: "hsl(var(--muted))",
+      inactiveBorder: "hsl(var(--border))",
+      inactiveText: "hsl(var(--muted-foreground))",
+      activeGrad: COLOR.copperGrad,
+      activeShadow: `0 3px 10px hsl(22 72% 48% / 0.35)`,
+    },
+    {
+      key: "critique",
+      label: "Rupture",
+      count: criticalCount,
+      inactiveBg: "hsl(0 72% 52% / 0.10)",
+      inactiveBorder: "hsl(0 72% 52% / 0.28)",
+      inactiveText: "hsl(0 72% 42%)",
+      activeGrad: "linear-gradient(135deg, hsl(0 72% 52%), hsl(6 72% 58%))",
+      activeShadow: "0 3px 10px hsl(0 72% 52% / 0.40)",
+    },
+    {
+      key: "bas",
+      label: "Bas",
+      count: lowCount,
+      inactiveBg: "hsl(36 88% 52% / 0.10)",
+      inactiveBorder: "hsl(36 88% 52% / 0.28)",
+      inactiveText: "hsl(36 72% 32%)",
+      activeGrad: "linear-gradient(135deg, hsl(36 88% 52%), hsl(42 88% 58%))",
+      activeShadow: "0 3px 10px hsl(36 88% 52% / 0.40)",
+    },
+    {
+      key: "normal",
+      label: "OK",
+      count: normalCount,
+      inactiveBg: "hsl(142 72% 38% / 0.10)",
+      inactiveBorder: "hsl(142 72% 38% / 0.28)",
+      inactiveText: "hsl(142 72% 28%)",
+      activeGrad: "linear-gradient(135deg, hsl(142 72% 38%), hsl(152 60% 44%))",
+      activeShadow: "0 3px 10px hsl(142 72% 38% / 0.40)",
+    },
   ];
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {tabs.map((tab) => {
         const isActive = filter === tab.key;
-        const activeGradient = tab.color
-          ? `linear-gradient(135deg, ${tab.color}, ${tab.color}cc)`
-          : `linear-gradient(135deg, ${COLOR.copper}, hsl(36 88% 52%))`;
         return (
           <button
             key={tab.key}
             onClick={() => onChange(tab.key)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold"
             style={{
-              transition: "background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease",
+              transition: "all 0.22s ease",
               ...(isActive
                 ? {
-                    background: activeGradient,
+                    background: tab.activeGrad,
                     color: "white",
-                    boxShadow: `0 2px 8px ${tab.color || COLOR.copper}55`,
+                    boxShadow: tab.activeShadow,
+                    border: "1px solid transparent",
                   }
                 : {
-                    background: "hsl(var(--muted))",
-                    color: "hsl(var(--muted-foreground))",
+                    background: tab.inactiveBg,
+                    color: tab.inactiveText,
+                    border: `1px solid ${tab.inactiveBorder}`,
+                    boxShadow: "none",
                   }),
             }}
           >
             {tab.label}
             <span
               className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-              style={{ background: "rgba(255,255,255,0.2)" }}
+              style={{
+                background: isActive ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.07)",
+              }}
             >
               {tab.count}
             </span>
@@ -1088,16 +1213,20 @@ export default function StockPage() {
                     style={{
                       border:
                         item.status === "critique"
-                          ? `1px solid ${COLOR.critical}55`
+                          ? `1px solid hsl(0 72% 52% / 0.30)`
                           : item.status === "bas"
-                          ? `1px solid ${COLOR.low}55`
+                          ? `1px solid hsl(36 88% 52% / 0.30)`
                           : "1px solid hsl(var(--border))",
                       borderLeft:
                         item.status === "critique"
-                          ? `3px solid ${COLOR.critical}`
+                          ? `3px solid hsl(0 72% 52%)`
                           : item.status === "bas"
-                          ? `3px solid ${COLOR.low}`
+                          ? `3px solid hsl(36 88% 52%)`
                           : "3px solid transparent",
+                      background:
+                        item.status === "critique"
+                          ? "hsl(0 72% 52% / 0.04)"
+                          : "hsl(var(--card))",
                       animationDelay: `${index * 40}ms`,
                       animation: "slideInUp 0.3s ease forwards",
                       opacity: 0,
@@ -1134,12 +1263,15 @@ export default function StockPage() {
                     </p>
 
                     {/* Barre de progression */}
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-1.5 rounded-full overflow-hidden"
+                      style={{ background: COLOR.barBg }}
+                    >
                       <div
                         className="h-full rounded-full"
                         style={{
                           width: `${pct}%`,
-                          background: statusColor(item.status),
+                          background: statusGrad(item.status),
                           transformOrigin: "left",
                           animation: `stockBarGrow 0.6s ease-out ${index * 40 + 200}ms both`,
                         }}
@@ -1222,15 +1354,15 @@ export default function StockPage() {
                           background: isSelected(item.id)
                             ? "hsl(var(--primary) / 0.05)"
                             : item.status === "critique"
-                            ? COLOR.criticalBg.replace("0.10", "0.03")
+                            ? "hsl(0 72% 52% / 0.04)"
                             : item.status === "bas"
-                            ? COLOR.lowBg.replace("0.12", "0.03")
+                            ? "hsl(36 88% 52% / 0.03)"
                             : "transparent",
                           borderLeft:
                             item.status === "critique"
-                              ? `3px solid ${COLOR.critical}`
+                              ? `3px solid hsl(0 72% 52%)`
                               : item.status === "bas"
-                              ? `3px solid ${COLOR.low}`
+                              ? `3px solid hsl(36 88% 52%)`
                               : "3px solid transparent",
                           animationDelay: `${index * 40}ms`,
                           animation: "slideInUp 0.3s ease forwards",
@@ -1260,12 +1392,15 @@ export default function StockPage() {
                         {/* Colonne niveau — barre + % */}
                         <td>
                           <div className="flex items-center gap-2">
-                            <div className="w-16 sm:w-24 h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="w-16 sm:w-24 h-1.5 rounded-full overflow-hidden"
+                              style={{ background: COLOR.barBg }}
+                            >
                               <div
                                 className="h-full rounded-full transition-all duration-300"
                                 style={{
                                   width: `${pct}%`,
-                                  background: statusColor(item.status),
+                                  background: statusGrad(item.status),
                                 }}
                               />
                             </div>
@@ -1333,23 +1468,25 @@ export default function StockPage() {
               return (
                 <div
                   key={item.id}
-                  className="bg-card rounded-xl p-4 flex flex-col gap-3"
+                  className="rounded-xl p-4 flex flex-col gap-3"
                   style={{
                     border:
                       item.status === "critique"
-                        ? `1px solid ${COLOR.critical}40`
+                        ? `1px solid hsl(0 72% 52% / 0.30)`
                         : item.status === "bas"
-                        ? `1px solid ${COLOR.low}40`
+                        ? `1px solid hsl(36 88% 52% / 0.28)`
                         : "1px solid hsl(var(--border))",
                     borderLeft:
                       item.status === "critique"
-                        ? `3px solid ${COLOR.critical}`
+                        ? `3px solid hsl(0 72% 52%)`
                         : item.status === "bas"
-                        ? `3px solid ${COLOR.low}`
+                        ? `3px solid hsl(36 88% 52%)`
                         : "3px solid transparent",
                     background: isSelected(item.id)
                       ? "hsl(var(--primary) / 0.04)"
-                      : undefined,
+                      : item.status === "critique"
+                      ? "hsl(0 72% 52% / 0.04)"
+                      : "hsl(var(--card))",
                     animationDelay: `${index * 40}ms`,
                     animation: "slideInUp 0.3s ease forwards",
                     opacity: 0,
@@ -1396,12 +1533,15 @@ export default function StockPage() {
                   </div>
 
                   {/* Progress bar */}
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full overflow-hidden"
+                    style={{ background: COLOR.barBg }}
+                  >
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${pct}%`,
-                        background: statusColor(item.status),
+                        background: statusGrad(item.status),
                       }}
                     />
                   </div>
@@ -1457,20 +1597,34 @@ export default function StockPage() {
           open
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
-            <DialogHeader>
+          <DialogContent
+            className="sm:max-w-md max-h-[90vh] overflow-y-auto p-0"
+            style={{ borderRadius: "20px", overflow: "hidden" }}
+          >
+            <DialogHeader
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%), hsl(28 80% 56%))",
+                padding: "20px 24px 16px",
+              }}
+            >
               <DialogTitle
-                style={{ fontFamily: "var(--font-heading, inherit)", color: COLOR.copper }}
+                style={{
+                  fontFamily: "var(--font-heading, inherit)",
+                  color: "white",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                }}
               >
                 Ajuster le stock — {modal.item.name}
               </DialogTitle>
             </DialogHeader>
-            <AdjustStockForm
-              item={modal.item}
-              onSubmit={handleAdjust}
-              onCancel={() => setModal({ type: "none" })}
-              isSubmitting={adjustMutation.isPending}
-            />
+            <div className="px-6 pb-6">
+              <AdjustStockForm
+                item={modal.item}
+                onSubmit={handleAdjust}
+                onCancel={() => setModal({ type: "none" })}
+                isSubmitting={adjustMutation.isPending}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -1481,20 +1635,34 @@ export default function StockPage() {
           open
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
-            <DialogHeader>
+          <DialogContent
+            className="sm:max-w-md max-h-[90vh] overflow-y-auto p-0"
+            style={{ borderRadius: "20px", overflow: "hidden" }}
+          >
+            <DialogHeader
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%), hsl(28 80% 56%))",
+                padding: "20px 24px 16px",
+              }}
+            >
               <DialogTitle
-                style={{ fontFamily: "var(--font-heading, inherit)", color: COLOR.copper }}
+                style={{
+                  fontFamily: "var(--font-heading, inherit)",
+                  color: "white",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                }}
               >
                 Ajuster la sélection — {modal.ids.size} produit{modal.ids.size > 1 ? "s" : ""}
               </DialogTitle>
             </DialogHeader>
-            <AdjustStockForm
-              item={{ id: -1, stockId: -1, name: "", category: "", imageUrl: null, stock: 0, min: 0, max: 0, price: 0, stockValue: 0, status: "normal" }}
-              onSubmit={handleBulkAdjust}
-              onCancel={() => setModal({ type: "none" })}
-              isSubmitting={isBulkSubmitting}
-            />
+            <div className="px-6 pb-6">
+              <AdjustStockForm
+                item={{ id: -1, stockId: -1, name: "", category: "", imageUrl: null, stock: 0, min: 0, max: 0, price: 0, stockValue: 0, status: "normal" }}
+                onSubmit={handleBulkAdjust}
+                onCancel={() => setModal({ type: "none" })}
+                isSubmitting={isBulkSubmitting}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -1505,20 +1673,34 @@ export default function StockPage() {
           open
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
-          <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl">
-            <DialogHeader>
+          <DialogContent
+            className="sm:max-w-sm max-h-[90vh] overflow-y-auto p-0"
+            style={{ borderRadius: "20px", overflow: "hidden" }}
+          >
+            <DialogHeader
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%), hsl(28 80% 56%))",
+                padding: "20px 24px 16px",
+              }}
+            >
               <DialogTitle
-                style={{ fontFamily: "var(--font-heading, inherit)", color: COLOR.copper }}
+                style={{
+                  fontFamily: "var(--font-heading, inherit)",
+                  color: "white",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                }}
               >
                 Définir les seuils — {modal.item.name}
               </DialogTitle>
             </DialogHeader>
+            <div className="px-6 pb-6">
             <ThresholdForm
               item={modal.item}
               onSubmit={handleThreshold}
               onCancel={() => setModal({ type: "none" })}
               isSubmitting={thresholdMutation.isPending}
             />
+            </div>
           </DialogContent>
         </Dialog>
       )}

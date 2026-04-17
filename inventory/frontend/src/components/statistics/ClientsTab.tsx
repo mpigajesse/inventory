@@ -29,6 +29,12 @@ function formatFcfaFull(amount: number): string {
   return amount.toLocaleString("fr-FR") + " FCFA";
 }
 
+// ─── Couleurs clients ─────────────────────────────────────────────────────────
+// Nouveaux = cuivre, Récurrents = vert forêt
+
+const COLOR_NEW = "hsl(22, 72%, 48%)";
+const COLOR_RETURNING = "hsl(152, 38%, 38%)";
+
 // ─── Tooltip personnalisé ──────────────────────────────────────────────────────
 
 interface TooltipPayloadItem {
@@ -47,16 +53,19 @@ function CustomLineTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div
-      className="rounded-lg px-3 py-2.5 text-xs shadow-lg"
       style={{
         background: "hsl(var(--popover))",
         border: "1px solid hsl(var(--border))",
         color: "hsl(var(--popover-foreground))",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        fontSize: "12px",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
       }}
     >
-      <p className="font-semibold mb-1">{label}</p>
+      <p style={{ fontWeight: "600", marginBottom: "6px" }}>{label}</p>
       {payload.map((item) => (
-        <p key={item.name} style={{ color: item.color }}>
+        <p key={item.name} style={{ color: item.color, fontWeight: "500" }}>
           {item.name} : {item.value}
         </p>
       ))}
@@ -69,11 +78,13 @@ function CustomBarTooltip({ active, payload, label }: CustomTooltipProps) {
   const value = payload[0]?.value ?? 0;
   return (
     <div
-      className="rounded-xl px-3 py-2.5 text-xs"
       style={{
         background: "hsl(20 25% 10%)",
         border: "1px solid rgba(255,255,255,0.12)",
         boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+        borderRadius: "12px",
+        padding: "10px 14px",
+        fontSize: "12px",
       }}
     >
       <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "11px", marginBottom: "4px" }} className="truncate max-w-[160px]">{label}</p>
@@ -96,7 +107,6 @@ export function ClientsTab({ period }: ClientsTabProps) {
     queryFn: () => statisticsService.getClients({ period }),
   });
 
-  // Entrance animation state
   const [kpiVisible, setKpiVisible] = useState(false);
   const [barChartVisible, setBarChartVisible] = useState(false);
   const [areaChartVisible, setAreaChartVisible] = useState(false);
@@ -146,27 +156,65 @@ export function ClientsTab({ period }: ClientsTabProps) {
             style={{
               opacity: kpiVisible ? 1 : 0,
               transform: kpiVisible ? "translateY(0)" : "translateY(12px)",
-              transition: `opacity 0.4s ease, transform 0.4s ease`,
+              transition: "opacity 0.4s ease, transform 0.4s ease",
               transitionDelay: `${idx * 65}ms`,
             }}
           >
             {idx === 0 && (
-              <StatCard
-                label="Nouveaux clients"
-                value={String(data.new_clients_this_period)}
-                icon={Users}
-                change="Sur la période sélectionnée"
-                changeType="neutral"
-              />
+              <div
+                style={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderTop: `3px solid ${COLOR_NEW}`,
+                  borderRadius: "16px",
+                  padding: "20px",
+                  boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.06em", color: "hsl(var(--muted-foreground))" }}>
+                    Nouveaux clients
+                  </span>
+                  <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: `${COLOR_NEW}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Users style={{ width: "16px", height: "16px", color: COLOR_NEW }} />
+                  </div>
+                </div>
+                <p style={{ fontSize: "28px", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif", color: COLOR_NEW, letterSpacing: "-0.03em", lineHeight: 1 }}>
+                  {data.new_clients_this_period}
+                </p>
+                <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Sur la période sélectionnée</p>
+              </div>
             )}
             {idx === 1 && (
-              <StatCard
-                label="Clients fidèles (≥2 achats)"
-                value={String(data.returning_clients)}
-                icon={UserCheck}
-                change="Ont acheté plusieurs fois"
-                changeType="positive"
-              />
+              <div
+                style={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderTop: `3px solid ${COLOR_RETURNING}`,
+                  borderRadius: "16px",
+                  padding: "20px",
+                  boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.06em", color: "hsl(var(--muted-foreground))" }}>
+                    Clients fidèles
+                  </span>
+                  <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: `${COLOR_RETURNING}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <UserCheck style={{ width: "16px", height: "16px", color: COLOR_RETURNING }} />
+                  </div>
+                </div>
+                <p style={{ fontSize: "28px", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif", color: COLOR_RETURNING, letterSpacing: "-0.03em", lineHeight: 1 }}>
+                  {data.returning_clients}
+                </p>
+                <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>≥ 2 achats</p>
+              </div>
             )}
             {idx === 2 && (
               <StatCard
@@ -194,18 +242,29 @@ export function ClientsTab({ period }: ClientsTabProps) {
       <div
         className="card-premium p-6"
         style={{
+          borderTop: `3px solid ${COLOR_NEW}`,
           opacity: barChartVisible ? 1 : 0,
           transform: barChartVisible ? "translateY(0)" : "translateY(12px)",
           transition: "opacity 0.4s ease, transform 0.4s ease",
         }}
       >
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
-            <Users className="w-4 h-4 text-warning" />
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "10px",
+              background: `${COLOR_NEW}18`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Users style={{ width: "16px", height: "16px", color: COLOR_NEW }} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold font-heading">Top 10 clients</h2>
-            <p className="text-xs text-muted-foreground">Classés par montant dépensé</p>
+            <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Top 10 clients</h2>
+            <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Classés par montant dépensé</p>
           </div>
         </div>
 
@@ -221,6 +280,12 @@ export function ClientsTab({ period }: ClientsTabProps) {
               data={topClients}
               margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
             >
+              <defs>
+                <linearGradient id="gradClientBar" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="hsl(22, 72%, 48%)" />
+                  <stop offset="100%" stopColor="hsl(30, 82%, 58%)" />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 horizontal={false}
                 strokeDasharray="3 3"
@@ -244,7 +309,7 @@ export function ClientsTab({ period }: ClientsTabProps) {
               <Tooltip content={<CustomBarTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
               <Bar
                 dataKey="total_spent"
-                fill="hsl(22, 72%, 48%)"
+                fill="url(#gradClientBar)"
                 radius={[0, 6, 6, 0]}
                 maxBarSize={28}
               />
@@ -258,18 +323,29 @@ export function ClientsTab({ period }: ClientsTabProps) {
         <div
           className="card-premium p-6"
           style={{
+            borderTop: `3px solid ${COLOR_RETURNING}`,
             opacity: areaChartVisible ? 1 : 0,
             transform: areaChartVisible ? "translateY(0)" : "translateY(12px)",
             transition: "opacity 0.4s ease, transform 0.4s ease",
           }}
         >
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-primary" />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "10px",
+                background: `${COLOR_RETURNING}18`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <TrendingUp style={{ width: "16px", height: "16px", color: COLOR_RETURNING }} />
             </div>
             <div>
-              <h2 className="text-sm font-semibold font-heading">Évolution clients</h2>
-              <p className="text-xs text-muted-foreground">Nouveaux et actifs sur la période</p>
+              <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Évolution clients</h2>
+              <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Nouveaux et actifs sur la période</p>
             </div>
           </div>
 
@@ -280,12 +356,12 @@ export function ClientsTab({ period }: ClientsTabProps) {
             >
               <defs>
                 <linearGradient id="gradNewClients" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor={COLOR_NEW} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={COLOR_NEW} stopOpacity={0.02} />
                 </linearGradient>
                 <linearGradient id="gradActiveClients" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(152, 38%, 38%)" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="hsl(152, 38%, 38%)" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor={COLOR_RETURNING} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={COLOR_RETURNING} stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -313,21 +389,21 @@ export function ClientsTab({ period }: ClientsTabProps) {
                 type="monotone"
                 dataKey="new_clients"
                 name="Nouveaux clients"
-                stroke="hsl(22, 72%, 48%)"
+                stroke={COLOR_NEW}
                 strokeWidth={2.5}
                 fill="url(#gradNewClients)"
                 dot={false}
-                activeDot={{ r: 5, fill: "hsl(22, 72%, 48%)", stroke: "white", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: COLOR_NEW, stroke: "white", strokeWidth: 2 }}
               />
               <Area
                 type="monotone"
                 dataKey="active_clients"
                 name="Clients actifs"
-                stroke="hsl(152, 38%, 38%)"
+                stroke={COLOR_RETURNING}
                 strokeWidth={2.5}
                 fill="url(#gradActiveClients)"
                 dot={false}
-                activeDot={{ r: 5, fill: "hsl(152, 38%, 38%)", stroke: "white", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: COLOR_RETURNING, stroke: "white", strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>

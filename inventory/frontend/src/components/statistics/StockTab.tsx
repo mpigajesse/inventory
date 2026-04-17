@@ -22,6 +22,11 @@ function formatFcfa(amount: number): string {
   return `${amount.toLocaleString("fr-FR")} FCFA`;
 }
 
+// ─── Couleurs stock — cohérentes avec StockPage ────────────────────────────────
+const COLOR_NORMAL   = "hsl(152, 52%, 38%)";   // vert — OK
+const COLOR_LOW      = "hsl(36, 88%, 52%)";    // amber — bas
+const COLOR_CRITICAL = "hsl(4, 72%, 52%)";     // rouge — rupture / critique
+
 // ─── Squelette de chargement ──────────────────────────────────────────────────
 
 function SkeletonRow() {
@@ -42,29 +47,38 @@ interface ProgressBarProps {
   count: number;
   total: number;
   color: string;
+  gradientEnd: string;
   barVisible: boolean;
   delay: number;
 }
 
-function ProgressBar({ label, count, total, color, barVisible, delay }: ProgressBarProps) {
+function ProgressBar({ label, count, total, color, gradientEnd, barVisible, delay }: ProgressBarProps) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-semibold tabular-nums" style={{ color }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px" }}>
+        <span style={{ color: "hsl(var(--muted-foreground))" }}>{label}</span>
+        <span style={{ fontWeight: "600", fontVariantNumeric: "tabular-nums", color }}>
           {count} produit{count > 1 ? "s" : ""} — {pct}%
         </span>
       </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
+      <div
+        style={{
+          height: "8px",
+          borderRadius: "100px",
+          background: "hsl(var(--muted))",
+          overflow: "hidden",
+        }}
+      >
         <div
-          className="h-full rounded-full"
           style={{
+            height: "100%",
+            borderRadius: "100px",
             width: `${pct}%`,
-            background: color,
+            background: `linear-gradient(90deg, ${color}, ${gradientEnd})`,
             transform: barVisible ? "scaleX(1)" : "scaleX(0)",
             transformOrigin: "left",
-            transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+            transition: "transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)",
             transitionDelay: `${delay}ms`,
           }}
         />
@@ -78,10 +92,21 @@ function ProgressBar({ label, count, total, color, barVisible, delay }: Progress
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-card border border-border rounded-lg shadow-lg px-3 py-2 text-xs">
-      <p className="font-semibold text-foreground mb-1 truncate max-w-[160px]">{label}</p>
+    <div
+      style={{
+        background: "hsl(20 25% 10%)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+        borderRadius: "12px",
+        padding: "10px 14px",
+        fontSize: "12px",
+      }}
+    >
+      <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "11px", marginBottom: "4px" }} className="truncate max-w-[160px]">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="text-muted-foreground">{formatFcfa(p.value)}</p>
+        <p key={i} style={{ color: "white", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif", fontSize: "13px" }}>
+          {formatFcfa(p.value)}
+        </p>
       ))}
     </div>
   );
@@ -96,7 +121,6 @@ export function StockTab() {
     staleTime: 60_000,
   });
 
-  // Entrance animation state
   const [kpiVisible, setKpiVisible] = useState(false);
   const [alertsVisible, setAlertsVisible] = useState(false);
   const [chartVisible, setChartVisible] = useState(false);
@@ -127,7 +151,6 @@ export function StockTab() {
     );
   }
 
-  // ── Section 1 : KPIs ──────────────────────────────────────────────────────
   const totalValue = data?.total_value ?? 0;
   const totalProducts = data?.total_products ?? 0;
   const statusBreakdown = data?.status_breakdown;
@@ -135,7 +158,6 @@ export function StockTab() {
   const lowCount = statusBreakdown?.low.count ?? 0;
   const criticalCount = statusBreakdown?.critical.count ?? 0;
 
-  // ── Section 2 : Alertes ───────────────────────────────────────────────────
   const alerts = (data?.alerts ?? []).slice().sort((a, b) => {
     const order = { critique: 0, critical: 0, low: 1, bas: 1, normal: 2 };
     const aOrder = order[a.status as keyof typeof order] ?? 3;
@@ -143,9 +165,7 @@ export function StockTab() {
     return aOrder - bOrder;
   });
 
-  // ── Section 3 : Top valeur stockée ───────────────────────────────────────
   const topValueProducts = (data?.top_value_products ?? []).slice(0, 10);
-
   const kpiCards = [0, 1, 2];
 
   return (
@@ -159,7 +179,7 @@ export function StockTab() {
             style={{
               opacity: kpiVisible ? 1 : 0,
               transform: kpiVisible ? "translateY(0)" : "translateY(12px)",
-              transition: `opacity 0.4s ease, transform 0.4s ease`,
+              transition: "opacity 0.4s ease, transform 0.4s ease",
               transitionDelay: `${idx * 65}ms`,
             }}
           >
@@ -180,26 +200,56 @@ export function StockTab() {
               />
             )}
             {idx === 2 && (
-              <div className="stat-card">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="stat-label">Répartition des niveaux</span>
-                  <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-4 h-4 text-warning" />
+              <div
+                style={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderTop: `3px solid ${COLOR_LOW}`,
+                  borderRadius: "16px",
+                  padding: "20px",
+                  boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Répartition des niveaux
+                  </span>
+                  <div
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "10px",
+                      background: `${COLOR_LOW}18`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AlertTriangle style={{ width: "16px", height: "16px", color: COLOR_LOW }} />
                   </div>
                 </div>
                 {isLoading ? (
-                  <div className="space-y-3">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="h-2 bg-muted rounded skeleton-shimmer" />
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-3 pt-1">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     <ProgressBar
                       label="Normal"
                       count={normalCount}
                       total={totalProducts}
-                      color="hsl(var(--success))"
+                      color={COLOR_NORMAL}
+                      gradientEnd="hsl(152, 45%, 48%)"
                       barVisible={barVisible}
                       delay={0}
                     />
@@ -207,7 +257,8 @@ export function StockTab() {
                       label="Bas"
                       count={lowCount}
                       total={totalProducts}
-                      color="hsl(var(--warning))"
+                      color={COLOR_LOW}
+                      gradientEnd="hsl(36, 88%, 62%)"
                       barVisible={barVisible}
                       delay={80}
                     />
@@ -215,7 +266,8 @@ export function StockTab() {
                       label="Critique"
                       count={criticalCount}
                       total={totalProducts}
-                      color="hsl(var(--destructive))"
+                      color={COLOR_CRITICAL}
+                      gradientEnd="hsl(4, 72%, 62%)"
                       barVisible={barVisible}
                       delay={160}
                     />
@@ -231,23 +283,34 @@ export function StockTab() {
       <div
         className="card-premium overflow-hidden"
         style={{
+          borderTop: `3px solid ${COLOR_CRITICAL}`,
           opacity: alertsVisible ? 1 : 0,
           transform: alertsVisible ? "translateY(0)" : "translateY(12px)",
           transition: "opacity 0.4s ease, transform 0.4s ease",
         }}
       >
-        <div className="flex items-center justify-between gap-2 px-6 py-4 border-b">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-4 h-4 text-destructive" />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "16px 24px", borderBottom: "1px solid hsl(var(--border))" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "10px",
+                background: `${COLOR_CRITICAL}18`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <AlertTriangle style={{ width: "16px", height: "16px", color: COLOR_CRITICAL }} />
             </div>
             <div>
-              <h2 className="text-sm font-semibold font-heading">Alertes stock</h2>
-              <p className="text-xs text-muted-foreground">Produits critiques et bas de stock</p>
+              <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Alertes stock</h2>
+              <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Produits critiques et bas de stock</p>
             </div>
           </div>
           {!isLoading && alerts.length > 0 && (
-            <span className="text-xs text-muted-foreground shrink-0">
+            <span style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))", flexShrink: 0 }}>
               {criticalCount} critique{criticalCount > 1 ? "s" : ""} · {lowCount} bas
             </span>
           )}
@@ -264,13 +327,26 @@ export function StockTab() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="data-table w-full">
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr>
-                  <th className="text-left">Produit</th>
-                  <th className="text-right">Qté actuelle</th>
-                  <th className="text-right">Seuil min</th>
-                  <th className="text-center">Statut</th>
+                <tr style={{ background: "hsl(var(--muted) / 0.5)", borderBottom: "1px solid hsl(var(--border))" }}>
+                  {["Produit", "Qté actuelle", "Seuil min", "Statut"].map((col, i) => (
+                    <th
+                      key={col}
+                      style={{
+                        padding: "10px 16px",
+                        textAlign: i === 0 ? "left" : i === 3 ? "center" : "right",
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        fontFamily: "var(--font-heading)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        color: "hsl(var(--muted-foreground))",
+                      }}
+                    >
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -280,18 +356,31 @@ export function StockTab() {
                     <tr
                       key={alert.product_id}
                       style={{
+                        borderBottom: "1px solid hsl(var(--border))",
                         opacity: rowsVisible ? 1 : 0,
                         transform: rowsVisible ? "translateY(0)" : "translateY(5px)",
-                        transition: `opacity 0.35s ease, transform 0.35s ease`,
+                        transition: "opacity 0.35s ease, transform 0.35s ease, background 0.15s ease",
                         transitionDelay: `${idx * 45}ms`,
                       }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLTableRowElement).style.background = isCritical
+                          ? `${COLOR_CRITICAL}06`
+                          : `${COLOR_LOW}06`;
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLTableRowElement).style.background = "transparent";
+                      }}
                     >
-                      <td className="font-medium text-sm">{alert.product_name}</td>
-                      <td className="text-right font-mono tabular-nums text-sm">{alert.quantity}</td>
-                      <td className="text-right font-mono tabular-nums text-sm text-muted-foreground">
+                      <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: "500", color: "hsl(var(--foreground))" }}>
+                        {alert.product_name}
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "right", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", fontSize: "13px" }}>
+                        {alert.quantity}
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "right", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", fontSize: "13px", color: "hsl(var(--muted-foreground))" }}>
                         {alert.min_threshold}
                       </td>
-                      <td className="text-center">
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
                         <StatusBadge
                           label={isCritical ? "Critique" : "Bas"}
                           variant={isCritical ? "danger" : "warning"}
@@ -310,18 +399,29 @@ export function StockTab() {
       <div
         className="card-premium p-6"
         style={{
+          borderTop: `3px solid ${COLOR_NORMAL}`,
           opacity: chartVisible ? 1 : 0,
           transform: chartVisible ? "translateY(0)" : "translateY(12px)",
           transition: "opacity 0.4s ease, transform 0.4s ease",
         }}
       >
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <BarChart2 className="w-4 h-4 text-primary" />
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "10px",
+              background: `${COLOR_NORMAL}18`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <BarChart2 style={{ width: "16px", height: "16px", color: COLOR_NORMAL }} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold font-heading">Top 10 par valeur stockée</h2>
-            <p className="text-xs text-muted-foreground">Produits représentant le plus de capital immobilisé</p>
+            <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Top 10 par valeur stockée</h2>
+            <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Produits représentant le plus de capital immobilisé</p>
           </div>
         </div>
 
@@ -341,6 +441,12 @@ export function StockTab() {
               data={topValueProducts}
               margin={{ top: 0, right: 20, bottom: 0, left: 0 }}
             >
+              <defs>
+                <linearGradient id="gradStockBar" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={COLOR_NORMAL} />
+                  <stop offset="100%" stopColor="hsl(152, 45%, 50%)" />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
               <XAxis
                 type="number"
@@ -358,7 +464,7 @@ export function StockTab() {
                 tickLine={false}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.4)" }} />
-              <Bar dataKey="value" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} maxBarSize={22} />
+              <Bar dataKey="value" fill="url(#gradStockBar)" radius={[0, 4, 4, 0]} maxBarSize={22} />
             </BarChart>
           </ResponsiveContainer>
         )}

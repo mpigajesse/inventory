@@ -57,6 +57,9 @@
     --font-body: 'Inter', 'Instrument Sans', system-ui, -apple-system, sans-serif;
     --font-editorial: 'Fraunces', 'Plus Jakarta Sans', Georgia, serif;
     --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+    /* Alias sémantiques pour usage direct */
+    --font-display: 'Plus Jakarta Sans', sans-serif;
+    --font-amount: 'Fraunces', serif;
 
     /* Échelle typographique fluide (clamp pour responsivité naturelle) */
     --text-xs: 0.75rem;     /* 12px */
@@ -68,6 +71,12 @@
     --text-3xl: clamp(1.75rem, 1.45rem + 1vw, 2rem);
     --text-4xl: clamp(2rem, 1.65rem + 1.3vw, 2.5rem);
     --text-hero: clamp(2.5rem, 1.8rem + 2.5vw, 3.75rem);
+
+    /* ── Tokens de surface — hiérarchie de profondeur ───────────────── */
+    --surface-1: hsl(30 20% 97%);       /* page background */
+    --surface-2: hsl(30 15% 94%);       /* card background */
+    --surface-3: hsl(30 10% 90%);       /* muted / section background */
+    --surface-elevated: hsl(0 0% 100%); /* elevated cards & modals */
 
     /* ── Rayons arrondis harmonieux ──────────────────────────────────── */
     --radius-sm: 6px;
@@ -96,6 +105,13 @@
                  0 24px 48px -12px hsl(var(--shadow-color-warm) / 0.18);
     --shadow-inner: inset 0 1px 2px 0 hsl(var(--shadow-color-warm) / 0.06);
     --shadow-focus: 0 0 0 3px hsl(var(--primary) / 0.18);
+
+    /* ── Shadows warm cuivre enrichies — double couche pour profondeur premium */
+    --shadow-warm-sm: 0 1px 3px hsl(22 72% 48% / 0.08), 0 1px 2px hsl(0 0% 0% / 0.06);
+    --shadow-warm-md: 0 4px 12px hsl(22 72% 48% / 0.12), 0 2px 4px hsl(0 0% 0% / 0.08);
+    --shadow-warm-lg: 0 8px 24px hsl(22 72% 48% / 0.15), 0 4px 8px hsl(0 0% 0% / 0.10);
+    --shadow-warm-xl: 0 16px 40px hsl(22 72% 48% / 0.18), 0 8px 16px hsl(0 0% 0% / 0.12);
+    --shadow-copper-glow: 0 0 20px hsl(22 72% 48% / 0.25), 0 4px 12px hsl(22 72% 48% / 0.15);
 
     /* ── Gradients utilitaires ───────────────────────────────────────── */
     --gradient-primary: linear-gradient(
@@ -728,17 +744,17 @@ html.theme-terracotta {
 }
 
 html.theme-nuit {
-  --background: 20 20% 9%;
+  --background: 20 15% 8%;
   --foreground: 30 18% 92%;
-  --card: 20 22% 12%;
+  --card: 20 12% 11%;
   --card-foreground: 30 18% 92%;
-  --popover: 20 22% 12%;
+  --popover: 20 12% 11%;
   --popover-foreground: 30 18% 92%;
   --primary: 22 72% 56%;
   --primary-foreground: 0 0% 100%;
   --secondary: 20 18% 18%;
   --secondary-foreground: 30 15% 82%;
-  --muted: 20 18% 18%;
+  --muted: 20 10% 15%;
   --muted-foreground: 28 12% 55%;
   --accent: 152 42% 44%;
   --accent-foreground: 0 0% 100%;
@@ -748,8 +764,8 @@ html.theme-nuit {
   --success-foreground: 0 0% 100%;
   --warning: 36 85% 55%;
   --warning-foreground: 20 25% 10%;
-  --border: 20 18% 22%;
-  --input: 20 18% 22%;
+  --border: 22 20% 20%;
+  --input: 22 20% 20%;
   --ring: 22 72% 56%;
   --radius: 0.5rem;
   --sidebar-bg: 20 28% 7%;
@@ -1365,10 +1381,21 @@ html.theme-couchant {
   .bg-gradient-accent  { background: var(--gradient-accent); }
 
   /* Shadow helpers alignés sur les tokens warm */
-  .shadow-warm-sm { box-shadow: var(--shadow-sm); }
-  .shadow-warm-md { box-shadow: var(--shadow-md); }
-  .shadow-warm-lg { box-shadow: var(--shadow-lg); }
-  .shadow-warm-xl { box-shadow: var(--shadow-xl); }
+  .shadow-warm-sm { box-shadow: var(--shadow-warm-sm); }
+  .shadow-warm-md { box-shadow: var(--shadow-warm-md); }
+  .shadow-warm-lg { box-shadow: var(--shadow-warm-lg); }
+  .shadow-warm-xl { box-shadow: var(--shadow-warm-xl); }
+  .shadow-copper-glow { box-shadow: var(--shadow-copper-glow); }
+
+  /* Surface token helpers */
+  .surface-1 { background: var(--surface-1); }
+  .surface-2 { background: var(--surface-2); }
+  .surface-3 { background: var(--surface-3); }
+  .surface-elevated { background: var(--surface-elevated); }
+
+  /* Font alias helpers */
+  .font-display { font-family: var(--font-display); }
+  .font-amount  { font-family: var(--font-amount); }
 
   /* Radius helpers harmonieux */
   .rounded-premium-sm { border-radius: var(--radius-sm); }
@@ -1405,11 +1432,11 @@ html.theme-couchant {
 @layer components {
   /* === GLASSMORPHISM === */
   .glass-card {
-    background: hsl(var(--card) / 0.75);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid hsl(var(--border) / 0.5);
-    box-shadow: var(--shadow-md);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: var(--shadow-warm-md);
   }
   .glass-card-dark {
     background: hsl(20 25% 10% / 0.85);
@@ -1424,7 +1451,7 @@ html.theme-couchant {
   }
   .hover-lift:hover {
     transform: translateY(-3px);
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-warm-lg);
   }
   .hover-lift-sm {
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
@@ -1462,7 +1489,7 @@ html.theme-couchant {
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius-lg);
     padding: 1.5rem;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-warm-sm);
     transition: all var(--transition-base);
     position: relative;
     overflow: hidden;
@@ -1476,7 +1503,7 @@ html.theme-couchant {
   }
   .kpi-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-warm-xl);
     border-color: hsl(var(--primary) / 0.3);
   }
 
@@ -1720,6 +1747,14 @@ html.theme-couchant {
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+@keyframes supplierPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(152 38% 38% / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px hsl(152 38% 38% / 0);
+  }
 }
 @keyframes invoiceDetailIn {
   from { opacity: 0; transform: translateX(8px); }

@@ -184,6 +184,7 @@ export function AppSidebar({
         )}
         style={{
           background: "linear-gradient(to bottom, hsl(20 30% 9%), hsl(18 25% 6%))",
+          backgroundImage: "radial-gradient(circle at 20% 50%, hsl(22 40% 20% / 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, hsl(152 30% 15% / 0.2) 0%, transparent 40%)",
           boxShadow: "inset -1px 0 0 hsl(20 22% 17% / 0.8), 4px 0 24px hsl(0 0% 0% / 0.18)",
           transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
@@ -205,10 +206,11 @@ export function AppSidebar({
           >
             {/* Logo mark — copper gradient */}
             <span
-              className="relative flex items-center justify-center w-9 h-9 shrink-0 rounded-xl"
+              className="relative flex items-center justify-center w-9 h-9 shrink-0"
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                boxShadow: "0 2px 8px -1px hsl(22 72% 48% / 0.5), inset 0 1px 0 hsl(0 0% 100% / 0.2)",
+                boxShadow: "0 4px 16px hsl(22 72% 48% / 0.3), 0 2px 8px -1px hsl(22 72% 48% / 0.5), inset 0 1px 0 hsl(0 0% 100% / 0.2)",
+                borderRadius: "16px",
               }}
             >
               <Store className="w-[18px] h-[18px] text-white" strokeWidth={2.25} />
@@ -286,9 +288,11 @@ export function AppSidebar({
             >
               {/* Group label — fades out when collapsed */}
               <p
-                className="text-[10px] font-semibold uppercase tracking-widest px-3 overflow-hidden"
+                className="font-semibold uppercase px-3 overflow-hidden"
                 style={{
-                  color: "hsl(0 0% 100% / 0.25)",
+                  color: "hsl(0 0% 100% / 0.3)",
+                  fontSize: "9px",
+                  letterSpacing: "0.1em",
                   opacity: collapsed ? 0 : 1,
                   maxHeight: collapsed ? 0 : "2rem",
                   marginBottom: collapsed ? 0 : "0.375rem",
@@ -323,7 +327,7 @@ export function AppSidebar({
                         title={collapsed ? item.label : undefined}
                         aria-current={isActive ? "page" : undefined}
                         className={cn(
-                          "group relative flex items-center gap-3 h-10 rounded-lg text-[13px] font-medium",
+                          "group relative flex items-center gap-3 h-10 rounded-lg text-[13px] font-medium overflow-hidden",
                           "transition-all duration-150 ease-out",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
                           collapsed ? "md:justify-center md:px-0 px-3" : "px-3",
@@ -333,19 +337,13 @@ export function AppSidebar({
                             ? "hsl(22 72% 58%)"
                             : "hsl(28 15% 68%)",
                           background: isActive
-                            ? "linear-gradient(90deg, hsl(22 72% 48% / 0.18), transparent)"
+                            ? "hsl(22 72% 48% / 0.15)"
                             : undefined,
-                          borderLeft: isActive
-                            ? "3px solid hsl(22 72% 48%)"
-                            : "3px solid transparent",
-                          borderLeftColor: isActive
-                            ? "hsl(22 72% 48%)"
-                            : "transparent",
-                          transition: "border-left-color 0.2s ease, background 0.15s ease, color 0.15s ease",
+                          transition: "background 0.15s ease, color 0.15s ease",
                           paddingLeft: collapsed
                             ? undefined
                             : isActive
-                              ? "calc(0.75rem - 3px)"
+                              ? "calc(0.75rem + 3px)"
                               : "0.75rem",
                         }}
                         onMouseEnter={(e) => {
@@ -361,6 +359,21 @@ export function AppSidebar({
                           }
                         }}
                       >
+                        {/* Active left border indicator */}
+                        {isActive && (
+                          <span
+                            aria-hidden="true"
+                            style={{
+                              position: "absolute",
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: "3px",
+                              background: "hsl(22 72% 48%)",
+                              borderRadius: "0 3px 3px 0",
+                            }}
+                          />
+                        )}
                         {/* Icon */}
                         <span className="relative shrink-0 flex items-center justify-center">
                           <item.icon
@@ -426,15 +439,29 @@ export function AppSidebar({
         <div
           className="shrink-0 pt-3 pb-2 px-2"
           style={{
-            borderTop: "1px solid hsl(0 0% 100% / 0.08)",
             opacity: mounted ? 1 : 0,
             transform: mounted ? "translateY(0)" : "translateY(8px)",
             transition: "opacity 0.4s ease 0.3s, transform 0.4s ease 0.3s",
           }}
         >
+          {/* Gradient separator */}
+          <div
+            aria-hidden="true"
+            style={{
+              height: "1px",
+              marginBottom: "12px",
+              background: "linear-gradient(90deg, hsl(0 0% 100% / 0) 0%, hsl(22 72% 48% / 0.3) 50%, hsl(0 0% 100% / 0) 100%)",
+            }}
+          />
           {/* User info row — expanded only */}
           {!collapsed && (
-            <div className="flex items-center gap-3 px-2 py-2 mb-1">
+            <div
+              className="flex items-center gap-3 px-2 py-2 mb-1"
+              style={{
+                background: "hsl(0 0% 0% / 0.2)",
+                borderRadius: "12px",
+              }}
+            >
               <span
                 className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-[11px] font-bold text-white"
                 style={{

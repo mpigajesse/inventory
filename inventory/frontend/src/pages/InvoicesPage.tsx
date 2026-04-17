@@ -86,16 +86,47 @@ function getPaymentLabel(method: string | undefined): React.ReactNode {
   }
 }
 
-function getPaymentStyle(method: string | undefined): { background: string; color: string } {
+function getPaymentStyle(method: string | undefined): React.CSSProperties {
+  const base: React.CSSProperties = {
+    borderRadius: "100px",
+    padding: "6px 12px",
+    fontWeight: 600,
+    fontSize: "11px",
+    letterSpacing: "0.02em",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    border: "1px solid transparent",
+  };
   switch (method) {
     case "cash":
-      return { background: "hsl(152 38% 38% / 0.1)", color: "hsl(152 38% 38%)" };
+      return {
+        ...base,
+        background: "hsl(152 38% 38% / 0.14)",
+        color: "hsl(152 45% 32%)",
+        border: "1px solid hsl(152 38% 38% / 0.25)",
+      };
     case "mobile_money":
-      return { background: "hsl(22 72% 48% / 0.1)", color: "hsl(22 72% 48%)" };
+      return {
+        ...base,
+        background: "hsl(210 70% 52% / 0.12)",
+        color: "hsl(210 72% 38%)",
+        border: "1px solid hsl(210 70% 52% / 0.25)",
+      };
     case "card":
-      return { background: "hsl(210 70% 52% / 0.1)", color: "hsl(210 70% 52%)" };
+      return {
+        ...base,
+        background: "hsl(270 60% 52% / 0.12)",
+        color: "hsl(270 55% 42%)",
+        border: "1px solid hsl(270 60% 52% / 0.25)",
+      };
     default:
-      return { background: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" };
+      return {
+        ...base,
+        background: "hsl(38 85% 50% / 0.12)",
+        color: "hsl(38 70% 36%)",
+        border: "1px solid hsl(38 85% 50% / 0.25)",
+      };
   }
 }
 
@@ -329,7 +360,8 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
       <div
         className="-mx-6 -mt-2 mb-5 px-6 py-5 rounded-t-lg"
         style={{
-          background: "linear-gradient(135deg, hsl(22 72% 22%), hsl(22 72% 32%))",
+          background: "linear-gradient(135deg, hsl(20 30% 7%), hsl(22 28% 12%))",
+          boxShadow: "inset 0 -1px 0 hsl(22 72% 48% / 0.15)",
         }}
       >
         <div className="flex items-start justify-between">
@@ -350,7 +382,13 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
           <div className="text-right">
             <p
               className="font-bold text-xl leading-tight font-editorial"
-              style={{ color: "hsl(36 88% 82%)", letterSpacing: "-0.02em" }}
+              style={{
+                background: "linear-gradient(135deg, hsl(36 88% 82%), hsl(22 72% 65%))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                letterSpacing: "-0.02em",
+              }}
             >
               {invoice.invoice_number}
             </p>
@@ -377,7 +415,7 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
           </div>
           {invoice.payment_method && (
             <span
-              className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+              className="ml-auto text-xs font-semibold"
               style={getPaymentStyle(invoice.payment_method)}
             >
               {getPaymentLabel(invoice.payment_method)}
@@ -389,18 +427,42 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
 
         {/* Items table */}
         {invoice.items && invoice.items.length > 0 ? (
-          <table className="w-full text-xs">
+          <table className="w-full text-xs" style={{ borderRadius: "8px", overflow: "hidden" }}>
             <thead>
-              <tr style={{ background: "linear-gradient(to right, hsl(var(--muted)), hsl(var(--muted) / 0.6))" }}>
-                <th className="text-left font-bold uppercase tracking-wider text-muted-foreground pb-2 pt-2 pl-2 rounded-l">Article</th>
-                <th className="text-center font-bold uppercase tracking-wider text-muted-foreground pb-2 pt-2 w-12">Qté</th>
-                <th className="text-right font-bold uppercase tracking-wider text-muted-foreground pb-2 pt-2 w-28">Prix unit.</th>
-                <th className="text-right font-bold uppercase tracking-wider text-muted-foreground pb-2 pt-2 pr-2 w-28 rounded-r">Total</th>
+              <tr style={{ background: "hsl(30 15% 95%)" }}>
+                <th
+                  className="text-left pb-2 pt-2 pl-2 rounded-l"
+                  style={{ fontWeight: 700, textTransform: "uppercase", fontSize: "11px", letterSpacing: "0.03em", color: "hsl(var(--muted-foreground))" }}
+                >
+                  Article
+                </th>
+                <th
+                  className="text-center pb-2 pt-2 w-12"
+                  style={{ fontWeight: 700, textTransform: "uppercase", fontSize: "11px", letterSpacing: "0.03em", color: "hsl(var(--muted-foreground))" }}
+                >
+                  Qté
+                </th>
+                <th
+                  className="text-right pb-2 pt-2 w-28"
+                  style={{ fontWeight: 700, textTransform: "uppercase", fontSize: "11px", letterSpacing: "0.03em", color: "hsl(var(--muted-foreground))" }}
+                >
+                  Prix unit.
+                </th>
+                <th
+                  className="text-right pb-2 pt-2 pr-2 w-28 rounded-r"
+                  style={{ fontWeight: 700, textTransform: "uppercase", fontSize: "11px", letterSpacing: "0.03em", color: "hsl(var(--muted-foreground))" }}
+                >
+                  Total
+                </th>
               </tr>
             </thead>
             <tbody>
-              {invoice.items.map((item) => (
-                <tr key={item.id} className="border-b last:border-0">
+              {invoice.items.map((item, idx) => (
+                <tr
+                  key={item.id}
+                  className="border-b last:border-0"
+                  style={{ background: idx % 2 !== 0 ? "hsl(30 20% 98%)" : "transparent" }}
+                >
                   <td className="py-2 pr-2 pl-2">{item.product_name}</td>
                   <td className="py-2 text-center text-muted-foreground">{item.quantity}</td>
                   <td className="py-2 text-right text-muted-foreground">{formatFCFA(item.unit_price)}</td>
@@ -443,7 +505,12 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
             <span className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Total</span>
             <span
               className="font-bold text-2xl font-editorial"
-              style={{ color: "hsl(22 72% 48%)" }}
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
               {formatFCFA(totalAmount)}
             </span>
@@ -691,8 +758,8 @@ export default function InvoicesPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ background: "linear-gradient(to right, hsl(var(--muted)), hsl(var(--muted) / 0.6))" }}>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <tr style={{ background: "hsl(30 15% 95%)" }}>
+                      <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                         N° Facture
                       </th>
                       <SortableHeader
@@ -700,12 +767,13 @@ export default function InvoicesPage() {
                         sortKey="issued_at"
                         currentSort={sort}
                         onSort={toggleSort}
-                        className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                        className="px-4 py-3 text-left text-muted-foreground"
+                        style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}
                       />
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                         Client
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <th className="px-4 py-3 text-center text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                         Articles
                       </th>
                       <SortableHeader
@@ -713,12 +781,13 @@ export default function InvoicesPage() {
                         sortKey="total_amount"
                         currentSort={sort}
                         onSort={toggleSort}
-                        className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                        className="px-4 py-3 text-right text-muted-foreground"
+                        style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}
                       />
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                         Paiement
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                         Statut
                       </th>
                       <th className="px-4 py-3 w-24" />
@@ -744,9 +813,10 @@ export default function InvoicesPage() {
                           opacity: 0,
                           animation: 'slideInUp 0.3s ease forwards',
                           animationDelay: `${idx * 45}ms`,
+                          background: idx % 2 !== 0 ? "hsl(30 20% 98%)" : "transparent",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(22 72% 48% / 0.03)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(22 72% 48% / 0.04)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = idx % 2 !== 0 ? "hsl(30 20% 98%)" : "transparent")}
                       >
                         {/* N° Facture */}
                         <td className="px-4 py-3.5">
@@ -781,7 +851,12 @@ export default function InvoicesPage() {
                         <td className="px-4 py-3.5 text-right">
                           <span
                             className="font-bold text-sm font-editorial"
-                            style={{ color: "hsl(22 72% 48%)", transition: "color 0.3s ease" }}
+                            style={{
+                              background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                              backgroundClip: "text",
+                            }}
                           >
                             {formatFCFA(inv.total_amount)}
                           </span>
@@ -790,7 +865,7 @@ export default function InvoicesPage() {
                         {/* Mode paiement pill */}
                         <td className="px-4 py-3.5">
                           <span
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+                            className="text-xs"
                             style={{ ...getPaymentStyle(inv.payment_method), transition: "background 0.2s, color 0.2s" }}
                           >
                             {getPaymentLabel(inv.payment_method)}
@@ -838,7 +913,12 @@ export default function InvoicesPage() {
                         <td className="py-3 text-right px-4">
                           <span
                             className="font-bold text-lg font-editorial tabular-nums"
-                            style={{ color: "hsl(22 72% 48%)" }}
+                            style={{
+                              background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                              backgroundClip: "text",
+                            }}
                           >
                             {formatFCFA(grandTotal)}
                           </span>
@@ -916,14 +996,19 @@ export default function InvoicesPage() {
                       </span>
                       <span
                         className="font-bold text-lg font-editorial tabular-nums leading-tight"
-                        style={{ color: "hsl(22 72% 48%)" }}
+                        style={{
+                          background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          backgroundClip: "text",
+                        }}
                       >
                         {formatFCFA(inv.total_amount)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                        className="text-[11px]"
                         style={{ ...getPaymentStyle(inv.payment_method), transition: "background 0.2s, color 0.2s" }}
                       >
                         {getPaymentLabel(inv.payment_method)}

@@ -73,6 +73,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        surface: {
+          1: "var(--surface-1)",
+          2: "var(--surface-2)",
+          3: "var(--surface-3)",
+          elevated: "var(--surface-elevated)",
+        },
         copper: {
           50:  "#fdf6f0",
           100: "#fae8d8",
@@ -97,12 +103,19 @@ export default {
         pill: "var(--radius-pill)",
       },
       boxShadow: {
+        /* Legacy aliases — conservés pour compatibilité */
         "warm-sm": "var(--shadow-sm)",
         "warm-md": "var(--shadow-md)",
         "warm-lg": "var(--shadow-lg)",
         "warm-xl": "var(--shadow-xl)",
         "warm-inner": "var(--shadow-inner)",
         "focus-ring": "var(--shadow-focus)",
+        /* Nouveaux tokens warm cuivre enrichis */
+        "copper-sm":   "var(--shadow-warm-sm)",
+        "copper-md":   "var(--shadow-warm-md)",
+        "copper-lg":   "var(--shadow-warm-lg)",
+        "copper-xl":   "var(--shadow-warm-xl)",
+        "copper-glow": "var(--shadow-copper-glow)",
       },
       transitionTimingFunction: {
         "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",

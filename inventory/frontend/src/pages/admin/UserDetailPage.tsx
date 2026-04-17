@@ -208,8 +208,12 @@ function KpiCard({ label, value, icon: Icon, accent = "copper" }: KpiCardProps) 
 
   return (
     <div
-      className="rounded-2xl p-4 flex items-center gap-4"
-      style={{ background: "hsl(var(--card))", border: `1px solid hsl(var(--border) / 0.7)` }}
+      className="rounded-2xl p-4 flex items-center gap-4 overflow-hidden"
+      style={{
+        background: "hsl(var(--card))",
+        border: `1px solid hsl(var(--border) / 0.7)`,
+        borderTop: `3px solid ${c.icon}`,
+      }}
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -246,12 +250,18 @@ function SectionCard({ title, children, action }: SectionCardProps) {
       }}
     >
       <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-0.5 h-4 rounded-full"
-            style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+            className="h-4 rounded-full shrink-0"
+            style={{
+              width: "3px",
+              background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
+            }}
           />
-          <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wide">
+          <h3
+            className="text-[13px] text-foreground uppercase tracking-wide"
+            style={{ fontWeight: 800, letterSpacing: "-0.01em" }}
+          >
             {title}
           </h3>
         </div>
@@ -274,10 +284,16 @@ function InfoRow({ icon: Icon, label, value }: InfoRowProps) {
   return (
     <div className="flex items-start gap-3 py-3 border-b border-border/40 last:border-0">
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-        style={{ background: "hsl(22 72% 48% / 0.07)" }}
+        className="flex items-center justify-center shrink-0 mt-0.5"
+        style={{
+          background: "hsl(22 72% 48% / 0.08)",
+          borderRadius: "8px",
+          padding: "6px",
+          width: "30px",
+          height: "30px",
+        }}
       >
-        <Icon className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+        <Icon style={{ width: "14px", height: "14px", color: "hsl(22 72% 48%)" }} />
       </div>
       <div className="min-w-0 flex-1">
         <p className={FIELD_LABEL_CLASSES}>{label}</p>
@@ -578,31 +594,39 @@ export default function UserDetailPage() {
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              opacity: 0.035,
+              opacity: 0.06,
               backgroundImage:
                 "repeating-linear-gradient(45deg, hsl(22 72% 48%) 0px, hsl(22 72% 48%) 1px, transparent 1px, transparent 15px)",
             }}
           />
 
-          {/* Glow blob */}
+          {/* Glow radial cuivre haut-droite */}
           <div
-            className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
+            className="absolute pointer-events-none"
             style={{
-              background: "radial-gradient(circle, hsl(22 72% 48% / 0.18) 0%, transparent 70%)",
+              top: "-30px",
+              right: "-30px",
+              width: "220px",
+              height: "220px",
+              background: "radial-gradient(circle at 60% 40%, hsl(22 72% 48% / 0.28) 0%, hsl(36 88% 52% / 0.12) 45%, transparent 70%)",
+              borderRadius: "50%",
             }}
           />
 
           <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
             {/* Grand avatar */}
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-extrabold flex-shrink-0"
+              className="flex items-center justify-center text-white text-2xl font-extrabold flex-shrink-0"
               style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "20px",
                 background: isAdmin
                   ? "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))"
                   : "linear-gradient(135deg, hsl(210 70% 48%), hsl(220 75% 60%))",
                 boxShadow: isAdmin
-                  ? "0 8px 24px hsl(22 72% 48% / 0.45)"
-                  : "0 8px 24px hsl(210 70% 48% / 0.35)",
+                  ? "0 8px 24px hsl(22 72% 48% / 0.3)"
+                  : "0 8px 24px hsl(210 70% 48% / 0.3)",
               }}
               aria-hidden="true"
             >
@@ -914,12 +938,18 @@ export default function UserDetailPage() {
                 boxShadow: "0 1px 2px rgba(120,60,20,0.04)",
               }}
             >
-              <div className="flex items-center gap-2 px-5 py-4 border-b border-border/50">
+              <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border/50">
                 <div
-                  className="w-0.5 h-4 rounded-full"
-                  style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+                  className="h-4 rounded-full shrink-0"
+                  style={{
+                    width: "3px",
+                    background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
+                  }}
                 />
-                <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wide">
+                <h3
+                  className="text-[13px] text-foreground uppercase tracking-wide"
+                  style={{ fontWeight: 800, letterSpacing: "-0.01em" }}
+                >
                   Actions rapides
                 </h3>
               </div>
@@ -927,7 +957,10 @@ export default function UserDetailPage() {
                 <button
                   type="button"
                   onClick={() => setEditOpen(true)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground transition-colors text-left"
+                  style={{ borderRadius: "12px" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "hsl(22 72% 48% / 0.08)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -940,7 +973,10 @@ export default function UserDetailPage() {
                 {role === "vendeur" && (
                   <Link
                     to="/admin/permissions"
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-foreground transition-colors"
+                    style={{ borderRadius: "12px" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "hsl(22 72% 48% / 0.08)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
                   >
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -955,12 +991,14 @@ export default function UserDetailPage() {
                   type="button"
                   onClick={() => activateMutation.mutate()}
                   disabled={activateMutation.isPending}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left disabled:opacity-50"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors text-left disabled:opacity-50"
                   style={
                     user.is_active
-                      ? { color: "hsl(var(--destructive))" }
-                      : { color: "hsl(152 38% 38%)" }
+                      ? { color: "hsl(var(--destructive))", borderRadius: "12px" }
+                      : { color: "hsl(152 38% 38%)", borderRadius: "12px" }
                   }
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "hsl(22 72% 48% / 0.08)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"

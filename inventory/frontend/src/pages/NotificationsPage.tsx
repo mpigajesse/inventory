@@ -283,16 +283,31 @@ export default function NotificationsPage() {
               <button
                 onClick={handleMarkAllRead}
                 disabled={markAllReadMutation.isPending}
-                className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all"
+                className="flex items-center gap-2 text-xs font-semibold transition-all"
                 style={{
-                  background: "hsl(var(--muted))",
-                  color: "hsl(var(--foreground))",
+                  padding: "7px 14px",
+                  borderRadius: "10px",
+                  background: "transparent",
+                  color: "hsl(22 72% 48%)",
+                  border: "1px solid hsl(22 72% 48% / 0.3)",
+                  cursor: markAllReadMutation.isPending ? "not-allowed" : "pointer",
+                  opacity: markAllReadMutation.isPending ? 0.6 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!markAllReadMutation.isPending) {
+                    e.currentTarget.style.background = "hsl(22 72% 48% / 0.08)";
+                    e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.3)";
                 }}
               >
                 {markAllReadMutation.isPending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <CheckCheck className="w-3.5 h-3.5" style={{ color: "hsl(22 72% 48%)" }} />
+                  <CheckCheck className="w-3.5 h-3.5" />
                 )}
                 Tout marquer comme lu
               </button>
@@ -308,6 +323,7 @@ export default function NotificationsPage() {
               value: String(notifications.length),
               icon: Bell,
               numericValue: notifications.length,
+              topColor: "hsl(210 70% 52%)",
             },
             {
               label: "Non lues",
@@ -316,6 +332,7 @@ export default function NotificationsPage() {
               change: unreadCount > 0 ? "Action requise" : "Tout à jour",
               icon: Bell,
               numericValue: unreadCount,
+              topColor: unreadCount > 0 ? "hsl(4 72% 52%)" : "hsl(152 38% 38%)",
             },
             {
               label: "Alertes stock",
@@ -324,6 +341,7 @@ export default function NotificationsPage() {
               change: stockAlertCount > 0 ? "Vérifier le stock" : "Aucune alerte",
               icon: AlertTriangle,
               numericValue: stockAlertCount,
+              topColor: stockAlertCount > 0 ? "hsl(36 88% 52%)" : "hsl(152 38% 38%)",
             },
             {
               label: "Ventes aujourd'hui",
@@ -332,6 +350,7 @@ export default function NotificationsPage() {
               change: "Ventes du jour",
               icon: ShoppingCart,
               numericValue: salesTodayCount,
+              topColor: "hsl(152 38% 38%)",
             },
           ].map((card, index) => (
             <div
@@ -340,6 +359,9 @@ export default function NotificationsPage() {
                 opacity: 0,
                 animation: "slideInLeft 0.3s ease forwards",
                 animationDelay: `${index * 70}ms`,
+                borderTop: `3px solid ${card.topColor}`,
+                borderRadius: "12px",
+                overflow: "hidden",
               }}
             >
               <StatCard
@@ -361,35 +383,72 @@ export default function NotificationsPage() {
           className="rounded-2xl overflow-hidden"
           style={{
             background: "hsl(var(--card))",
-            border: "1px solid hsl(var(--border))",
+            border: "1px solid hsl(var(--border) / 0.5)",
+            borderRadius: "16px",
             boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
           }}
         >
           {/* Tabs + badge non-lues */}
-          <div className="flex items-center justify-between px-1 pt-1 border-b overflow-x-auto gap-2">
-            <div className="flex gap-0.5">
+          <div className="flex items-center justify-between px-3 pt-3 pb-3 border-b overflow-x-auto gap-2">
+            <div className="flex gap-1.5">
               {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => handleTabSwitch(tab)}
-                  className={cn(
-                    "relative flex items-center gap-1.5 px-4 py-3 text-xs font-semibold rounded-t-lg whitespace-nowrap transition-all duration-200",
-                    activeTab === tab
-                      ? "text-primary bg-primary/5 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-t"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                  )}
+                  className="relative flex items-center gap-1.5 whitespace-nowrap transition-all duration-200"
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "100px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    background: activeTab === tab
+                      ? "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))"
+                      : "transparent",
+                    color: activeTab === tab ? "white" : "hsl(var(--muted-foreground))",
+                    boxShadow: activeTab === tab
+                      ? "0 2px 8px hsl(22 72% 48% / 0.35)"
+                      : "none",
+                    border: activeTab === tab
+                      ? "none"
+                      : "1px solid transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (tab !== activeTab) {
+                      e.currentTarget.style.background = "hsl(var(--muted) / 0.5)";
+                      e.currentTarget.style.color = "hsl(var(--foreground))";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (tab !== activeTab) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "hsl(var(--muted-foreground))";
+                    }
+                  }}
                 >
                   {TAB_LABELS[tab]}
                   {tabCounts[tab] > 0 && (
                     <span
-                      className={cn(
-                        "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
-                        activeTab === tab
-                          ? "bg-primary text-primary-foreground"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: "18px",
+                        height: "18px",
+                        padding: "0 4px",
+                        borderRadius: "100px",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        background: activeTab === tab
+                          ? "rgba(255,255,255,0.25)"
                           : tab === "non_lues" && tabCounts[tab] > 0
-                          ? "bg-destructive text-destructive-foreground"
-                          : "bg-muted text-muted-foreground"
-                      )}
+                          ? "hsl(var(--destructive))"
+                          : "hsl(var(--muted))",
+                        color: activeTab === tab
+                          ? "white"
+                          : tab === "non_lues" && tabCounts[tab] > 0
+                          ? "white"
+                          : "hsl(var(--muted-foreground))",
+                      }}
                     >
                       {tabCounts[tab]}
                     </span>
@@ -398,7 +457,7 @@ export default function NotificationsPage() {
               ))}
             </div>
             {unreadCount > 0 && (
-              <span className="shrink-0 mr-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-semibold">
+              <span className="shrink-0 mr-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse-soft inline-block" />
                 {unreadCount} non {unreadCount > 1 ? "lues" : "lue"}
               </span>
@@ -427,6 +486,7 @@ export default function NotificationsPage() {
               style={{
                 opacity: tabVisible ? 1 : 0,
                 transition: "opacity 0.15s ease",
+                padding: "6px 0",
               }}
             >
               {displayed.length === 0 ? (
@@ -458,30 +518,39 @@ export default function NotificationsPage() {
                         opacity: 0,
                         animation: "slideInLeft 0.3s ease forwards",
                         animationDelay: `${index * 50}ms`,
-                        background: !notif.is_read ? `color-mix(in srgb, ${typeColor} 5%, transparent)` : "transparent",
+                        background: !notif.is_read ? `hsl(22 72% 48% / 0.04)` : "white",
                         borderLeft: `3px solid ${!notif.is_read ? typeColor : "transparent"}`,
-                        transition: "border-left-color 0.3s ease, background 0.3s ease, opacity 0.3s ease, transform 0.3s ease",
+                        borderRadius: "16px",
+                        margin: "6px 10px",
+                        border: `1px solid hsl(var(--border) / 0.5)`,
+                        borderLeftWidth: "3px",
+                        borderLeftColor: !notif.is_read ? typeColor : "transparent",
+                        transition: "border-left-color 0.3s ease, background 0.3s ease, opacity 0.3s ease, transform 0.3s ease, box-shadow 0.2s ease",
                         cursor: "pointer",
                       }}
                       className={cn(
-                        "group relative flex items-start gap-4 px-5 py-4 border-b border-border/50 last:border-0",
+                        "group relative flex items-start gap-4 px-5 py-4",
                         "overflow-hidden",
-                        removingId === notif.id && "opacity-0 scale-95",
+                        removingId === notif.id ? "opacity-0 scale-95" : "",
                         notif.is_read ? "opacity-80 hover:opacity-100" : ""
                       )}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.background = "hsl(22 72% 48% / 0.04)";
+                        e.currentTarget.style.boxShadow = "0 2px 10px hsl(22 30% 15% / 0.08)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = !notif.is_read
-                          ? `color-mix(in srgb, ${typeColor} 5%, transparent)`
-                          : "transparent";
+                        e.currentTarget.style.background = !notif.is_read ? "hsl(22 72% 48% / 0.04)" : "white";
+                        e.currentTarget.style.boxShadow = "none";
                       }}
                     >
                       {/* Icône type avec couleur */}
                       <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                        className="flex items-center justify-center flex-shrink-0 mt-0.5"
                         style={{
+                          width: "38px",
+                          height: "38px",
+                          borderRadius: "10px",
+                          padding: "8px",
                           background: `color-mix(in srgb, ${typeColor} 12%, transparent)`,
                           border: `1px solid color-mix(in srgb, ${typeColor} 20%, transparent)`,
                         }}

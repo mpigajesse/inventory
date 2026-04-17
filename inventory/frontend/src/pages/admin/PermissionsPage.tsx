@@ -209,6 +209,7 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
             className="text-center px-2 py-3"
             style={{
               borderBottom: "1px solid hsl(var(--border) / 0.6)",
+              background: isAdmin ? "hsl(22 72% 48% / 0.04)" : undefined,
               opacity: 0,
               animation: "permFadeIn 0.2s ease forwards",
               animationDelay: `${staggerDelay}ms`,
@@ -219,14 +220,17 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className="w-5 h-5 rounded-md flex items-center justify-center cursor-not-allowed"
+                      className="flex items-center justify-center cursor-not-allowed"
                       style={{
+                        width: "22px",
+                        height: "22px",
+                        borderRadius: "8px",
                         background: "hsl(22 72% 48% / 0.35)",
                         border: "1px solid hsl(22 72% 48% / 0.35)",
                       }}
                       aria-label={`${perm.label} — admin`}
                     >
-                      <Check className="w-3 h-3 text-white opacity-60" />
+                      <Check className="w-3 h-3 text-white" style={{ opacity: 0.8 }} />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs">
@@ -236,17 +240,30 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
               ) : (
                 <button
                   onClick={() => handleToggleWithFeedback(user.id, perm.key)}
-                  className="w-5 h-5 rounded-md flex items-center justify-center focus:outline-none focus-visible:ring-2"
+                  className="flex items-center justify-center focus:outline-none focus-visible:ring-2"
                   style={{
+                    width: "22px",
+                    height: "22px",
+                    borderRadius: "8px",
                     background: isChecked ? "hsl(22 72% 48%)" : "hsl(var(--muted))",
                     border: isChecked
                       ? "1px solid hsl(22 72% 48%)"
                       : "1px solid hsl(var(--border))",
                     boxShadow: isChecked
-                      ? "0 2px 6px hsl(22 72% 48% / 0.3)"
+                      ? "0 2px 6px hsl(22 72% 48% / 0.35)"
                       : "none",
                     transform: isPressing ? "scale(0.9)" : "scale(1)",
                     transition: "transform 0.1s ease, background 0.15s ease, box-shadow 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isChecked) {
+                      (e.currentTarget as HTMLButtonElement).style.background = "hsl(22 72% 48% / 0.12)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isChecked) {
+                      (e.currentTarget as HTMLButtonElement).style.background = "hsl(var(--muted))";
+                    }
                   }}
                   aria-label={perm.label}
                   aria-pressed={isChecked}
@@ -630,13 +647,16 @@ export default function PermissionsPage() {
                 <th
                   className="sticky left-0 z-20 px-4 py-3 text-left"
                   style={{
-                    background: "hsl(var(--muted))",
+                    background: "hsl(30 15% 95%)",
                     borderBottom: "1px solid hsl(var(--border))",
                     borderRight: "1px solid hsl(var(--border) / 0.4)",
                     minWidth: "220px",
                   }}
                 >
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div
+                    className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground"
+                    style={{ fontWeight: 700 }}
+                  >
                     <Users className="w-3.5 h-3.5" />
                     Utilisateur
                   </div>
@@ -650,7 +670,7 @@ export default function PermissionsPage() {
                       key={perm.key}
                       className="px-2 py-3 text-center"
                       style={{
-                        background: "hsl(var(--muted))",
+                        background: "hsl(22 72% 48% / 0.06)",
                         borderBottom: "1px solid hsl(var(--border))",
                         minWidth: "76px",
                         opacity: 0,
@@ -667,12 +687,12 @@ export default function PermissionsPage() {
                             >
                               <Icon
                                 className="w-3.5 h-3.5"
-                                style={{ color: "hsl(22 72% 48%)" }}
+                                style={{ color: "hsl(22 72% 48% / 0.6)" }}
                               />
                             </div>
                             <span
-                              className="text-[10px] font-semibold text-muted-foreground leading-tight text-center"
-                              style={{ maxWidth: "68px" }}
+                              className="font-semibold text-muted-foreground leading-tight text-center uppercase"
+                              style={{ maxWidth: "68px", fontSize: "9px", letterSpacing: "0.05em" }}
                             >
                               {perm.shortLabel}
                             </span>
@@ -794,8 +814,11 @@ export default function PermissionsPage() {
               display: "flex",
               alignItems: "center",
               gap: "1rem",
-              background: "hsl(var(--card))",
+              background: "rgba(255,255,255,0.9)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
               border: "1px solid hsl(var(--border))",
+              borderTop: "2px solid hsl(22 72% 48% / 0.4)",
               borderRadius: "14px",
               padding: "0.75rem 1.25rem",
               boxShadow: "0 8px 32px hsl(22 30% 15% / 0.18)",

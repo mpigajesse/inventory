@@ -207,8 +207,11 @@ function PremiumKpi({
     <div
       className="relative overflow-hidden rounded-2xl cursor-default"
       style={{
-        background: "hsl(var(--card))",
-        border: "1px solid hsl(var(--border))",
+        background: "linear-gradient(160deg, hsl(0 0% 100%), hsl(30 20% 98%))",
+        borderTop: "none",
+        borderLeft: "none",
+        borderBottom: "1px solid hsl(var(--border) / 0.5)",
+        borderRight: "1px solid hsl(var(--border) / 0.5)",
         boxShadow:
           "0 2px 8px hsl(22 30% 15% / 0.06), 0 8px 24px hsl(22 30% 15% / 0.04)",
         opacity: isVisible ? 1 : 0,
@@ -243,7 +246,7 @@ function PremiumKpi({
             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background: tc.iconGradient,
-              boxShadow: tc.iconShadow,
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px hsl(22 72% 48% / 0.2)`,
             }}
           >
             <Icon className="w-5 h-5 text-white" />
@@ -283,14 +286,19 @@ function PremiumKpi({
 
         {/* Valeur principale — chiffres proéminents */}
         <div
-          className="text-[1.75rem] md:text-[2rem] font-bold leading-none tracking-tight tabular-nums text-foreground mb-1"
-          style={{ fontFamily: "'Fraunces', 'Georgia', serif", letterSpacing: "-0.03em" }}
+          className="tabular-nums text-foreground mb-1 leading-none"
+          style={{
+            fontFamily: "'Fraunces', 'Georgia', serif",
+            fontSize: "clamp(1.6rem, 3vw, 2rem)",
+            fontWeight: "700",
+            letterSpacing: "-0.03em",
+          }}
         >
           <KpiValue key={`${label}-${value}`} end={value} suffix={suffix} duration={duration} />
         </div>
 
         {/* Label */}
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mt-2">
+        <p className="font-semibold uppercase text-muted-foreground mt-2" style={{ fontSize: "10px", letterSpacing: "0.1em" }}>
           {label}
         </p>
 
@@ -361,8 +369,11 @@ function SectionHeader({
       }}
     >
       <div
-        className="w-1 h-5 rounded-full shrink-0"
+        className="shrink-0 rounded-sm"
         style={{
+          width: "3px",
+          height: "20px",
+          borderRadius: "2px",
           background:
             "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
         }}
@@ -373,7 +384,10 @@ function SectionHeader({
             {kicker}
           </p>
         )}
-        <h2 className="text-base md:text-[0.95rem] font-bold tracking-tight text-foreground leading-none">
+        <h2
+          className="text-base md:text-[0.95rem] font-bold text-foreground leading-none"
+          style={{ letterSpacing: "-0.02em" }}
+        >
           {title}
         </h2>
       </div>
@@ -397,8 +411,9 @@ function StockAlertBanner({ lowCount }: { lowCount: number }) {
     <div
       className="flex items-center gap-3 p-4 rounded-xl mb-6 border"
       style={{
-        background:
-          "linear-gradient(135deg, hsl(36 88% 52% / 0.08), hsl(22 72% 48% / 0.05))",
+        background: "hsl(36 88% 52% / 0.1)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         borderColor: "hsl(36 88% 52% / 0.3)",
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? "translateY(0)" : "translateY(-8px)",
@@ -453,14 +468,17 @@ function GradientButton({
       onClick={onClick}
       className={cn("inline-flex items-center gap-2", className)}
       style={{
+        position: "relative",
+        overflow: "hidden",
         background:
           "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
         boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
         color: "white",
         borderRadius: "12px",
         padding: "0.625rem 1.25rem",
-        fontWeight: "600",
+        fontWeight: "700",
         fontSize: "0.875rem",
+        letterSpacing: "0.025em",
         transition: "all 0.2s",
         border: "none",
         cursor: "pointer",
@@ -476,6 +494,17 @@ function GradientButton({
           "0 4px 14px hsl(22 72% 48% / 0.35)";
       }}
     >
+      {/* Shine overlay */}
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.12) 60%, transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
       {children}
     </button>
   );
@@ -561,8 +590,11 @@ export default function DashboardPage() {
               {/* Grand titre avec accent bar */}
               <div className="flex items-center gap-3 mb-1">
                 <div
-                  className="w-1 h-7 rounded-full shrink-0"
+                  className="shrink-0"
                   style={{
+                    width: "3px",
+                    height: "28px",
+                    borderRadius: "2px",
                     background:
                       "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
                   }}
@@ -610,7 +642,7 @@ export default function DashboardPage() {
         )}
 
         {/* ── KPI Cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           {isLoading ? (
             <>
               <KpiCardSkeleton />

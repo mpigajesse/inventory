@@ -35,6 +35,7 @@ import {
   Phone,
   Mail,
   MapPin,
+  AlertCircle,
 } from "lucide-react";
 import { exportClients } from "@/lib/exportClients";
 import { useState } from "react";
@@ -79,7 +80,7 @@ function TableRowSkeleton() {
     <tr className="border-b border-border/60 animate-pulse">
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-muted shrink-0" />
+          <div className="rounded-full bg-muted shrink-0" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
           <div className="space-y-1.5 flex-1">
             <div className="h-3.5 bg-muted rounded w-32" />
             <div className="h-3 bg-muted rounded w-24" />
@@ -126,8 +127,14 @@ function HistoryModal({ client, onClose }: HistoryModalProps) {
           <div className="flex items-center gap-3">
             {client && (
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                style={{ background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})` }}
+                className="rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})`,
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+                }}
               >
                 {initials(client.name)}
               </div>
@@ -290,7 +297,17 @@ export default function ClientsPage() {
         </div>
 
         {/* ── Search bar ──────────────────────────────────────────────────── */}
-        <div className="mb-5" style={{ transition: "opacity 0.2s ease" }}>
+        <div
+          className="mb-5"
+          style={{
+            padding: "16px",
+            background: "white",
+            borderRadius: "16px",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            border: "1px solid hsl(var(--border))",
+            transition: "opacity 0.2s ease",
+          }}
+        >
           <SearchInput
             placeholder="Rechercher un client par nom, téléphone ou email..."
             value={search}
@@ -309,21 +326,21 @@ export default function ClientsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr
-                  className="border-b border-border/60 text-xs font-semibold uppercase tracking-wider"
-                  style={{ background: "hsl(22 72% 48% / 0.04)" }}
+                  className="border-b border-border/60"
+                  style={{ background: "hsl(30 15% 95%)" }}
                 >
-                  <th className="px-4 py-3 text-left text-muted-foreground">Client</th>
-                  <th className="px-4 py-3 text-left text-muted-foreground hidden md:table-cell">
+                  <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Client</th>
+                  <th className="px-4 py-3 text-left text-muted-foreground hidden md:table-cell" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                     Contact
                   </th>
-                  <th className="px-4 py-3 text-left text-muted-foreground">Total achats</th>
-                  <th className="px-4 py-3 text-left text-muted-foreground hidden lg:table-cell">
+                  <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Total achats</th>
+                  <th className="px-4 py-3 text-left text-muted-foreground hidden lg:table-cell" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                     Crédit dû
                   </th>
-                  <th className="px-4 py-3 text-left text-muted-foreground hidden sm:table-cell">
+                  <th className="px-4 py-3 text-left text-muted-foreground hidden sm:table-cell" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                     Depuis
                   </th>
-                  <th className="px-4 py-3 text-right text-muted-foreground">Actions</th>
+                  <th className="px-4 py-3 text-right text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Actions</th>
                 </tr>
               </thead>
               <tbody key={search}>
@@ -426,12 +443,17 @@ function ClientRow({ client, index, canManage, onHistory, onEdit, onDelete }: Cl
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-3">
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+            className="rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
             style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
               background: `linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))`,
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               transform: hovered ? "scale(1.08)" : "scale(1)",
-              boxShadow: hovered ? "0 4px 12px hsl(22 72% 48% / 0.35)" : "none",
+              boxShadow: hovered
+                ? "0 4px 8px rgba(0,0,0,0.15), 0 2px 6px hsl(22 72% 48% / 0.35)"
+                : "0 2px 4px rgba(0,0,0,0.08)",
             }}
           >
             {initials(client.name)}
@@ -472,7 +494,10 @@ function ClientRow({ client, index, canManage, onHistory, onEdit, onDelete }: Cl
           className="font-bold text-sm tabular-nums"
           style={{
             fontFamily: "Fraunces, Georgia, serif",
-            color: "hsl(22 72% 48%)",
+            background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
           }}
         >
           {formatFcfa(client.total_purchases)}
@@ -483,12 +508,16 @@ function ClientRow({ client, index, canManage, onHistory, onEdit, onDelete }: Cl
       <td className="px-4 py-3.5 hidden lg:table-cell">
         {creditBalance > 0 ? (
           <span
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold overflow-hidden"
+            className="inline-flex items-center gap-1.5 text-xs font-bold overflow-hidden"
             style={{
-              background: "hsl(4 72% 52% / 0.1)",
-              color: "hsl(4 72% 52%)",
+              borderRadius: "100px",
+              padding: "6px 12px",
+              background: "hsl(38 85% 50% / 0.13)",
+              color: "hsl(38 70% 32%)",
+              border: "1px solid hsl(38 85% 50% / 0.3)",
             }}
           >
+            <AlertCircle className="w-3 h-3 shrink-0" />
             <span
               className="inline-block"
               style={{
@@ -498,7 +527,7 @@ function ClientRow({ client, index, canManage, onHistory, onEdit, onDelete }: Cl
                 transform: "scaleX(0)",
               }}
             >
-              ↑ {creditBalance.toLocaleString("fr-FR")} FCFA dû
+              {creditBalance.toLocaleString("fr-FR")} FCFA dû
             </span>
           </span>
         ) : (

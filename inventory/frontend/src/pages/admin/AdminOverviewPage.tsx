@@ -222,7 +222,7 @@ export default function AdminOverviewPage() {
         onMenuClick={onMenuClick}
       />
 
-      <div className="page-container animate-slide-in space-y-8">
+      <div className="page-container animate-slide-in space-y-6">
 
         {/* ── Hero header : statut système ────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -230,18 +230,24 @@ export default function AdminOverviewPage() {
             <div className="flex items-center gap-2 mb-1">
               <div
                 ref={accentBarRef}
-                className="w-1 h-6 rounded-full flex-shrink-0"
+                className="flex-shrink-0"
                 style={{
+                  width: "3px",
+                  height: "28px",
+                  borderRadius: "2px",
                   background: 'linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))',
-                  transformOrigin: 'left',
-                  transform: mounted ? 'scaleX(1)' : 'scaleX(0)',
+                  transformOrigin: 'top',
+                  transform: mounted ? 'scaleY(1)' : 'scaleY(0)',
                   transition: 'transform 0.3s ease-out',
                 }}
               />
-              <h1 className="text-2xl font-extrabold font-heading" style={{ letterSpacing: '-0.025em' }}>Vue d'ensemble Admin</h1>
+              <h1
+                className="text-2xl font-heading"
+                style={{ fontWeight: 800, letterSpacing: '-0.02em' }}
+              >Vue d&apos;ensemble Admin</h1>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5 pl-3">
-              Supervision et gestion de l'application NAOSERVICES INVENTORY
+              Supervision et gestion de l&apos;application NAOSERVICES INVENTORY
             </p>
           </div>
           <SystemStatusBadge />
@@ -250,12 +256,13 @@ export default function AdminOverviewPage() {
         {/* ── Section : Santé du système ───────────────────────────────── */}
         <section>
           <SectionHeader icon={CheckCircle2} title="Santé du système" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
             {HEALTH_ITEMS.map(({ icon: Icon, label, status, variant }, index) => (
               <div
                 key={label}
                 className="card-premium p-4 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5"
                 style={{
+                  borderRadius: "20px",
                   boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)',
                   opacity: 0,
                   animation: mounted ? 'adminFadeUp 0.35s ease forwards' : 'none',
@@ -266,8 +273,9 @@ export default function AdminOverviewPage() {
               >
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    className="w-8 h-8 flex items-center justify-center shrink-0"
                     style={{
+                      borderRadius: "14px",
                       background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
                       transition: 'transform 0.2s ease',
                     }}
@@ -278,7 +286,15 @@ export default function AdminOverviewPage() {
                   </div>
                   <span className="text-xs text-muted-foreground leading-tight font-medium">{label}</span>
                 </div>
-                <StatusBadge label={status} variant={variant} />
+                <div className="flex items-center gap-2">
+                  {(variant === "success") && (
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "hsl(var(--success, 142 71% 45%))" }} />
+                      <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "hsl(var(--success, 142 71% 45%))" }} />
+                    </span>
+                  )}
+                  <StatusBadge label={status} variant={variant} />
+                </div>
               </div>
             ))}
           </div>
@@ -287,28 +303,32 @@ export default function AdminOverviewPage() {
         {/* ── Section : Stats rapides ──────────────────────────────────── */}
         <section>
           <SectionHeader icon={Activity} title="Statistiques rapides" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
             {[
               {
                 icon: Users,
                 label: "Clients enregistrés",
                 value: statsLoading ? "—" : String(stats?.clients.total ?? 0),
+                accentColor: "hsl(22 72% 48%)",
               },
               {
                 icon: Package,
                 label: "Produits en catalogue",
                 value: statsLoading ? "—" : String(stats?.stock.total_products ?? 0),
+                accentColor: "hsl(210 70% 52%)",
               },
               {
                 icon: ShoppingCart,
                 label: "Transactions ce mois",
                 value: statsLoading ? "—" : String(stats?.month.sales_count ?? 0),
+                accentColor: "hsl(142 71% 40%)",
               },
-            ].map(({ icon: Icon, label, value }, index) => (
+            ].map(({ icon: Icon, label, value, accentColor }, index) => (
               <div
                 key={label}
                 className="card-premium p-5 flex flex-col gap-2 transition-all duration-200 hover:-translate-y-0.5"
                 style={{
+                  borderTop: `3px solid ${accentColor}`,
                   boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)',
                   opacity: 0,
                   animation: mounted ? 'adminFadeUp 0.35s ease forwards' : 'none',
@@ -324,7 +344,8 @@ export default function AdminOverviewPage() {
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                     style={{
-                      background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+                      background: `linear-gradient(135deg, ${accentColor}, ${accentColor})`,
+                      opacity: 0.9,
                       transition: 'transform 0.2s ease',
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)'; }}
@@ -333,7 +354,14 @@ export default function AdminOverviewPage() {
                     <Icon className="w-4 h-4 text-white" />
                   </div>
                 </div>
-                <span className="text-2xl font-black tabular-nums text-foreground font-heading" style={{ letterSpacing: '-0.02em' }}>{value}</span>
+                <span
+                  className="text-2xl tabular-nums text-foreground"
+                  style={{
+                    fontFamily: "'Fraunces', 'Georgia', serif",
+                    fontWeight: 900,
+                    letterSpacing: '-0.02em',
+                  }}
+                >{value}</span>
               </div>
             ))}
           </div>

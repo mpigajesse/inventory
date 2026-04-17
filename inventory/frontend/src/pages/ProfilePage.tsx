@@ -116,9 +116,11 @@ function IdentityCard() {
 
   return (
     <section
-      className="relative overflow-hidden rounded-2xl mb-6"
+      className="relative overflow-hidden mb-6"
       style={{
-        background: "linear-gradient(135deg, hsl(20 30% 8%), hsl(22 26% 14%))",
+        background: "linear-gradient(135deg, hsl(20 32% 7%), hsl(22 26% 13%), hsl(20 22% 10%))",
+        border: "1px solid hsl(22 72% 48% / 0.15)",
+        borderRadius: "24px",
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? "translateY(0)" : "translateY(16px)",
         transition: "opacity 450ms cubic-bezier(0.16, 1, 0.3, 1), transform 450ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -129,7 +131,8 @@ function IdentityCard() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          opacity: 0.04,
+          borderRadius: "24px",
+          opacity: 0.06,
           backgroundImage:
             "repeating-linear-gradient(45deg, hsl(22 72% 48%) 0px, hsl(22 72% 48%) 1px, transparent 1px, transparent 15px)",
         }}
@@ -164,9 +167,12 @@ function IdentityCard() {
           <button
             type="button"
             onClick={handleAvatarClick}
-            className="group relative block w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            className="group relative block overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             style={{
-              boxShadow: "0 8px 24px hsl(22 72% 48% / 0.4), 0 0 0 3px hsl(22 26% 14%)",
+              width: "72px",
+              height: "72px",
+              borderRadius: "18px",
+              boxShadow: "0 8px 20px hsl(22 72% 48% / 0.35), 0 0 0 3px hsl(22 26% 14%)",
             }}
             aria-label="Changer la photo de profil"
           >
@@ -183,7 +189,7 @@ function IdentityCard() {
                 {initials}
               </span>
             )}
-            <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-200 rounded-2xl" style={{ background: "rgba(0,0,0,0.55)" }}>
+            <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-200" style={{ background: "rgba(0,0,0,0.55)", borderRadius: "18px" }}>
               <Camera className="w-6 h-6 text-white" />
             </span>
           </button>
@@ -211,11 +217,14 @@ function IdentityCard() {
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2.5">
             <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold"
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold"
               style={{
-                background: "hsl(22 72% 48% / 0.28)",
-                color: "hsl(22 72% 75%)",
-                border: "1px solid hsl(22 72% 48% / 0.35)",
+                background: "rgba(255,255,255,0.12)",
+                color: "hsl(22 72% 80%)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: "100px",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
               }}
             >
               {isAdmin ? <Shield className="w-3 h-3" /> : <ShoppingBag className="w-3 h-3" />}
@@ -251,13 +260,14 @@ function PremiumSection({
 }: PremiumSectionProps) {
   return (
     <section
-      className="rounded-2xl overflow-hidden mb-5"
+      className="overflow-hidden mb-5"
       style={{
         background: tinted ? "hsl(36 88% 52% / 0.04)" : "hsl(var(--card))",
         border: tinted
           ? "1px solid hsl(36 88% 52% / 0.22)"
           : "1px solid hsl(var(--border))",
-        boxShadow: "0 2px 10px hsl(22 30% 15% / 0.07)",
+        borderRadius: "20px",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
         ...animationStyle,
       }}
     >
@@ -267,15 +277,17 @@ function PremiumSection({
         style={{ background: tinted ? "hsl(36 88% 52% / 0.06)" : "hsl(var(--muted))" }}
       >
         <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          className="w-7 h-7 flex items-center justify-center flex-shrink-0"
           style={
             iconGradient
               ? {
+                  borderRadius: "12px",
                   background:
                     "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                   boxShadow: "0 2px 8px hsl(22 72% 48% / 0.35)",
                 }
               : {
+                  borderRadius: "12px",
                   background: tinted
                     ? "hsl(36 88% 52% / 0.15)"
                     : "hsl(22 72% 48% / 0.12)",
@@ -367,7 +379,8 @@ function ProfileSection() {
             <Input
               id="profile-first-name"
               placeholder="Ex : Jean"
-              className="h-11 rounded-lg transition-all duration-200 focus-visible:ring-primary/60"
+              className="rounded-xl transition-all duration-200 focus-visible:ring-[hsl(22_72%_48%/0.5)]"
+              style={{ height: "48px", borderRadius: "12px" }}
               {...register("first_name")}
             />
             {errors.first_name && (
@@ -382,7 +395,8 @@ function ProfileSection() {
             <Input
               id="profile-last-name"
               placeholder="Ex : Mouloungui"
-              className="h-11 rounded-lg transition-all duration-200 focus-visible:ring-primary/60"
+              className="rounded-xl transition-all duration-200 focus-visible:ring-[hsl(22_72%_48%/0.5)]"
+              style={{ height: "48px", borderRadius: "12px" }}
               {...register("last_name")}
             />
             {errors.last_name && (
@@ -398,7 +412,8 @@ function ProfileSection() {
               id="profile-email"
               type="email"
               placeholder="exemple@naoservices.ga"
-              className="h-11 rounded-lg transition-all duration-200 focus-visible:ring-primary/60"
+              className="rounded-xl transition-all duration-200 focus-visible:ring-[hsl(22_72%_48%/0.5)]"
+              style={{ height: "48px", borderRadius: "12px" }}
               {...register("email")}
             />
             {errors.email && (
@@ -486,7 +501,8 @@ function SecuritySection() {
               id="pwd-current"
               type={showCurrentPassword ? "text" : "password"}
               placeholder="••••••••"
-              className="h-11 rounded-lg pr-11 transition-all duration-200 focus-visible:ring-primary/60"
+              className="rounded-xl pr-11 transition-all duration-200 focus-visible:ring-[hsl(22_72%_48%/0.5)]"
+              style={{ height: "48px", borderRadius: "12px" }}
               {...register("current")}
             />
             <button
@@ -514,7 +530,8 @@ function SecuritySection() {
                 id="pwd-next"
                 type={showNewPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className="h-11 rounded-lg pr-11 transition-all duration-200 focus-visible:ring-primary/60"
+                className="rounded-xl pr-11 transition-all duration-200 focus-visible:ring-[hsl(22_72%_48%/0.5)]"
+              style={{ height: "48px", borderRadius: "12px" }}
                 {...register("next")}
               />
               <button
@@ -541,7 +558,8 @@ function SecuritySection() {
                 id="pwd-confirm"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className="h-11 rounded-lg pr-11 transition-all duration-200 focus-visible:ring-primary/60"
+                className="rounded-xl pr-11 transition-all duration-200 focus-visible:ring-[hsl(22_72%_48%/0.5)]"
+              style={{ height: "48px", borderRadius: "12px" }}
                 {...register("confirm")}
               />
               <button
@@ -622,7 +640,7 @@ function PreferencesSection() {
             name="language"
             render={({ field }) => (
               <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger className="h-11 rounded-lg">
+                <SelectTrigger className="rounded-xl" style={{ height: "48px", borderRadius: "12px" }}>
                   <SelectValue placeholder="Langue" />
                 </SelectTrigger>
                 <SelectContent>
@@ -640,7 +658,7 @@ function PreferencesSection() {
             name="timezone"
             render={({ field }) => (
               <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger className="h-11 rounded-lg">
+                <SelectTrigger className="rounded-xl" style={{ height: "48px", borderRadius: "12px" }}>
                   <SelectValue placeholder="Fuseau horaire" />
                 </SelectTrigger>
                 <SelectContent>

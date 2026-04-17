@@ -2,7 +2,7 @@ import { useOutletContext, useNavigate, useParams, Link } from "react-router-dom
 import { Topbar } from "@/components/layout/Topbar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, UserPlus, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, UserPlus, Loader2, AlertTriangle, AlertCircle } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -63,16 +63,31 @@ function PremiumInput({ label, required, error, hint, ...props }: PremiumInputPr
 
   return (
     <div>
-      <label className="block text-sm font-semibold text-foreground mb-1.5">
+      <label
+        className="block mb-1.5"
+        style={{
+          fontWeight: 600,
+          fontSize: "13px",
+          letterSpacing: "0.01em",
+          color: "hsl(var(--foreground))",
+        }}
+      >
         {label}
         {required && <span style={{ color: "hsl(4 72% 52%)" }} className="ml-0.5"> *</span>}
       </label>
       <input
         ref={inputRef}
-        className="w-full h-10 px-3.5 rounded-xl text-sm outline-none bg-card"
+        className="w-full outline-none bg-card text-sm"
         style={{
-          border: `1.5px solid ${focused ? TERRACOTTA : error ? "hsl(4 72% 52%)" : "hsl(var(--border))"}`,
-          boxShadow: focused ? `0 0 0 3px hsl(22 72% 48% / 0.12)` : error ? `0 0 0 3px hsl(4 72% 52% / 0.1)` : "none",
+          height: "48px",
+          padding: "0 16px",
+          borderRadius: "12px",
+          border: `1.5px solid ${focused ? "hsl(22 72% 48%)" : error ? "hsl(4 72% 52%)" : "hsl(var(--border))"}`,
+          boxShadow: focused
+            ? `0 0 0 3px hsl(22 72% 48% / 0.15)`
+            : error
+            ? `0 0 0 3px hsl(4 72% 52% / 0.1)`
+            : "none",
           transition: "border-color 0.2s ease, box-shadow 0.2s ease",
         }}
         onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
@@ -166,7 +181,17 @@ export default function ClientFormPage() {
         <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground">
           <Link
             to="/clients"
-            className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 hover:text-foreground transition-all px-2.5 py-1.5"
+            style={{
+              borderRadius: "10px",
+              transition: "background 0.2s ease, color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = "hsl(22 72% 48% / 0.06)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+            }}
           >
             <ArrowLeft className="w-4 h-4" />
             Clients
@@ -203,11 +228,13 @@ export default function ClientFormPage() {
 
             {/* ── Colonne gauche : Informations personnelles ─────────── */}
             <div
-              className="rounded-2xl p-6 space-y-5"
+              className="space-y-5"
               style={{
                 background: "hsl(var(--card))",
                 border: "1.5px solid hsl(var(--border))",
-                boxShadow: "0 1px 8px hsl(0 0% 0% / 0.04)",
+                borderRadius: "20px",
+                padding: "24px",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
                 animation: "slideInUp 0.35s ease forwards",
                 animationDelay: "0ms",
                 opacity: 0,
@@ -249,11 +276,13 @@ export default function ClientFormPage() {
 
             {/* ── Colonne droite : Coordonnées + Crédit + Notes ───────── */}
             <div
-              className="rounded-2xl p-6 space-y-5"
+              className="space-y-5"
               style={{
                 background: "hsl(var(--card))",
                 border: "1.5px solid hsl(var(--border))",
-                boxShadow: "0 1px 8px hsl(0 0% 0% / 0.04)",
+                borderRadius: "20px",
+                padding: "24px",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
                 animation: "slideInUp 0.35s ease forwards",
                 animationDelay: "80ms",
                 opacity: 0,
@@ -274,9 +303,29 @@ export default function ClientFormPage() {
 
               {/* Crédit dû — champ spécial avec alerte si > 0 */}
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">
-                  Solde crédit dû
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">(FCFA)</span>
+                <label
+                  className="flex items-center gap-1.5 mb-1.5"
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "13px",
+                    letterSpacing: "0.01em",
+                    color: hasCredit ? "hsl(36 88% 42%)" : "hsl(var(--foreground))",
+                    transition: "color 0.3s ease",
+                  }}
+                >
+                  {hasCredit && (
+                    <AlertCircle
+                      className="w-3.5 h-3.5 shrink-0"
+                      style={{ color: "hsl(36 88% 42%)" }}
+                    />
+                  )}
+                  Crédit accordé
+                  <span
+                    className="text-xs font-normal"
+                    style={{
+                      color: hasCredit ? "hsl(36 88% 52% / 0.7)" : "hsl(var(--muted-foreground))",
+                    }}
+                  >(FCFA)</span>
                 </label>
                 <CreditInput
                   hasCredit={hasCredit}
@@ -301,15 +350,35 @@ export default function ClientFormPage() {
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                <label
+                  className="block mb-1.5"
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "13px",
+                    letterSpacing: "0.01em",
+                    color: "hsl(var(--foreground))",
+                  }}
+                >
                   Notes
                 </label>
                 <div className="relative">
                   <Textarea
                     id="notes"
                     placeholder="Informations complémentaires sur le client..."
-                    className="resize-none rounded-xl min-h-[100px] text-sm"
-                    style={{ border: "1.5px solid hsl(var(--border))" }}
+                    className="resize-none min-h-[100px] text-sm bg-card outline-none"
+                    style={{
+                      borderRadius: "12px",
+                      border: "1.5px solid hsl(var(--border))",
+                      transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "hsl(22 72% 48%)";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.15)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "hsl(var(--border))";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
                     rows={4}
                     {...register("notes")}
                   />
@@ -333,11 +402,13 @@ export default function ClientFormPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 hover:brightness-110 active:scale-95"
+              className="inline-flex items-center gap-2 px-6 text-sm font-semibold text-white disabled:opacity-60 hover:brightness-110 active:scale-95"
               style={{
+                height: "52px",
+                borderRadius: "14px",
                 background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})`,
-                boxShadow: `0 4px 14px hsl(22 72% 48% / 0.35)`,
-                transition: "transform 0.15s ease, box-shadow 0.2s ease",
+                boxShadow: `0 4px 16px hsl(22 72% 48% / 0.40), 0 1px 4px hsl(22 72% 48% / 0.20)`,
+                transition: "transform 0.15s ease, box-shadow 0.2s ease, filter 0.15s ease",
               }}
             >
               {isSubmitting ? (
@@ -374,7 +445,9 @@ function CreditInput({ hasCredit, error, registration }: CreditInputProps) {
     : "hsl(var(--border))";
 
   const shadow = focused
-    ? "0 0 0 3px hsl(22 72% 48% / 0.12)"
+    ? "0 0 0 3px hsl(22 72% 48% / 0.15)"
+    : hasCredit && !focused
+    ? "0 0 0 2px hsl(36 88% 52% / 0.12)"
     : "none";
 
   return (
@@ -383,11 +456,14 @@ function CreditInput({ hasCredit, error, registration }: CreditInputProps) {
         type="number"
         min={0}
         step={100}
-        className="w-full h-10 px-3.5 rounded-xl text-sm outline-none bg-card"
+        className="w-full text-sm outline-none"
         style={{
+          height: "48px",
+          padding: "0 16px",
+          borderRadius: "12px",
           border: `1.5px solid ${borderColor}`,
           boxShadow: shadow,
-          background: hasCredit ? "hsl(36 88% 52% / 0.04)" : "hsl(var(--card))",
+          background: hasCredit ? "hsl(36 88% 52% / 0.05)" : "hsl(var(--card))",
           transition: "border-color 0.3s ease, background 0.3s ease, box-shadow 0.2s ease",
         }}
         onFocus={() => setFocused(true)}

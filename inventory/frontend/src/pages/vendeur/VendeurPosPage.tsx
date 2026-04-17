@@ -68,6 +68,14 @@ function getFirstName(fullName: string | undefined): string {
   return trimmed.split(/\s+/)[0];
 }
 
+function getInitials(fullName: string | undefined): string {
+  if (!fullName) return "V";
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "V";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
 // ─── Ticket de caisse ─────────────────────────────────────────────────────────
 
 interface ReceiptProps {
@@ -575,6 +583,7 @@ export default function VendeurPosPage() {
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
   const change = Math.max(0, Number(amountGiven) - total);
+  const isAmountSufficient = Number(amountGiven) >= total && amountGiven !== "";
 
   // Trigger product grid stagger entrance on mount
   useEffect(() => {
@@ -592,6 +601,7 @@ export default function VendeurPosPage() {
   }, [saleComplete]);
 
   const vendeurName = getFirstName(currentUser?.name);
+  const vendeurInitials = getInitials(currentUser?.name);
 
   const handlePrint = useReactToPrint({
     contentRef: receiptRef,
@@ -901,29 +911,38 @@ export default function VendeurPosPage() {
         onMenuClick={onMenuClick}
       />
 
-      {/* Vendeur identity band */}
+      {/* Vendeur identity band — improved copper tint + refined avatar */}
       <div
         className="shrink-0 px-4 md:px-5 py-2.5 border-b flex items-center gap-3"
         style={{
           background:
-            "linear-gradient(to right, hsl(22 72% 48% / 0.08), hsl(22 72% 48% / 0.04), transparent)",
+            "linear-gradient(to right, hsl(22 72% 48% / 0.08), hsl(22 72% 48% / 0.03), transparent)",
         }}
       >
+        {/* Avatar with initials — rounded-[10px] */}
         <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center ring-1 shrink-0"
+          className="flex items-center justify-center text-white font-bold text-sm shrink-0"
           style={{
-            background: "hsl(22 72% 48% / 0.15)",
-            ringColor: "hsl(22 72% 48% / 0.2)",
+            width: "36px",
+            height: "36px",
+            borderRadius: "10px",
+            background:
+              "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+            boxShadow: "0 3px 10px hsl(22 72% 48% / 0.3)",
+            fontSize: "12px",
+            fontWeight: 700,
           }}
         >
-          <User
-            className="w-4 h-4"
-            strokeWidth={2.2}
-            style={{ color: "hsl(22 72% 62%)" }}
-          />
+          {vendeurInitials}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold leading-none">
+          <p
+            className="uppercase tracking-wider font-semibold leading-none"
+            style={{
+              fontSize: "11px",
+              color: "hsl(var(--muted-foreground))",
+            }}
+          >
             Vendeur
           </p>
           <p className="text-sm font-bold text-foreground truncate">
@@ -1073,7 +1092,10 @@ export default function VendeurPosPage() {
                     <div className="flex items-baseline justify-between">
                       <span
                         className="text-[15px] font-black tabular-nums leading-none"
-                        style={{ color: "hsl(var(--primary))" }}
+                        style={{
+                          color: "hsl(var(--primary))",
+                          fontFamily: "'Fraunces', Georgia, serif",
+                        }}
                       >
                         {product.price.toLocaleString("fr-FR")}
                       </span>
@@ -1104,15 +1126,35 @@ export default function VendeurPosPage() {
             boxShadow: "-8px 0 24px -12px hsl(0 0% 0% / 0.1)",
           }}
         >
-          {/* Cart header — dark ticket theme */}
+          {/* Cart header — richer dark gradient + diagonal pattern overlay */}
           <div
-            className="px-4 md:px-5 py-4 border-b flex items-center justify-between shrink-0"
+            className="px-4 md:px-5 py-4 border-b flex items-center justify-between shrink-0 relative overflow-hidden"
             style={{
               background:
-                "linear-gradient(to right, hsl(20 30% 9%), hsl(18 25% 7%))",
+                "linear-gradient(135deg, hsl(20 32% 8%), hsl(22 28% 11%), hsl(18 24% 7%))",
             }}
           >
-            <div className="flex items-center gap-3">
+            {/* Diagonal stripe pattern */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, hsl(22 72% 62%) 0px, hsl(22 72% 62%) 1px, transparent 1px, transparent 14px)",
+                opacity: 0.05,
+              }}
+            />
+            {/* Subtle copper glow top-right */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-8 -right-8 w-28 h-28 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, hsl(22 72% 48% / 0.25), transparent 70%)",
+              }}
+            />
+
+            <div className="relative flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center ring-1 shrink-0"
                 style={{
@@ -1159,7 +1201,7 @@ export default function VendeurPosPage() {
             {cart.length > 0 && (
               <button
                 onClick={() => setCart([])}
-                className="text-[11px] font-semibold uppercase tracking-wider hover:text-destructive transition-all px-3 py-2.5 rounded-md hover:bg-white/5 min-h-[44px]"
+                className="relative text-[11px] font-semibold uppercase tracking-wider hover:text-destructive transition-all px-3 py-2.5 rounded-md hover:bg-white/5 min-h-[44px]"
                 style={{ color: "hsl(var(--sidebar-fg) / 0.6)" }}
               >
                 Vider
@@ -1208,12 +1250,13 @@ export default function VendeurPosPage() {
                     <div
                       key={item.id}
                       className={cn(
-                        "group rounded-xl border bg-card px-3 py-2.5",
+                        "group border bg-card px-3 py-2.5",
                         flashItem === item.id
                           ? "border-primary/60 bg-primary/5 shadow-sm shadow-primary/10 scale-[1.005]"
                           : "border-[hsl(var(--border))] hover:border-[hsl(var(--border))]/80",
                       )}
                       style={{
+                        borderRadius: "10px",
                         opacity: isRemoving ? 0 : isNew ? 0 : 1,
                         transform: isRemoving
                           ? "translateX(10px)"
@@ -1241,7 +1284,13 @@ export default function VendeurPosPage() {
                           <p className="text-[13px] font-semibold leading-tight truncate">
                             {item.name}
                           </p>
-                          <span className="text-[11px] text-muted-foreground tabular-nums">
+                          <span
+                            className="text-[11px] tabular-nums"
+                            style={{
+                              color: "hsl(var(--muted-foreground))",
+                              fontFamily: "'Fraunces', Georgia, serif",
+                            }}
+                          >
                             {item.price.toLocaleString("fr-FR")} F
                           </span>
                         </div>
@@ -1255,7 +1304,14 @@ export default function VendeurPosPage() {
                           >
                             <Minus className="w-3.5 h-3.5" strokeWidth={2.4} />
                           </button>
-                          <span className="min-w-[36px] h-9 flex items-center justify-center text-[13px] font-black tabular-nums">
+                          {/* Quantity in copper badge */}
+                          <span
+                            className="min-w-[36px] h-9 flex items-center justify-center text-[13px] font-black tabular-nums text-white"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                            }}
+                          >
                             {item.qty}
                           </span>
                           <button
@@ -1267,11 +1323,17 @@ export default function VendeurPosPage() {
                           </button>
                         </div>
 
-                        {/* Line total */}
+                        {/* Line total in Fraunces */}
                         <div className="text-right shrink-0 min-w-[60px]">
-                          <p className="text-[14px] font-black tabular-nums text-foreground leading-tight">
+                          <p
+                            className="text-[14px] font-black tabular-nums text-foreground leading-tight"
+                            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                          >
                             {lineTotal.toLocaleString("fr-FR")}{" "}
-                            <span className="text-[10px] font-bold text-muted-foreground">
+                            <span
+                              className="text-[10px] font-bold"
+                              style={{ fontFamily: "inherit", color: "hsl(var(--muted-foreground))" }}
+                            >
                               F
                             </span>
                           </p>
@@ -1334,6 +1396,7 @@ export default function VendeurPosPage() {
                       <span
                         className="text-[30px] font-black tabular-nums leading-none"
                         style={{
+                          fontFamily: "'Fraunces', Georgia, serif",
                           background:
                             "linear-gradient(135deg, hsl(22 72% 62%), hsl(36 88% 62%))",
                           WebkitBackgroundClip: "text",
@@ -1349,10 +1412,12 @@ export default function VendeurPosPage() {
 
                   <button
                     onClick={() => setShowPayment(true)}
-                    className="w-full h-16 text-base font-bold rounded-xl text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] animate-glow-pulse"
+                    className="w-full h-16 text-base font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] animate-glow-pulse"
                     style={{
                       background:
                         "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                      borderRadius: "14px",
+                      boxShadow: "0 8px 24px hsl(22 72% 48% / 0.4)",
                     }}
                   >
                     <Banknote className="w-5 h-5" strokeWidth={2.2} />
@@ -1379,7 +1444,11 @@ export default function VendeurPosPage() {
                     <p
                       key={total}
                       className="text-[34px] font-black tabular-nums leading-none animate-count-up"
-                      style={{ color: "hsl(var(--foreground))", transition: "all 0.3s ease" }}
+                      style={{
+                        color: "hsl(var(--foreground))",
+                        transition: "all 0.3s ease",
+                        fontFamily: "'Fraunces', Georgia, serif",
+                      }}
                     >
                       {total.toLocaleString("fr-FR")}{" "}
                       <span className="text-lg">FCFA</span>
@@ -1426,14 +1495,15 @@ export default function VendeurPosPage() {
                     </div>
                   </div>
 
-                  {/* Change display */}
-                  {Number(amountGiven) >= total && (
+                  {/* Change display — green tint when sufficient */}
+                  {isAmountSufficient && (
                     <div
                       className="rounded-xl p-4 text-center animate-fade-scale"
                       style={{
                         background:
-                          "linear-gradient(135deg, hsl(var(--success) / 0.15), hsl(var(--success) / 0.05))",
+                          "linear-gradient(135deg, hsl(142 72% 38% / 0.08), hsl(142 72% 38% / 0.04))",
                         border: "2px solid hsl(var(--success) / 0.3)",
+                        transition: "background 300ms ease, border-color 300ms ease",
                       }}
                     >
                       <p
@@ -1445,6 +1515,7 @@ export default function VendeurPosPage() {
                       <p
                         key={change}
                         className="text-[30px] font-black text-success tabular-nums leading-tight animate-count-up"
+                        style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                       >
                         {change.toLocaleString("fr-FR")}{" "}
                         <span className="text-lg">FCFA</span>
@@ -1464,29 +1535,34 @@ export default function VendeurPosPage() {
                     </Button>
                     <button
                       onClick={handlePayment}
-                      disabled={Number(amountGiven) < total}
+                      disabled={!isAmountSufficient}
                       className={cn(
-                        "flex-[2] h-16 font-bold text-base rounded-xl text-white flex items-center justify-center gap-2",
+                        "flex-[2] font-bold text-base text-white flex items-center justify-center gap-2",
                         "transition-all active:scale-[0.98]",
                         "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none",
-                        Number(amountGiven) >= total && "animate-glow-pulse",
+                        isAmountSufficient && "animate-glow-pulse",
                       )}
                       style={
-                        Number(amountGiven) >= total
+                        isAmountSufficient
                           ? {
+                              height: "64px",
+                              borderRadius: "14px",
                               background:
                                 "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                              boxShadow: "0 8px 24px hsl(22 72% 48% / 0.45)",
                             }
                           : {
+                              height: "64px",
+                              borderRadius: "14px",
                               background: "hsl(var(--muted))",
                               color: "hsl(var(--muted-foreground))",
                             }
                       }
                     >
-                      <CheckCircle className="w-5 h-5" strokeWidth={2.2} />
+                      <Zap className="w-5 h-5" strokeWidth={2.2} />
                       Valider la vente
-                      {Number(amountGiven) >= total && (
-                        <Zap className="w-4 h-4 opacity-80" />
+                      {isAmountSufficient && (
+                        <CheckCircle className="w-4 h-4 opacity-80" />
                       )}
                     </button>
                   </div>

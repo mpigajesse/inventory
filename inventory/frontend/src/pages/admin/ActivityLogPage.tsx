@@ -121,6 +121,8 @@ const ACTION_CONFIG: Record<
     color: string;
     line: string;
     badge: { label: string; variant: "success" | "warning" | "info" | "default" | "danger" };
+    gradient: string;
+    avatarGradient: string;
   }
 > = {
   vente: {
@@ -129,6 +131,8 @@ const ACTION_CONFIG: Record<
     color: "text-success",
     line: "border-success/30",
     badge: { label: "Vente", variant: "success" },
+    gradient: "linear-gradient(135deg, hsl(152 38% 32%), hsl(152 38% 44%))",
+    avatarGradient: "linear-gradient(135deg, hsl(152 38% 32%), hsl(152 38% 48%))",
   },
   stock: {
     icon: Package,
@@ -136,6 +140,8 @@ const ACTION_CONFIG: Record<
     color: "text-primary",
     line: "border-primary/30",
     badge: { label: "Stock", variant: "info" },
+    gradient: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+    avatarGradient: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
   },
   produit: {
     icon: Tag,
@@ -143,6 +149,8 @@ const ACTION_CONFIG: Record<
     color: "text-warning",
     line: "border-warning/30",
     badge: { label: "Produit", variant: "warning" },
+    gradient: "linear-gradient(135deg, hsl(36 88% 48%), hsl(22 72% 52%))",
+    avatarGradient: "linear-gradient(135deg, hsl(36 88% 44%), hsl(22 72% 54%))",
   },
   connexion: {
     icon: LogIn,
@@ -150,6 +158,8 @@ const ACTION_CONFIG: Record<
     color: "text-muted-foreground",
     line: "border-border",
     badge: { label: "Connexion", variant: "default" },
+    gradient: "linear-gradient(135deg, hsl(215 20% 48%), hsl(215 30% 58%))",
+    avatarGradient: "linear-gradient(135deg, hsl(215 20% 44%), hsl(215 30% 56%))",
   },
   système: {
     icon: Cpu,
@@ -157,32 +167,44 @@ const ACTION_CONFIG: Record<
     color: "text-muted-foreground",
     line: "border-border",
     badge: { label: "Système", variant: "default" },
+    gradient: "linear-gradient(135deg, hsl(215 15% 42%), hsl(215 20% 54%))",
+    avatarGradient: "linear-gradient(135deg, hsl(215 15% 40%), hsl(215 20% 52%))",
   },
 };
 
 // ─── Timeline icon pill ───────────────────────────────────────────────────────
 
 function ActionTypeIcon({ type }: { type: ActionType }) {
-  const { icon: Icon, bg, color } = ACTION_CONFIG[type];
-  // Use gradient for vente and produit/stock, keep muted for connexion/système
+  const { icon: Icon, bg, color, gradient } = ACTION_CONFIG[type];
   const isColored = type === 'vente' || type === 'stock' || type === 'produit';
   return (
     <div
-      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 border-card ${isColored ? '' : bg}`}
+      className={`flex items-center justify-center shrink-0 ${isColored ? '' : bg}`}
       style={{
-        transition: 'transform 0.2s ease',
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        padding: 8,
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
         ...(isColored ? {
-          background: type === 'vente'
-            ? 'linear-gradient(135deg, hsl(152 38% 38%), hsl(152 38% 48%))'
-            : type === 'produit'
-            ? 'linear-gradient(135deg, hsl(36 88% 52%), hsl(22 72% 48%))'
-            : 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
-        } : {}),
+          background: gradient,
+          boxShadow: '0 2px 8px hsl(0 0% 0% / 0.12)',
+        } : {
+          boxShadow: '0 1px 4px hsl(0 0% 0% / 0.06)',
+        }),
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.12)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)';
+        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 12px hsl(0 0% 0% / 0.18)';
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
+        (e.currentTarget as HTMLDivElement).style.boxShadow = isColored
+          ? '0 2px 8px hsl(0 0% 0% / 0.12)'
+          : '0 1px 4px hsl(0 0% 0% / 0.06)';
+      }}
     >
-      <Icon className={`w-3.5 h-3.5 ${isColored ? 'text-white' : color}`} />
+      <Icon style={{ width: 16, height: 16 }} className={isColored ? 'text-white' : color} />
     </div>
   );
 }
@@ -379,14 +401,98 @@ export default function ActivityLogPage() {
         {/* ── Desktop : tableau classique ── */}
         <div className="hidden md:block card-premium overflow-hidden mt-0">
           <div className="overflow-x-auto">
-            <table className="data-table">
+            <table className="data-table" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr>
-                  <th className="w-10">Type</th>
-                  <SortableHeader label="Date / Heure" sortKey="dateSort" currentSort={sort} onSort={toggleSort} />
-                  <SortableHeader label="Utilisateur" sortKey="user" currentSort={sort} onSort={toggleSort} />
-                  <SortableHeader label="Action" sortKey="action" currentSort={sort} onSort={toggleSort} />
-                  <th>Détail</th>
+                  <th
+                    className="w-10"
+                    style={{
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 2,
+                      background: 'hsl(30 15% 95%)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                      color: 'hsl(var(--muted-foreground))',
+                    }}
+                  >
+                    Type
+                  </th>
+                  <SortableHeader
+                    label="Date / Heure"
+                    sortKey="dateSort"
+                    currentSort={sort}
+                    onSort={toggleSort}
+                    style={{
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 2,
+                      background: 'hsl(30 15% 95%)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                    } as React.CSSProperties}
+                  />
+                  <SortableHeader
+                    label="Utilisateur"
+                    sortKey="user"
+                    currentSort={sort}
+                    onSort={toggleSort}
+                    style={{
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 2,
+                      background: 'hsl(30 15% 95%)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                    } as React.CSSProperties}
+                  />
+                  <SortableHeader
+                    label="Action"
+                    sortKey="action"
+                    currentSort={sort}
+                    onSort={toggleSort}
+                    style={{
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 2,
+                      background: 'hsl(30 15% 95%)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                    } as React.CSSProperties}
+                  />
+                  <th
+                    style={{
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 2,
+                      background: 'hsl(30 15% 95%)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                      color: 'hsl(var(--muted-foreground))',
+                    }}
+                  >
+                    Détail
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -409,12 +515,20 @@ export default function ActivityLogPage() {
                   typedPaginated.map((entry, index) => (
                     <tr
                       key={entry.id}
-                      className="animate-fade-scale"
                       style={{
                         opacity: 0,
                         transform: 'translateY(5px)',
                         animation: `activityRowIn 0.3s ease forwards`,
                         animationDelay: `${index * 35}ms`,
+                        transition: 'background 0.15s ease',
+                        cursor: 'default',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLTableRowElement).style.background =
+                          'hsl(22 72% 48% / 0.04)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLTableRowElement).style.background = 'transparent';
                       }}
                     >
                       <td>
@@ -485,7 +599,16 @@ export default function ActivityLogPage() {
                           animationDelay: `${groupIndex * 80}ms`,
                         }}
                       />
-                      <span className="text-xs font-bold text-muted-foreground px-2 py-0.5 rounded-full bg-muted">
+                      <span
+                        className="text-xs font-bold"
+                        style={{
+                          background: 'hsl(22 72% 48% / 0.1)',
+                          color: 'hsl(22 72% 48%)',
+                          borderRadius: 100,
+                          padding: '2px 10px',
+                          letterSpacing: '0.04em',
+                        }}
+                      >
                         {dateKey}
                       </span>
                       <div
@@ -524,10 +647,10 @@ export default function ActivityLogPage() {
                           onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'hsl(22 72% 48% / 0.02)'; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
                         >
-                          {/* Avatar utilisateur */}
+                          {/* Avatar utilisateur — gradient selon action type */}
                           <div
                             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                            style={{ background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+                            style={{ background: ACTION_CONFIG[entry.actionType].avatarGradient }}
                           >
                             {(entry.user?.[0] || 'S').toUpperCase()}
                           </div>

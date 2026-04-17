@@ -128,14 +128,22 @@ function PrintableCard({ product }: PrintableCardProps) {
       {/* Visible print button */}
       <button
         type="button"
-        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold"
+        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold"
         style={{
           background: 'hsl(22 72% 48% / 0.1)',
           color: 'hsl(22 72% 48%)',
-          transition: 'background 0.2s ease, color 0.2s ease',
+          borderRadius: 100,
+          transition: 'background 0.2s ease, box-shadow 0.2s ease',
+          border: 'none',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'hsl(22 72% 48% / 0.18)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'hsl(22 72% 48% / 0.1)'; }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'hsl(22 72% 48% / 0.2)';
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 8px hsl(22 72% 48% / 0.2)';
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'hsl(22 72% 48% / 0.1)';
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+        }}
         onClick={() => handlePrint()}
       >
         <Printer className="w-3.5 h-3.5" />
@@ -167,7 +175,7 @@ function ProductBarcodeCard({
   return (
     <div
       className={[
-        "bg-card rounded-xl p-4 flex flex-col gap-3",
+        "bg-card p-4 flex flex-col gap-3",
         hasBarcode
           ? "border border-l-4 border-l-[hsl(var(--success))] border-border/70"
           : "border border-border/70",
@@ -176,6 +184,7 @@ function ProductBarcodeCard({
           : "",
       ].join(" ")}
       style={{
+        borderRadius: 18,
         boxShadow: selected
           ? '0 6px 20px hsl(22 72% 48% / 0.2)'
           : '0 1px 4px hsl(22 30% 15% / 0.06)',
@@ -235,7 +244,14 @@ function ProductBarcodeCard({
       </div>
 
       {/* Barcode display or placeholder */}
-      <div className="flex flex-col items-center justify-center min-h-[76px] bg-white rounded-lg border border-border/50 overflow-hidden px-2 py-2 shadow-[var(--shadow-inner)]">
+      <div
+        className="flex flex-col items-center justify-center min-h-[76px] overflow-hidden px-2 py-2"
+        style={{
+          background: '#ffffff',
+          borderRadius: 10,
+          boxShadow: 'inset 0 0 0 1px hsl(var(--border) / 0.4), 0 1px 3px hsl(0 0% 0% / 0.04)',
+        }}
+      >
         {product.barcode ? (
           <>
             <Barcode
@@ -511,7 +527,11 @@ export default function BarcodesPage() {
               placeholder="Rechercher un produit…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 pl-9 rounded-lg border-border/60 text-sm"
+              className="h-9 pl-9 border-border/60 text-sm"
+              style={{
+                borderRadius: 14,
+                boxShadow: '0 1px 4px hsl(0 0% 0% / 0.05)',
+              }}
             />
           </div>
         </div>

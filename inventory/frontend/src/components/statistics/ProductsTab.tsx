@@ -26,17 +26,15 @@ function formatFcfa(amount: number): string {
   return `${amount.toLocaleString("fr-FR")} FCFA`;
 }
 
-// ─── Palette couleurs pour le PieChart ────────────────────────────────────────
+// ─── Palette couleurs pour le PieChart — 6 couleurs distinctes cycliques ──────
 
 const PIE_COLORS = [
-  "hsl(22, 72%, 48%)",   // primary (terracotta)
-  "hsl(152, 38%, 38%)",  // accent (vert gabon)
-  "hsl(36, 88%, 52%)",   // warning (doré)
-  "hsl(4, 72%, 52%)",    // destructive (rouge)
-  "hsl(200, 60%, 46%)",  // bleu
-  "hsl(270, 50%, 52%)",  // violet
-  "hsl(152, 52%, 50%)",  // success clair
-  "hsl(22, 55%, 62%)",   // primary clair
+  "hsl(22, 72%, 48%)",   // cuivre primaire
+  "hsl(152, 38%, 38%)",  // vert forêt
+  "hsl(210, 70%, 52%)",  // bleu
+  "hsl(36, 88%, 52%)",   // amber / doré
+  "hsl(280, 60%, 55%)",  // violet
+  "hsl(4, 72%, 52%)",    // rouge
 ];
 
 // ─── Squelette de chargement ──────────────────────────────────────────────────
@@ -57,11 +55,13 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   if (!active || !payload?.length) return null;
   return (
     <div
-      className="rounded-xl px-3 py-2.5 text-xs"
       style={{
         background: "hsl(20 25% 10%)",
         border: "1px solid rgba(255,255,255,0.12)",
         boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+        borderRadius: "12px",
+        padding: "10px 14px",
+        fontSize: "12px",
       }}
     >
       <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "11px", marginBottom: "4px" }} className="truncate max-w-[160px]">{label}</p>
@@ -89,7 +89,6 @@ export function ProductsTab({ period }: ProductsTabProps) {
     staleTime: 60_000,
   });
 
-  // Entrance animation state
   const [visible, setVisible] = useState(false);
   const [chartVisible, setChartVisible] = useState(false);
   const [pieVisible, setPieVisible] = useState(false);
@@ -117,18 +116,13 @@ export function ProductsTab({ period }: ProductsTabProps) {
     );
   }
 
-  // ── Section 1 : Top 10 Vendeurs ────────────────────────────────────────────
   const topSellers = data?.top_sellers.slice(0, 10) ?? [];
-
-  // ── Section 2 : Répartition par catégorie ─────────────────────────────────
   const byCategory = (data?.by_category ?? []).map((c) => ({
     ...c,
     name: c.category,
     value: c.revenue,
   }));
   const totalRevenue = byCategory.reduce((s, c) => s + c.revenue, 0);
-
-  // ── Section 3 : Produits à faible rotation ────────────────────────────────
   const slowMovers = data?.slow_movers ?? [];
 
   return (
@@ -138,18 +132,29 @@ export function ProductsTab({ period }: ProductsTabProps) {
       <div
         className="card-premium p-6"
         style={{
+          borderTop: "3px solid hsl(22 72% 48%)",
           opacity: chartVisible ? 1 : 0,
           transform: chartVisible ? "translateY(0)" : "translateY(12px)",
           transition: "opacity 0.4s ease, transform 0.4s ease",
         }}
       >
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <BarChart2 className="w-4 h-4 text-primary" />
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "10px",
+              background: "hsl(22 72% 48% / 0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <BarChart2 style={{ width: "16px", height: "16px", color: "hsl(22 72% 48%)" }} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold font-heading">Top 10 Produits</h2>
-            <p className="text-xs text-muted-foreground">Classés par chiffre d'affaires</p>
+            <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Top 10 Produits</h2>
+            <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Classés par chiffre d'affaires</p>
           </div>
         </div>
 
@@ -169,6 +174,12 @@ export function ProductsTab({ period }: ProductsTabProps) {
               data={topSellers}
               margin={{ top: 0, right: 20, bottom: 0, left: 0 }}
             >
+              <defs>
+                <linearGradient id="gradTopSellers" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="hsl(22, 72%, 48%)" />
+                  <stop offset="100%" stopColor="hsl(30, 82%, 58%)" />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
               <XAxis
                 type="number"
@@ -186,7 +197,7 @@ export function ProductsTab({ period }: ProductsTabProps) {
                 tickLine={false}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.4)" }} />
-              <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} maxBarSize={22} />
+              <Bar dataKey="revenue" fill="url(#gradTopSellers)" radius={[0, 4, 4, 0]} maxBarSize={22} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -196,18 +207,29 @@ export function ProductsTab({ period }: ProductsTabProps) {
       <div
         className="card-premium p-6"
         style={{
+          borderTop: "3px solid hsl(280 60% 55%)",
           opacity: pieVisible ? 1 : 0,
           transform: pieVisible ? "translateY(0)" : "translateY(12px)",
           transition: "opacity 0.4s ease, transform 0.4s ease",
         }}
       >
-        <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-            <PieChartIcon className="w-4 h-4 text-accent" />
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "10px",
+              background: "hsl(280 60% 55% / 0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <PieChartIcon style={{ width: "16px", height: "16px", color: "hsl(280 60% 55%)" }} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold font-heading">Répartition par catégorie</h2>
-            <p className="text-xs text-muted-foreground">Part du chiffre d'affaires total</p>
+            <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Répartition par catégorie</h2>
+            <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Part du chiffre d'affaires total</p>
           </div>
         </div>
 
@@ -237,7 +259,11 @@ export function ProductsTab({ period }: ProductsTabProps) {
                     nameKey="name"
                   >
                     {byCategory.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="transparent" />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={PIE_COLORS[index % PIE_COLORS.length]}
+                        stroke="transparent"
+                      />
                     ))}
                   </Pie>
                   <Legend
@@ -259,27 +285,53 @@ export function ProductsTab({ period }: ProductsTabProps) {
             </div>
 
             {/* Tableau récapitulatif */}
-            <div className="w-full lg:w-1/2 space-y-2">
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "4px" }}>
               {byCategory.map((cat, i) => (
                 <div
                   key={cat.category}
-                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors"
                   style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    cursor: "default",
                     opacity: visible ? 1 : 0,
                     transform: visible ? "translateY(0)" : "translateY(5px)",
-                    transition: `opacity 0.35s ease, transform 0.35s ease`,
+                    transition: "opacity 0.35s ease, transform 0.35s ease, background 0.15s ease",
                     transitionDelay: `${i * 45}ms`,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = "hsl(var(--muted) / 0.45)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = "transparent";
                   }}
                 >
                   <span
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                      background: PIE_COLORS[i % PIE_COLORS.length],
+                    }}
                   />
-                  <span className="flex-1 text-sm font-medium truncate">{cat.category}</span>
-                  <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                  <span style={{ flex: 1, fontSize: "13px", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {cat.category}
+                  </span>
+                  <span style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))", fontFamily: "monospace", flexShrink: 0 }}>
                     {totalRevenue > 0 ? ((cat.revenue / totalRevenue) * 100).toFixed(1) : cat.pct_of_total.toFixed(1)}%
                   </span>
-                  <span className="text-sm font-semibold font-editorial amount-editorial shrink-0">
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      fontFamily: "Fraunces, Georgia, serif",
+                      flexShrink: 0,
+                      color: "hsl(var(--foreground))",
+                    }}
+                  >
                     {formatFcfa(cat.revenue)}
                   </span>
                 </div>
@@ -293,21 +345,34 @@ export function ProductsTab({ period }: ProductsTabProps) {
       <div
         className="card-premium overflow-hidden"
         style={{
+          borderTop: "3px solid hsl(36 88% 52%)",
           opacity: slowVisible ? 1 : 0,
           transform: slowVisible ? "translateY(0)" : "translateY(12px)",
           transition: "opacity 0.4s ease 0.08s, transform 0.4s ease 0.08s",
         }}
       >
-        <div className="flex items-center gap-2 px-6 py-4 border-b">
-          <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-            <TrendingDown className="w-4 h-4 text-warning" />
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "16px 24px", borderBottom: "1px solid hsl(var(--border))" }}>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "10px",
+              background: "hsl(36 88% 52% / 0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <TrendingDown style={{ width: "16px", height: "16px", color: "hsl(36 88% 52%)" }} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold font-heading">Produits à faible rotation</h2>
-            <p className="text-xs text-muted-foreground">Peu ou pas vendus sur la période</p>
+            <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Produits à faible rotation</h2>
+            <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Peu ou pas vendus sur la période</p>
           </div>
           {!isLoading && slowMovers.length > 0 && (
-            <span className="ml-auto text-xs text-muted-foreground">{slowMovers.length} produits</span>
+            <span style={{ marginLeft: "auto", fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>
+              {slowMovers.length} produits
+            </span>
           )}
         </div>
 
@@ -322,14 +387,26 @@ export function ProductsTab({ period }: ProductsTabProps) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="data-table w-full">
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr>
-                  <th className="text-left">Produit</th>
-                  <th className="text-left">Catégorie</th>
-                  <th className="text-right">Ventes (période)</th>
-                  <th className="text-right">Jours sans vente</th>
-                  <th className="text-center">Statut</th>
+                <tr style={{ background: "hsl(var(--muted) / 0.5)", borderBottom: "1px solid hsl(var(--border))" }}>
+                  {["Produit", "Catégorie", "Ventes (période)", "Jours sans vente", "Statut"].map((col, i) => (
+                    <th
+                      key={col}
+                      style={{
+                        padding: "10px 16px",
+                        textAlign: i < 2 ? "left" : i === 4 ? "center" : "right",
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        fontFamily: "var(--font-heading)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        color: "hsl(var(--muted-foreground))",
+                      }}
+                    >
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -351,21 +428,32 @@ export function ProductsTab({ period }: ProductsTabProps) {
                     <tr
                       key={item.product_id}
                       style={{
+                        borderBottom: "1px solid hsl(var(--border))",
                         opacity: visible ? 1 : 0,
                         transform: visible ? "translateY(0)" : "translateY(5px)",
-                        transition: `opacity 0.35s ease, transform 0.35s ease`,
+                        transition: "opacity 0.35s ease, transform 0.35s ease, background 0.15s ease",
                         transitionDelay: `${idx * 45}ms`,
                       }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLTableRowElement).style.background = "hsl(22 72% 48% / 0.04)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLTableRowElement).style.background = "transparent";
+                      }}
                     >
-                      <td className="font-medium text-sm">{item.product_name}</td>
-                      <td className="text-sm text-muted-foreground">{item.category}</td>
-                      <td className="text-right">
+                      <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: "500", color: "hsl(var(--foreground))" }}>
+                        {item.product_name}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: "13px", color: "hsl(var(--muted-foreground))" }}>
+                        {item.category}
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "right" }}>
                         <StatusBadge label={soldLabel} variant={soldBadge as "danger" | "warning" | "default"} />
                       </td>
-                      <td className="text-right text-sm font-mono tabular-nums text-muted-foreground">
+                      <td style={{ padding: "12px 16px", textAlign: "right", fontSize: "13px", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", color: "hsl(var(--muted-foreground))" }}>
                         {item.days_without_sale}j
                       </td>
-                      <td className="text-center">
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
                         <StatusBadge
                           label={item.total_sold === 0 ? "Inactif" : "Lent"}
                           variant={item.total_sold === 0 ? "danger" : "warning"}

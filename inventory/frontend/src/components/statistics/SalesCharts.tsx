@@ -86,17 +86,38 @@ interface GranularitySelectorProps {
 
 function GranularitySelector({ value, onChange }: GranularitySelectorProps) {
   return (
-    <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary/60 border border-border">
+    <div className="flex items-center gap-1 p-1 bg-secondary/60 border border-border" style={{ borderRadius: "100px" }}>
       {GRANULARITY_OPTIONS.map(({ value: g, label, icon: Icon }) => (
         <button
           key={g}
           onClick={() => onChange(g)}
-          className={cn(
-            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150",
-            value === g
-              ? "bg-card shadow-sm text-foreground border border-border"
-              : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-          )}
+          className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold")}
+          style={{
+            borderRadius: "100px",
+            transition: "background 0.25s cubic-bezier(0.16,1,0.3,1), color 0.2s ease, box-shadow 0.25s ease",
+            ...(value === g
+              ? {
+                  background: "linear-gradient(135deg, hsl(22, 72%, 48%), hsl(36, 88%, 52%))",
+                  color: "white",
+                  boxShadow: "0 2px 8px hsl(22 72% 48% / 0.35)",
+                }
+              : {
+                  background: "transparent",
+                  color: "hsl(var(--muted-foreground))",
+                }),
+          }}
+          onMouseEnter={(e) => {
+            if (value !== g) {
+              (e.currentTarget as HTMLButtonElement).style.background = "hsl(22 72% 48% / 0.08)";
+              (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--foreground))";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (value !== g) {
+              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--muted-foreground))";
+            }
+          }}
         >
           <Icon className="w-3 h-3" />
           {label}
@@ -123,14 +144,19 @@ function CustomTooltip({ active, payload, label, granularity }: CustomTooltipPro
 
   return (
     <div
-      className="rounded-xl px-4 py-3 text-sm min-w-[160px]"
+      className="text-sm min-w-[160px]"
       style={{
-        background: "hsl(20 25% 10%)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+        background: "hsl(20 25% 10% / 0.92)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderTop: "2px solid hsl(22, 72%, 48%)",
+        borderRadius: "12px",
+        padding: "12px 16px",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        boxShadow: "0 8px 28px rgba(0,0,0,0.35), 0 2px 8px hsl(22 72% 48% / 0.15)",
       }}
     >
-      <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "11px", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+      <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
         {formatDateLabel(label ?? "", granularity)}
       </p>
       <p style={{ color: "white", fontSize: "15px", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif", letterSpacing: "-0.01em" }}>
@@ -316,8 +342,8 @@ export function SalesChart({ period }: SalesChartProps) {
             <AreaChart data={formatted} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -357,7 +383,7 @@ export function SalesChart({ period }: SalesChartProps) {
                 strokeWidth={2.5}
                 fill="url(#gradRevenue)"
                 dot={false}
-                activeDot={{ r: 5, fill: "hsl(22, 72%, 48%)", stroke: "white", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "hsl(22, 72%, 48%)", stroke: "white", strokeWidth: 2.5 }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -418,7 +444,7 @@ export function SalesChart({ period }: SalesChartProps) {
               />
               <Tooltip
                 content={<CustomTooltip granularity={granularity} />}
-                cursor={{ fill: "hsl(22 72% 48% / 0.06)" }}
+                cursor={{ fill: "hsl(152 38% 38% / 0.07)" }}
               />
               <Legend
                 iconType="square"
@@ -429,7 +455,7 @@ export function SalesChart({ period }: SalesChartProps) {
               <Bar
                 dataKey="transactions"
                 name="transactions"
-                fill="hsl(22, 72%, 48%)"
+                fill="hsl(152, 38%, 38%)"
                 radius={[6, 6, 0, 0]}
                 maxBarSize={40}
               />

@@ -244,11 +244,23 @@ export function Topbar({
     currentUser?.role === "admin" ? "Administrateur" : "Vendeur";
 
   return (
+    <>
+    <style>{`
+      @keyframes bell-badge-bounce {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+      }
+      .bell-badge-bounce {
+        animation: bell-badge-bounce 0.4s ease-out;
+      }
+    `}</style>
     <header
       className="shrink-0 sticky top-0 z-20"
       style={{
-        background: "hsl(var(--card))",
-        borderBottom: "1px solid hsl(var(--border))",
+        background: "rgba(255,255,255,0.9)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: "1px solid hsl(var(--border) / 0.5)",
         boxShadow: "0 1px 3px hsl(22 30% 15% / 0.08)",
         position: "relative",
       }}
@@ -380,7 +392,8 @@ export function Topbar({
               <Bell className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
               {unreadCount > 0 && (
                 <span
-                  className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
+                  key={unreadCount}
+                  className="bell-badge-bounce absolute top-1.5 right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
                   style={{
                     background: "hsl(22 72% 48%)",
                     color: "#fff",
@@ -545,13 +558,15 @@ export function Topbar({
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all",
+                "flex items-center gap-2 px-3 py-1.5 transition-all",
                 "hover:-translate-y-0.5 hover:shadow-md",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               )}
               style={{
+                borderRadius: "100px",
                 background: "hsl(22 72% 48% / 0.08)",
                 border: "1px solid hsl(22 72% 48% / 0.2)",
+                boxShadow: "0 2px 8px hsl(22 72% 48% / 0.2)",
               }}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
@@ -561,8 +576,8 @@ export function Topbar({
               <span
                 className="flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold text-white shrink-0"
                 style={{
-                  background:
-                    "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                  background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                  boxShadow: "0 1px 4px hsl(22 72% 48% / 0.4)",
                 }}
                 aria-hidden="true"
               >
@@ -713,6 +728,7 @@ export function Topbar({
         </div>
       )}
     </header>
+    </>
   );
 }
 

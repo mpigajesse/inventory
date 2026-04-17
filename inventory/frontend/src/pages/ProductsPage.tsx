@@ -90,8 +90,15 @@ function StockOverlayBadge({ product }: { product: Product }) {
 
   return (
     <span
-      className="text-[10px] font-bold px-2 py-0.5 rounded-full leading-none"
-      style={{ background: bg, color: "white", backdropFilter: "blur(8px)" }}
+      className="text-[10px] font-bold leading-none"
+      style={{
+        background: "rgba(0,0,0,0.6)",
+        color: "white",
+        backdropFilter: "blur(8px)",
+        borderRadius: "8px",
+        padding: "3px 8px",
+        border: "1px solid rgba(255,255,255,0.12)",
+      }}
     >
       {label}
     </span>
@@ -331,11 +338,28 @@ export default function ProductsPage() {
           }}
         >
           {/* Search */}
-          <div className="flex-1 min-w-[180px]">
+          <div
+            className="flex-1 min-w-[180px] relative"
+            style={{
+              borderRadius: "14px",
+              background: "white",
+              boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+              overflow: "hidden",
+            }}
+            onFocusCapture={(e) => {
+              (e.currentTarget as HTMLDivElement).style.boxShadow =
+                "0 0 0 3px hsl(22 72% 48% / 0.15), 0 1px 6px rgba(0,0,0,0.06)";
+            }}
+            onBlurCapture={(e) => {
+              (e.currentTarget as HTMLDivElement).style.boxShadow =
+                "0 1px 6px rgba(0,0,0,0.06)";
+            }}
+          >
             <SearchInput
               placeholder="Rechercher un produit ou code-barres..."
               value={search}
               onChange={setSearch}
+              className="[&_input]:border-0 [&_input]:shadow-none [&_input]:rounded-none [&_input]:bg-transparent [&_input]:focus-visible:ring-0"
             />
           </div>
 
@@ -345,20 +369,36 @@ export default function ProductsPage() {
               {/* "Tous" pill */}
               <button
                 onClick={() => { setCategoryFilter(""); clearSelection(); }}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200"
+                className="text-xs whitespace-nowrap transition-all duration-200"
                 style={
                   categoryFilter === ""
                     ? {
                         background:
                           "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                         color: "white",
-                        boxShadow: "0 2px 8px hsl(22 72% 48% / 0.30)",
+                        boxShadow: "0 4px 12px hsl(22 72% 48% / 0.3)",
+                        borderRadius: "100px",
+                        padding: "6px 16px",
+                        fontWeight: 600,
                       }
                     : {
                         background: "hsl(var(--muted))",
                         color: "hsl(var(--foreground))",
+                        borderRadius: "100px",
+                        padding: "6px 16px",
+                        fontWeight: 500,
                       }
                 }
+                onMouseEnter={(e) => {
+                  if (categoryFilter !== "") {
+                    (e.currentTarget as HTMLButtonElement).style.background = "hsl(22 72% 48% / 0.08)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (categoryFilter !== "") {
+                    (e.currentTarget as HTMLButtonElement).style.background = "hsl(var(--muted))";
+                  }
+                }}
               >
                 Tous
               </button>
@@ -370,20 +410,36 @@ export default function ProductsPage() {
                     setCategoryFilter(cat.name === categoryFilter ? "" : cat.name);
                     clearSelection();
                   }}
-                  className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 hover:brightness-95"
+                  className="text-xs whitespace-nowrap transition-all duration-200"
                   style={
                     categoryFilter === cat.name
                       ? {
                           background:
                             "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                           color: "white",
-                          boxShadow: "0 2px 8px hsl(22 72% 48% / 0.30)",
+                          boxShadow: "0 4px 12px hsl(22 72% 48% / 0.3)",
+                          borderRadius: "100px",
+                          padding: "6px 16px",
+                          fontWeight: 600,
                         }
                       : {
                           background: "hsl(var(--muted))",
                           color: "hsl(var(--foreground))",
+                          borderRadius: "100px",
+                          padding: "6px 16px",
+                          fontWeight: 500,
                         }
                   }
+                  onMouseEnter={(e) => {
+                    if (categoryFilter !== cat.name) {
+                      (e.currentTarget as HTMLButtonElement).style.background = "hsl(22 72% 48% / 0.08)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (categoryFilter !== cat.name) {
+                      (e.currentTarget as HTMLButtonElement).style.background = "hsl(var(--muted))";
+                    }
+                  }}
                 >
                   {cat.name}
                 </button>
@@ -476,15 +532,30 @@ export default function ProductsPage() {
             )}
             {!isLoading && typedPaginated.length === 0 && (
               <div
-                className="rounded-2xl border py-14 flex flex-col items-center gap-3 text-muted-foreground"
+                className="rounded-2xl border py-16 flex flex-col items-center gap-4 text-muted-foreground"
                 style={{
                   background: "hsl(var(--card))",
                   borderColor: "hsl(var(--border))",
                   animation: "fadeIn 0.4s ease both",
                 }}
               >
-                <Package className="w-10 h-10 opacity-25" />
-                <p className="text-sm">Aucun produit trouvé.</p>
+                <div
+                  style={{
+                    background: "hsl(22 72% 48% / 0.08)",
+                    borderRadius: "50%",
+                    padding: "2rem",
+                    boxShadow: "0 0 0 8px hsl(22 72% 48% / 0.04)",
+                  }}
+                >
+                  <Package
+                    className="w-10 h-10"
+                    style={{ color: "hsl(22 72% 48% / 0.5)" }}
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-foreground/60">Aucun produit trouvé.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Ajoutez votre premier produit au catalogue.</p>
+                </div>
               </div>
             )}
             {!isLoading && typedPaginated.length > 0 && (
@@ -529,11 +600,28 @@ export default function ProductsPage() {
               <div
                 key={product.id}
                 className={cn(
-                  "bg-card border rounded-2xl p-4 flex items-start justify-between gap-3 transition-colors",
+                  "bg-card border rounded-2xl p-4 flex items-start justify-between gap-3 transition-all duration-200",
                   isSelected(product.id)
                     ? "ring-1 ring-primary/30 bg-primary/5"
-                    : "hover:bg-muted/30"
+                    : ""
                 )}
+                style={{
+                  borderLeft: isSelected(product.id)
+                    ? "3px solid hsl(22 72% 48%)"
+                    : "3px solid transparent",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected(product.id)) {
+                    (e.currentTarget as HTMLDivElement).style.borderLeftColor = "hsl(22 72% 48%)";
+                    (e.currentTarget as HTMLDivElement).style.background = "hsl(var(--muted)/0.3)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected(product.id)) {
+                    (e.currentTarget as HTMLDivElement).style.borderLeftColor = "transparent";
+                    (e.currentTarget as HTMLDivElement).style.background = "";
+                  }
+                }}
               >
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <input
@@ -995,11 +1083,12 @@ function ProductCard({
 }: ProductCardProps) {
   return (
     <div
-      className="group relative rounded-2xl overflow-hidden cursor-pointer"
+      className="group relative overflow-hidden cursor-pointer"
       style={{
         background: "hsl(var(--card))",
         border: "1px solid hsl(var(--border))",
-        boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+        borderRadius: "20px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
         transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease",
         animation: `slideInUp 0.35s ease both`,
         animationDelay: `${animIndex * 60}ms`,
@@ -1013,7 +1102,7 @@ function ProductCard({
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.transform = "translateY(0)";
-        el.style.boxShadow = "0 2px 8px hsl(22 30% 15% / 0.06)";
+        el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)";
         el.style.borderColor = "hsl(var(--border))";
       }}
       onClick={onView}
@@ -1119,7 +1208,13 @@ function ProductCard({
         <div className="flex items-center justify-between gap-2">
           <span
             className="font-black text-sm tabular-nums"
-            style={{ color: "hsl(22 72% 48%)" }}
+            style={{
+              fontFamily: "'Fraunces', 'Georgia', serif",
+              background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
           >
             {product.selling_price.toLocaleString("fr-FR")} FCFA
           </span>

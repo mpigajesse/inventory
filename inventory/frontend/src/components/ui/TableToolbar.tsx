@@ -138,10 +138,22 @@ export function TableToolbar({
             <button
               type="button"
               onClick={onExport}
-              className={cn(
-                "flex items-center gap-1.5 h-8 px-3 rounded-md border border-input bg-background",
-                "text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              )}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold text-white transition-all"
+              style={{
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                border: "none",
+                boxShadow: "0 2px 8px hsl(22 72% 48% / 0.32)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 4px 14px hsl(22 72% 48% / 0.48)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 2px 8px hsl(22 72% 48% / 0.32)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+              }}
             >
               <ExportIcon className="w-3.5 h-3.5" />
               {exportLabel}

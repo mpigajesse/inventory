@@ -227,17 +227,22 @@ export default function ReportsPage() {
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
             <div
-              className="w-1 h-6 rounded-full flex-shrink-0"
-              style={{ background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))" }}
+              className="flex-shrink-0"
+              style={{
+                width: "3px",
+                height: "28px",
+                borderRadius: "2px",
+                background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
+              }}
             />
             <h1
               className="text-2xl font-extrabold font-heading"
-              style={{ letterSpacing: "-0.025em" }}
+              style={{ letterSpacing: "-0.02em" }}
             >
               Rapports & Exports
             </h1>
           </div>
-          <p className="text-sm text-muted-foreground ml-3">
+          <p className="text-sm text-muted-foreground ml-4">
             Ventes hebdomadaires, produits phares et exports Excel
           </p>
         </div>
@@ -282,7 +287,14 @@ export default function ReportsPage() {
         >
 
           {/* Graphique barres — ventes par jour */}
-          <div className="card-premium p-6">
+          <div
+            className="card-premium"
+            style={{
+              borderRadius: "20px",
+              padding: "24px",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+            }}
+          >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -350,7 +362,13 @@ export default function ReportsPage() {
           </div>
 
           {/* Top produits */}
-          <div className="card-premium overflow-hidden">
+          <div
+            className="card-premium overflow-hidden"
+            style={{
+              borderRadius: "20px",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+            }}
+          >
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
@@ -450,10 +468,11 @@ export default function ReportsPage() {
 
             {/* Lien vers statistiques avancées */}
             <div
-              className="flex items-center gap-3 px-4 py-3 rounded-xl"
+              className="flex items-center gap-3 px-4 py-3"
               style={{
-                background: "linear-gradient(135deg, hsl(22 72% 48% / 0.06), hsl(36 88% 52% / 0.04))",
-                border: "1px solid hsl(22 72% 48% / 0.15)",
+                borderRadius: "16px",
+                background: "linear-gradient(135deg, hsl(22 72% 48% / 0.08), hsl(36 88% 52% / 0.05))",
+                border: "1px solid hsl(22 72% 48% / 0.18)",
               }}
             >
               <BarChart2 className="w-4 h-4 flex-shrink-0" style={{ color: "hsl(22 72% 48%)" }} />
@@ -476,8 +495,9 @@ export default function ReportsPage() {
             {REPORTS.map((report, index) => (
               <div
                 key={report.id}
-                className="rounded-2xl overflow-hidden"
                 style={{
+                  borderRadius: "20px",
+                  overflow: "hidden",
                   background: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
                   boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
@@ -497,8 +517,8 @@ export default function ReportsPage() {
                   e.currentTarget.style.borderColor = "hsl(var(--border))";
                 }}
               >
-                {/* Color band top */}
-                <div className="h-1.5" style={{ background: report.color }} />
+                {/* Color band top — 4px, highly visible */}
+                <div style={{ height: "4px", background: report.color }} />
 
                 <div className="p-5">
                   {/* Icon */}
@@ -512,10 +532,19 @@ export default function ReportsPage() {
                     <report.icon className="w-5 h-5" style={{ color: report.color }} />
                   </div>
 
-                  <h3 className="font-heading font-bold text-sm text-foreground mb-1">
+                  <h3
+                    className="font-heading text-sm text-foreground mb-1"
+                    style={{ fontWeight: 800, letterSpacing: "-0.01em" }}
+                  >
                     {report.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                  <p
+                    className="mb-4 leading-relaxed"
+                    style={{
+                      fontSize: "13px",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
                     {report.description}
                   </p>
 
@@ -535,8 +564,9 @@ export default function ReportsPage() {
                   <button
                     onClick={() => report.onDownload()}
                     disabled={report.disabled}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
+                      borderRadius: "12px",
                       background: report.isLoading
                         ? "hsl(var(--muted))"
                         : `linear-gradient(135deg, ${report.color}, color-mix(in srgb, ${report.color} 75%, hsl(36 88% 52%)))`,
@@ -544,7 +574,7 @@ export default function ReportsPage() {
                       border: "none",
                       boxShadow: report.isLoading
                         ? "none"
-                        : `0 4px 12px color-mix(in srgb, ${report.color} 30%, transparent)`,
+                        : `0 4px 14px color-mix(in srgb, ${report.color} 35%, transparent)`,
                       cursor: report.disabled ? (report.isLoading ? "wait" : "not-allowed") : "pointer",
                     }}
                   >

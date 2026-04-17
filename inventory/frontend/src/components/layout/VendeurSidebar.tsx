@@ -74,18 +74,20 @@ function NavLink({
         title={collapsed ? item.label : undefined}
         aria-current={isActive ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-3 h-10 rounded-lg text-[13px] font-medium",
-          "transition-colors duration-150 ease-out",
+          "group relative flex items-center gap-3 h-10 text-[13px] font-medium",
+          "transition-all duration-150 ease-out",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+          !isActive && "hover:bg-[hsl(0_0%_100%/0.07)]",
           collapsed ? "md:justify-center md:px-0 px-3" : "px-3",
         )}
         style={{
+          borderRadius: "10px",
           color: isActive
             ? "hsl(var(--sidebar-fg-active))"
             : "hsl(var(--sidebar-fg))",
-          background: isActive ? "hsl(var(--primary) / 0.13)" : undefined,
+          background: isActive ? "hsl(22 72% 48% / 0.15)" : undefined,
           borderLeft: isActive
-            ? "3px solid hsl(var(--sidebar-accent))"
+            ? "3px solid hsl(22 72% 56%)"
             : "3px solid transparent",
           paddingLeft: collapsed ? undefined : isActive ? "9px" : "11px",
         }}
@@ -95,7 +97,7 @@ function NavLink({
             className="w-[18px] h-[18px]"
             strokeWidth={isActive ? 2.3 : 2}
             style={{
-              color: isActive ? "hsl(var(--sidebar-accent))" : undefined,
+              color: isActive ? "hsl(22 72% 62%)" : undefined,
             }}
           />
         </span>
@@ -164,13 +166,28 @@ export function VendeurSidebar({
           background:
             "linear-gradient(to bottom, hsl(20 30% 9%), hsl(18 25% 6%))",
           boxShadow: "inset -1px 0 0 hsl(var(--sidebar-border))",
+          position: "relative",
+          overflow: "hidden",
         }}
         aria-label="Navigation vendeur"
       >
+        {/* ── Radial overlay pattern ────────────────────────── */}
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(ellipse 80% 50% at 50% 0%, hsl(22 72% 48% / 0.10) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 100%, hsl(18 60% 20% / 0.18) 0%, transparent 70%)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+
         {/* ── Brand ─────────────────────────────────────────── */}
         <div
           className="flex items-center justify-between h-16 px-3 border-b shrink-0"
-          style={{ borderColor: "hsl(var(--sidebar-border))" }}
+          style={{ borderColor: "hsl(var(--sidebar-border))", position: "relative", zIndex: 1 }}
         >
           <Link
             to="/vendeur/dashboard"
@@ -247,7 +264,7 @@ export function VendeurSidebar({
         </div>
 
         {collapsed && (
-          <div className="hidden md:flex justify-center pt-2">
+          <div className="hidden md:flex justify-center pt-2" style={{ position: "relative", zIndex: 1 }}>
             <button
               type="button"
               onClick={() => onCollapsedChange(false)}
@@ -265,6 +282,7 @@ export function VendeurSidebar({
         <nav
           className="flex-1 py-3 px-2 overflow-y-auto overflow-x-hidden"
           aria-label="Menu vendeur"
+          style={{ position: "relative", zIndex: 1 }}
         >
           {/* CTA Caisse — primary action */}
           <div className="px-1 mb-3">
@@ -273,25 +291,30 @@ export function VendeurSidebar({
               onClick={handleNavClick}
               title={collapsed ? "Caisse POS" : undefined}
               className={cn(
-                "flex items-center gap-3 w-full rounded-xl font-bold text-[13px] transition-all duration-200",
+                "flex items-center gap-3 w-full font-bold text-[13px] transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30",
-                collapsed ? "md:justify-center md:px-0 px-4 py-3" : "px-4 py-3",
+                collapsed ? "md:justify-center md:px-0 px-5 py-[14px]" : "px-5 py-[14px]",
               )}
               style={{
+                borderRadius: "14px",
                 background: isPosActive
                   ? "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))"
-                  : "linear-gradient(135deg, hsl(22 72% 48% / 0.22), hsl(22 72% 48% / 0.12))",
+                  : "linear-gradient(135deg, hsl(22 72% 44% / 0.28), hsl(36 88% 52% / 0.16))",
                 color: "white",
+                fontWeight: 700,
+                letterSpacing: "0.01em",
                 boxShadow: isPosActive
-                  ? "0 4px 16px hsl(22 72% 48% / 0.45)"
-                  : "0 1px 4px hsl(22 72% 48% / 0.15)",
+                  ? "0 6px 16px hsl(22 72% 48% / 0.35), inset 0 1px 0 hsl(0 0% 100% / 0.20)"
+                  : "0 2px 6px hsl(22 72% 48% / 0.12), inset 0 1px 0 hsl(0 0% 100% / 0.06)",
                 border: isPosActive
-                  ? "1px solid hsl(22 72% 60% / 0.4)"
-                  : "1px solid hsl(22 72% 48% / 0.25)",
+                  ? "1px solid hsl(22 72% 60% / 0.45)"
+                  : "1px solid hsl(22 72% 48% / 0.30)",
               }}
             >
               <ShoppingCart
-                className="w-5 h-5 shrink-0"
+                className="shrink-0"
+                width={20}
+                height={20}
                 strokeWidth={isPosActive ? 2.4 : 2.1}
               />
               <span className={cn("flex-1 truncate", collapsed && "md:hidden")}>
@@ -322,10 +345,14 @@ export function VendeurSidebar({
           <div>
             <p
               className={cn(
-                "text-[10px] font-semibold uppercase tracking-[0.18em] px-3 mt-1 mb-1.5",
+                "font-semibold uppercase px-3 mt-1 mb-1.5",
                 collapsed && "md:hidden",
               )}
-              style={{ color: "hsl(var(--sidebar-fg) / 0.4)" }}
+              style={{
+                fontSize: "9px",
+                letterSpacing: "0.12em",
+                color: "hsl(0 0% 100% / 0.30)",
+              }}
             >
               Navigation
             </p>
@@ -352,10 +379,14 @@ export function VendeurSidebar({
           <div>
             <p
               className={cn(
-                "text-[10px] font-semibold uppercase tracking-[0.18em] px-3 mb-1.5",
+                "font-semibold uppercase px-3 mb-1.5",
                 collapsed && "md:hidden",
               )}
-              style={{ color: "hsl(var(--sidebar-fg) / 0.4)" }}
+              style={{
+                fontSize: "9px",
+                letterSpacing: "0.12em",
+                color: "hsl(0 0% 100% / 0.30)",
+              }}
             >
               Mon compte
             </p>
@@ -375,7 +406,7 @@ export function VendeurSidebar({
         {/* ── Footer ─────────────────────────────────────────── */}
         <div
           className="shrink-0 border-t p-2"
-          style={{ borderColor: "hsl(var(--sidebar-border))" }}
+          style={{ borderColor: "hsl(var(--sidebar-border))", position: "relative", zIndex: 1 }}
         >
           <div
             className={cn(
@@ -466,7 +497,7 @@ export function VendeurSidebar({
               "linear-gradient(to bottom, hsl(20 30% 9%), hsl(18 25% 6%))",
             borderTop: "1px solid hsl(var(--sidebar-border))",
             paddingBottom: "env(safe-area-inset-bottom, 0px)",
-            boxShadow: "0 -4px 12px hsl(0 0% 0% / 0.15)",
+            boxShadow: "0 -6px 20px hsl(0 0% 0% / 0.22), 0 -1px 0 hsl(0 0% 100% / 0.04)",
           }}
         >
           <ul className="flex items-stretch justify-around h-16">
@@ -486,28 +517,33 @@ export function VendeurSidebar({
                     )}
                     style={{
                       color: isPos
-                        ? isActive
-                          ? "hsl(36 88% 58%)"
-                          : "hsl(22 72% 58%)"
+                        ? "white"
                         : isActive
-                          ? "hsl(var(--sidebar-accent))"
-                          : "hsl(var(--sidebar-fg) / 0.8)",
+                          ? "hsl(0 0% 100%)"
+                          : "hsl(0 0% 100% / 0.50)",
                     }}
                   >
                     {isPos ? (
                       <span
-                        className="flex items-center justify-center w-10 h-7 rounded-xl mb-0.5"
+                        className="flex items-center justify-center mb-0.5"
                         style={{
+                          width: "48px",
+                          height: "28px",
+                          borderRadius: "20px",
                           background: isActive
                             ? "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))"
-                            : "hsl(22 72% 48% / 0.18)",
+                            : "linear-gradient(135deg, hsl(22 72% 44% / 0.32), hsl(36 88% 52% / 0.20))",
                           boxShadow: isActive
-                            ? "0 2px 8px hsl(22 72% 48% / 0.45)"
-                            : undefined,
+                            ? "0 4px 12px hsl(22 72% 48% / 0.40), inset 0 1px 0 hsl(0 0% 100% / 0.18)"
+                            : "0 2px 6px hsl(22 72% 48% / 0.18)",
+                          border: isActive
+                            ? "1px solid hsl(22 72% 60% / 0.40)"
+                            : "1px solid hsl(22 72% 48% / 0.20)",
                         }}
                       >
                         <item.icon
-                          className="w-4.5 h-4.5"
+                          width={18}
+                          height={18}
                           strokeWidth={isActive ? 2.4 : 2}
                           style={{ color: "white" }}
                         />
@@ -521,10 +557,11 @@ export function VendeurSidebar({
                     <span
                       className="text-[10px] font-semibold tracking-tight"
                       style={{
-                        color:
-                          isActive && !isPos
-                            ? "hsl(var(--sidebar-fg-active))"
-                            : undefined,
+                        color: isPos
+                          ? "hsl(22 72% 70%)"
+                          : isActive
+                            ? "hsl(0 0% 100%)"
+                            : "hsl(0 0% 100% / 0.50)",
                       }}
                     >
                       {item.label.split(" ")[0]}
@@ -532,7 +569,7 @@ export function VendeurSidebar({
                     {isActive && !isPos && (
                       <span
                         className="absolute top-0 w-8 h-[2px] rounded-b-full"
-                        style={{ background: "hsl(var(--sidebar-accent))" }}
+                        style={{ background: "hsl(22 72% 56%)" }}
                         aria-hidden="true"
                       />
                     )}

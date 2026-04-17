@@ -122,7 +122,8 @@ export default function LoginPage() {
       <div
         className="hidden lg:flex lg:w-[55%] relative overflow-hidden flex-col justify-between p-12"
         style={{
-          background: "linear-gradient(145deg, hsl(20 30% 8%) 0%, hsl(22 26% 13%) 50%, hsl(24 22% 16%) 100%)",
+          background: "linear-gradient(135deg, hsl(20 35% 6%), hsl(22 28% 12%), hsl(20 25% 9%))",
+          borderRight: "1px solid hsl(22 72% 48% / 0.15)",
         }}
       >
         {/* Pattern géométrique africain */}
@@ -199,11 +200,31 @@ export default function LoginPage() {
               <Store className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-white font-bold text-lg tracking-widest leading-none">
+              <p
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 800,
+                  fontSize: "1.1rem",
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                  background: "linear-gradient(135deg, hsl(22 72% 72%), hsl(30 60% 92%))",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
                 NAOSERVICES
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "hsl(22 72% 65% / 0.70)" }}>
-                Système de Gestion de Stock
+              <p
+                className="mt-0.5"
+                style={{
+                  color: "hsl(22 72% 65% / 0.70)",
+                  fontSize: "11px",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                }}
+              >
+                NAOSERVICES INVENTORY
               </p>
             </div>
           </div>
@@ -255,8 +276,11 @@ export default function LoginPage() {
                 key={label}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.07)",
+                  background: "rgba(255,255,255,0.06)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "16px",
                   opacity: isMounted ? 1 : 0,
                   transform: isMounted ? 'translateX(0)' : 'translateX(-10px)',
                   transition: `opacity 0.35s ease ${index * 100}ms, transform 0.35s ease ${index * 100}ms`,
@@ -313,7 +337,7 @@ export default function LoginPage() {
       ═══════════════════════════════════════════════════════ */}
       <div
         className="flex-1 lg:w-[45%] flex items-center justify-center p-6 lg:p-12"
-        style={{ background: "hsl(30 18% 97%)" }}
+        style={{ background: "hsl(30 20% 98%)" }}
       >
         <div
           className="w-full max-w-md"
@@ -321,6 +345,10 @@ export default function LoginPage() {
             opacity: isMounted ? 1 : 0,
             transform: isMounted ? 'translateY(0)' : 'translateY(20px)',
             transition: 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+            background: "white",
+            borderRadius: "24px",
+            padding: "40px",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)",
           }}
         >
 
@@ -338,11 +366,31 @@ export default function LoginPage() {
                 <Store className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="font-bold text-foreground tracking-widest text-base leading-none">
+                <p
+                  style={{
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontWeight: 800,
+                    fontSize: "1rem",
+                    letterSpacing: "-0.03em",
+                    lineHeight: 1,
+                    background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
                   NAOSERVICES
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: "hsl(22 72% 48%)" }}>
-                  Gestion de stock &amp; ventes
+                <p
+                  className="mt-0.5"
+                  style={{
+                    color: "hsl(22 72% 48%)",
+                    fontSize: "11px",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  NAOSERVICES INVENTORY
                 </p>
               </div>
             </div>
@@ -373,20 +421,19 @@ export default function LoginPage() {
                 id="username"
                 type="text"
                 placeholder="admin"
-                className="w-full h-11 px-4 rounded-xl border-[1.5px] bg-card focus-visible:ring-2 outline-none"
-                style={
-                  {
-                    "--tw-ring-color": "hsl(22 72% 48% / 0.20)",
-                    borderColor: "hsl(var(--border))",
-                    transition: "box-shadow 0.2s ease, border-color 0.2s ease",
-                  } as React.CSSProperties
-                }
+                className="w-full px-4 bg-card outline-none"
+                style={{
+                  height: "52px",
+                  borderRadius: "12px",
+                  border: "1.5px solid hsl(var(--border))",
+                  transition: "box-shadow 0.2s ease, border-color 0.2s ease",
+                }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.65)";
-                  e.currentTarget.style.boxShadow   = "0 0 0 3px hsl(22 72% 48% / 0.12)";
+                  e.currentTarget.style.borderColor = "hsl(22 72% 48%)";
+                  e.currentTarget.style.boxShadow   = "0 0 0 3px hsl(22 72% 48% / 0.15)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "";
+                  e.currentTarget.style.borderColor = "hsl(var(--border))";
                   e.currentTarget.style.boxShadow   = "";
                 }}
                 value={username}
@@ -411,14 +458,19 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Votre mot de passe"
-                  className="w-full h-11 px-4 pr-11 rounded-xl border-[1.5px] bg-card outline-none"
-                  style={{ transition: "box-shadow 0.2s ease, border-color 0.2s ease" }}
+                  className="w-full px-4 pr-11 bg-card outline-none"
+                  style={{
+                    height: "52px",
+                    borderRadius: "12px",
+                    border: "1.5px solid hsl(var(--border))",
+                    transition: "box-shadow 0.2s ease, border-color 0.2s ease",
+                  }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.65)";
-                    e.currentTarget.style.boxShadow   = "0 0 0 3px hsl(22 72% 48% / 0.12)";
+                    e.currentTarget.style.borderColor = "hsl(22 72% 48%)";
+                    e.currentTarget.style.boxShadow   = "0 0 0 3px hsl(22 72% 48% / 0.15)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "";
+                    e.currentTarget.style.borderColor = "hsl(var(--border))";
                     e.currentTarget.style.boxShadow   = "";
                   }}
                   value={password}
@@ -450,7 +502,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 rounded-xl font-semibold text-white hover:brightness-110 active:brightness-100 disabled:opacity-60 disabled:cursor-wait"
+              className="w-full text-white hover:brightness-110 active:brightness-100 disabled:opacity-60 disabled:cursor-wait"
               onMouseEnter={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ''; }}
               onMouseDown={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
@@ -458,14 +510,24 @@ export default function LoginPage() {
               style={
                 isSubmitting
                   ? {
+                      height: "52px",
+                      borderRadius: "14px",
+                      fontSize: "1rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.01em",
                       transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s, filter 0.15s ease",
                       background: "linear-gradient(135deg, hsl(22 72% 48% / 0.70), hsl(36 88% 52% / 0.70))",
                       boxShadow: "none",
                     }
                   : {
+                      height: "52px",
+                      borderRadius: "14px",
+                      fontSize: "1rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.01em",
                       transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s, filter 0.15s ease",
                       background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                      boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
+                      boxShadow: "0 8px 20px hsl(22 72% 48% / 0.4)",
                     }
               }
             >

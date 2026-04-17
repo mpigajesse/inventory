@@ -10,6 +10,7 @@ interface SortableHeaderProps {
   currentSort: SortState | null;
   onSort: (key: string) => void;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ export function SortableHeader({
   currentSort,
   onSort,
   className,
+  style,
 }: SortableHeaderProps) {
   const isActive = currentSort?.key === sortKey;
   const direction = isActive ? currentSort.direction : null;
@@ -35,7 +37,7 @@ export function SortableHeader({
   }
 
   return (
-    <th className={cn(className)}>
+    <th className={cn(className)} style={style}>
       <button
         type="button"
         onClick={() => onSort(sortKey)}

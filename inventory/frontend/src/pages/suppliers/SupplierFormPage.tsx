@@ -115,14 +115,22 @@ interface FieldProps {
 function Field({ label, required, error, children }: FieldProps) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground">
+      <label
+        className="block"
+        style={{
+          fontWeight: 600,
+          fontSize: "13px",
+          letterSpacing: "0.01em",
+          color: "hsl(var(--foreground))",
+        }}
+      >
         {label}
-        {required && <span className="ml-1 text-destructive">*</span>}
+        {required && <span className="ml-1" style={{ color: "hsl(4 72% 52%)" }}>*</span>}
       </label>
       {children}
       {error && (
-        <p className="text-xs text-destructive flex items-center gap-1">
-          <span className="inline-block w-1 h-1 rounded-full bg-destructive" />
+        <p className="text-xs flex items-center gap-1" style={{ color: "hsl(4 72% 52%)" }}>
+          <span className="inline-block w-1 h-1 rounded-full" style={{ background: "hsl(4 72% 52%)" }} />
           {error}
         </p>
       )}
@@ -142,24 +150,34 @@ interface SectionCardProps {
 function SectionCard({ title, icon, children, animationDelay = 0 }: SectionCardProps) {
   return (
     <div
-      className="rounded-2xl p-6"
       style={{
         background: "hsl(var(--card))",
-        border: "1px solid hsl(var(--border))",
-        boxShadow: "0 2px 8px hsl(22 30% 15% / 0.05)",
+        border: "1px solid hsl(var(--border) / 0.6)",
+        borderRadius: "20px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
         animation: "slideInUp 0.35s ease forwards",
         animationDelay: `${animationDelay}ms`,
         opacity: 0,
+        overflow: "hidden",
       }}
     >
-      {/* Section header */}
-      <div className="flex items-center gap-2 mb-5 pb-4"
-           style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}>
+      {/* Section header strip */}
+      <div
+        className="flex items-center gap-2.5 px-6 py-4"
+        style={{
+          background: "hsl(var(--muted) / 0.6)",
+          borderBottom: "1px solid hsl(var(--border) / 0.4)",
+        }}
+      >
         <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: "hsl(22 72% 48% / 0.10)" }}
+          className="w-7 h-7 flex items-center justify-center flex-shrink-0"
+          style={{
+            borderRadius: "12px",
+            background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+            boxShadow: "0 2px 6px hsl(22 72% 48% / 0.25)",
+          }}
         >
-          <span style={{ color: "hsl(22 72% 48%)" }}>{icon}</span>
+          <span style={{ color: "#fff" }}>{icon}</span>
         </div>
         <p
           className="text-xs font-bold uppercase tracking-[0.12em]"
@@ -168,7 +186,7 @@ function SectionCard({ title, icon, children, animationDelay = 0 }: SectionCardP
           {title}
         </p>
       </div>
-      <div className="space-y-5">{children}</div>
+      <div className="p-6 space-y-5">{children}</div>
     </div>
   );
 }
@@ -255,21 +273,26 @@ function TagInput({ value, onChange }: TagInputProps) {
 // ─── Styled Input ─────────────────────────────────────────────────────────────
 
 function StyledInput(props: React.ComponentProps<typeof Input>) {
+  // When used with an icon wrapper (pl-9 class), preserve left padding from class
+  const hasIconPadding = (props.className ?? "").includes("pl-");
   return (
     <Input
       {...props}
       className={[
-        "h-11 rounded-xl bg-background",
+        "bg-background",
         props.className ?? "",
       ].join(" ")}
       style={{
+        height: "48px",
+        borderRadius: "12px",
+        ...(hasIconPadding ? { paddingRight: "16px" } : { padding: "0 16px" }),
         border: "1.5px solid hsl(var(--border))",
         transition: "border-color 0.2s ease, box-shadow 0.2s ease",
         ...(props.style ?? {}),
       }}
       onFocus={(e) => {
         e.currentTarget.style.borderColor = "hsl(22 72% 48%)";
-        e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.12)";
+        e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.15)";
         props.onFocus?.(e);
       }}
       onBlur={(e) => {
@@ -356,7 +379,22 @@ export default function SupplierFormPage() {
         <div className="mb-6">
           <Link
             to="/suppliers"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground group"
+            style={{
+              padding: "6px 12px 6px 8px",
+              borderRadius: "10px",
+              transition: "background 0.2s ease, color 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLAnchorElement;
+              el.style.background = "hsl(22 72% 48% / 0.06)";
+              el.style.color = "hsl(22 72% 48%)";
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLAnchorElement;
+              el.style.background = "transparent";
+              el.style.color = "";
+            }}
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             Retour aux fournisseurs
@@ -398,7 +436,7 @@ export default function SupplierFormPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* ── Colonne gauche : Informations entreprise ──────────── */}
             <SectionCard
@@ -486,7 +524,7 @@ export default function SupplierFormPage() {
             </SectionCard>
 
             {/* ── Colonne droite ────────────────────────────────────── */}
-            <div className="space-y-5">
+            <div className="space-y-6">
 
               {/* Produits fournis */}
               <SectionCard
@@ -540,9 +578,21 @@ export default function SupplierFormPage() {
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger
-                          className="w-full h-11 rounded-xl bg-background transition-shadow"
+                          className="w-full bg-background"
                           style={{
+                            height: "48px",
+                            borderRadius: "12px",
+                            padding: "0 16px",
                             border: "1.5px solid hsl(var(--border))",
+                            transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                          }}
+                          onFocus={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = "hsl(22 72% 48%)";
+                            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.15)";
+                          }}
+                          onBlur={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.borderColor = "hsl(var(--border))";
+                            (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
                           }}
                         >
                           <SelectValue placeholder="Sélectionner un statut" />
@@ -580,7 +630,23 @@ export default function SupplierFormPage() {
             <Button
               type="button"
               variant="outline"
-              className="h-10 rounded-xl px-5 font-medium transition-colors hover:border-primary/30 hover:text-primary"
+              className="px-5 font-medium transition-all"
+              style={{
+                height: "52px",
+                borderRadius: "10px",
+              }}
+              onMouseEnter={(e) => {
+                const btn = e.currentTarget as HTMLButtonElement;
+                btn.style.background = "hsl(36 88% 96%)";
+                btn.style.borderColor = "hsl(22 72% 48% / 0.30)";
+                btn.style.color = "hsl(22 72% 48%)";
+              }}
+              onMouseLeave={(e) => {
+                const btn = e.currentTarget as HTMLButtonElement;
+                btn.style.background = "";
+                btn.style.borderColor = "";
+                btn.style.color = "";
+              }}
               onClick={() => navigate("/suppliers")}
               disabled={isSubmitting}
             >
@@ -589,10 +655,12 @@ export default function SupplierFormPage() {
             </Button>
             <Button
               type="submit"
-              className="h-10 rounded-xl px-6 text-white font-semibold border-0 hover:brightness-105 hover:-translate-y-px"
+              className="px-6 text-white font-semibold border-0 hover:brightness-105 hover:-translate-y-px"
               style={{
+                height: "52px",
+                borderRadius: "14px",
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                boxShadow: "0 4px 14px hsl(22 72% 48% / 0.30)",
+                boxShadow: "0 4px 16px hsl(22 72% 48% / 0.38), 0 1px 3px hsl(22 72% 48% / 0.2)",
                 transition: "transform 0.15s ease, box-shadow 0.2s ease",
               }}
               disabled={isSubmitting}

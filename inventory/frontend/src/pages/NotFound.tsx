@@ -19,15 +19,16 @@ const NotFound = () => {
     >
       <div className="text-center max-w-md">
 
-        {/* 404 gradient */}
+        {/* 404 gradient text trois tons */}
         <div
-          className="text-8xl font-extrabold mb-4 font-heading leading-none select-none"
+          className="font-extrabold mb-4 font-heading leading-none select-none"
           style={{
+            fontSize: 'clamp(5rem, 15vw, 9rem)',
             background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%), hsl(152 38% 38%))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            letterSpacing: '-0.04em',
+            letterSpacing: '-0.05em',
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'scale(1)' : 'scale(0.92)',
             transition: 'opacity 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1)',
@@ -37,9 +38,11 @@ const NotFound = () => {
         </div>
 
         <h1
-          className="text-2xl font-extrabold text-foreground font-heading mb-2"
+          className="text-foreground font-heading mb-2"
           style={{
-            letterSpacing: '-0.025em',
+            fontSize: '1.5rem',
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'translateY(0)' : 'translateY(10px)',
             transition: 'opacity 400ms ease 200ms, transform 400ms ease 200ms',
@@ -65,11 +68,11 @@ const NotFound = () => {
               background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
               color: 'white',
               border: 'none',
-              borderRadius: '12px',
+              borderRadius: 14,
               padding: '0.75rem 1.5rem',
-              fontWeight: '600',
+              fontWeight: 600,
               fontSize: '0.9rem',
-              boxShadow: '0 4px 14px hsl(22 72% 48% / 0.35)',
+              boxShadow: '0 8px 20px hsl(22 72% 48% / 0.35)',
               cursor: 'pointer',
               transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 400ms ease 350ms',
               opacity: mounted ? 1 : 0,
@@ -77,11 +80,11 @@ const NotFound = () => {
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px hsl(22 72% 48% / 0.45), 0 0 0 4px hsl(22 72% 48% / 0.15)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 28px hsl(22 72% 48% / 0.45), 0 0 0 4px hsl(22 72% 48% / 0.15)';
             }}
             onMouseLeave={e => {
               (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 14px hsl(22 72% 48% / 0.35)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 20px hsl(22 72% 48% / 0.35)';
             }}
           >
             ← Retour au tableau de bord
@@ -89,8 +92,11 @@ const NotFound = () => {
         </Link>
 
         <p
-          className="text-xs text-muted-foreground/50 mt-8"
+          className="text-muted-foreground/50 mt-8"
           style={{
+            fontSize: 11,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
             opacity: mounted ? 0.5 : 0,
             transition: 'opacity 600ms ease 500ms',
           }}

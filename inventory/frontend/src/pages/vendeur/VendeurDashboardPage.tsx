@@ -64,6 +64,13 @@ function getGreetingIcon(date: Date): React.ComponentType<{ className?: string; 
 
 type VendeurKpiTint = "copper" | "green" | "blue";
 
+// Border-top accent colors per KPI tint
+const kpiBorderTop: Record<VendeurKpiTint, string> = {
+  copper: "hsl(22 72% 48%)",
+  green: "hsl(var(--success))",
+  blue: "hsl(var(--badge-blue))",
+};
+
 const tintStyles: Record<
   VendeurKpiTint,
   { iconBg: string; iconColor: string; gradientFrom: string; valueColor: string }
@@ -134,12 +141,22 @@ function KpiValue({
   end,
   suffix,
   duration,
+  isMoney,
 }: {
   end: number;
   suffix: string;
   duration: number;
+  isMoney?: boolean;
 }) {
   const counted = useCountUp({ end, duration });
+  if (isMoney) {
+    return (
+      <span style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+        {counted.toLocaleString("fr-FR")}
+        {suffix}
+      </span>
+    );
+  }
   return (
     <>
       {counted.toLocaleString("fr-FR")}
@@ -200,12 +217,15 @@ export default function VendeurDashboardPage() {
               transition: `opacity 400ms ${ENTRANCE_EASE}, transform 400ms ${ENTRANCE_EASE}`,
             }}
           >
-            {/* Avatar */}
+            {/* Avatar — rounded-2xl 56×56, copper shadow */}
             <div
-              className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg shrink-0"
+              className="relative flex items-center justify-center text-white font-bold text-lg shrink-0"
               style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "16px",
                 background: "var(--gradient-primary)",
-                boxShadow: "0 6px 20px hsl(22 72% 48% / 0.32)",
+                boxShadow: "0 6px 16px hsl(22 72% 48% / 0.3)",
               }}
             >
               {initials}
@@ -228,11 +248,24 @@ export default function VendeurDashboardPage() {
                 {greeting}
               </p>
               <h1
-                className="text-xl md:text-2xl font-extrabold font-heading tracking-tight truncate"
+                className="font-extrabold font-heading truncate"
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.15,
+                }}
               >
                 {firstName}
               </h1>
-              <p className="text-[12px] text-muted-foreground mt-0.5 capitalize">
+              <p
+                className="mt-0.5 capitalize"
+                style={{
+                  fontSize: "13px",
+                  color: "hsl(var(--muted-foreground))",
+                  lineHeight: 1.4,
+                }}
+              >
                 {formatLongDate(today)} · Bonne journée de ventes !
               </p>
             </div>
@@ -244,7 +277,9 @@ export default function VendeurDashboardPage() {
           {vendeurKpis.map((kpi, index) => {
             const Icon = kpi.icon;
             const t = tintStyles[kpi.tint];
+            const borderTopColor = kpiBorderTop[kpi.tint];
             const delay = 200 + index * 80;
+            const isMoney = kpi.suffix.includes("F");
             return (
               <div
                 key={kpi.label}
@@ -255,6 +290,8 @@ export default function VendeurDashboardPage() {
                   transition: `opacity 400ms ${ENTRANCE_EASE} ${delay}ms, transform 400ms ${ENTRANCE_EASE} ${delay}ms`,
                   boxShadow:
                     "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
+                  // Colored top border accent
+                  borderTop: `3px solid ${borderTopColor}`,
                 }}
               >
                 {/* Gradient overlay */}
@@ -268,7 +305,14 @@ export default function VendeurDashboardPage() {
 
                 <div className="relative">
                   <div className="flex items-start justify-between gap-3 mb-4">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    <span
+                      className="font-semibold uppercase"
+                      style={{
+                        fontSize: "11px",
+                        letterSpacing: "0.08em",
+                        color: "hsl(var(--muted-foreground))",
+                      }}
+                    >
                       {kpi.label}
                     </span>
                     <div
@@ -291,6 +335,7 @@ export default function VendeurDashboardPage() {
                       end={kpi.numericEnd}
                       suffix={kpi.suffix}
                       duration={kpi.duration}
+                      isMoney={isMoney}
                     />
                   </div>
 
@@ -336,6 +381,17 @@ export default function VendeurDashboardPage() {
             transition: `opacity 400ms ${ENTRANCE_EASE} 400ms, transform 400ms ${ENTRANCE_EASE} 400ms`,
           }}
         >
+          {/* Diagonal stripe pattern overlay — opacité 0.06 */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, hsl(22 72% 62%) 0px, hsl(22 72% 62%) 1px, transparent 1px, transparent 12px)",
+              opacity: 0.06,
+            }}
+          />
+
           {/* Decorative glow */}
           <div
             aria-hidden
@@ -367,15 +423,24 @@ export default function VendeurDashboardPage() {
                     style={{ color: "hsl(36 88% 60%)" }}
                   />
                   <span
-                    className="text-[11px] font-bold uppercase tracking-[0.18em]"
-                    style={{ color: "hsl(36 88% 60%)" }}
+                    className="font-bold uppercase"
+                    style={{
+                      fontSize: "11px",
+                      letterSpacing: "0.18em",
+                      color: "hsl(36 88% 60%)",
+                    }}
                   >
                     Action rapide
                   </span>
                 </div>
                 <h2
-                  className="font-extrabold text-xl font-heading mb-1"
-                  style={{ color: "white" }}
+                  className="font-heading mb-1"
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: 800,
+                    color: "white",
+                    lineHeight: 1.2,
+                  }}
                 >
                   Accéder à la caisse
                 </h2>
@@ -388,13 +453,16 @@ export default function VendeurDashboardPage() {
               </div>
             </div>
 
-            {/* Caisse CTA button — pulsing glow */}
+            {/* Caisse CTA button — rounded-xl with strong copper shadow */}
             <button
               onClick={() => navigate("/vendeur/pos")}
-              className="group inline-flex items-center justify-center gap-2 shrink-0 font-bold text-[15px] text-white rounded-xl px-6 py-3.5 transition-all active:scale-[0.97] animate-glow-pulse"
+              className="group inline-flex items-center justify-center gap-2 shrink-0 font-bold text-[15px] text-white transition-all active:scale-[0.97] animate-glow-pulse"
               style={{
                 background:
                   "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                borderRadius: "14px",
+                padding: "14px 24px",
+                boxShadow: "0 8px 24px hsl(22 72% 48% / 0.45)",
               }}
             >
               <ShoppingCart className="w-4.5 h-4.5" strokeWidth={2.2} />
@@ -408,7 +476,14 @@ export default function VendeurDashboardPage() {
         <div>
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="border-l-2 border-primary/30 pl-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground mb-0.5">
+              <p
+                className="font-semibold uppercase mb-0.5"
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.12em",
+                  color: "hsl(var(--muted-foreground))",
+                }}
+              >
                 Activité
               </p>
               <h2 className="text-base md:text-lg font-bold tracking-tight">
@@ -443,11 +518,19 @@ export default function VendeurDashboardPage() {
                     return (
                       <div
                         key={vente.id}
-                        className="p-4 flex items-start justify-between gap-3 hover:bg-primary/5 transition-colors cursor-pointer"
+                        className="p-4 flex items-start justify-between gap-3 cursor-pointer"
                         style={{
                           opacity: mounted ? 1 : 0,
                           transition: `opacity 300ms ease ${rowDelay}ms`,
+                          background: "transparent",
                         }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background =
+                            "hsl(22 72% 48% / 0.04)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
                         onClick={() => navigate("/invoices")}
                       >
                         <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -463,7 +546,10 @@ export default function VendeurDashboardPage() {
                               {vente.articles} article
                               {vente.articles !== 1 ? "s" : ""}
                             </p>
-                            <p className="text-sm font-bold mt-1 tabular-nums">
+                            <p
+                              className="mt-1 tabular-nums font-bold text-sm"
+                              style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                            >
                               {vente.total}
                             </p>
                           </div>
@@ -479,11 +565,22 @@ export default function VendeurDashboardPage() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Réf.</th>
-                        <th>Heure</th>
-                        <th>Articles</th>
-                        <th className="text-right">Total</th>
-                        <th>Statut</th>
+                        {["Réf.", "Heure", "Articles", "Total", "Statut"].map(
+                          (col, i) => (
+                            <th
+                              key={col}
+                              style={{
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.08em",
+                                textAlign: i === 3 ? "right" : undefined,
+                              }}
+                            >
+                              {col}
+                            </th>
+                          )
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -492,11 +589,18 @@ export default function VendeurDashboardPage() {
                         return (
                           <tr
                             key={vente.id}
-                            className="hover:bg-primary/5 transition-colors cursor-pointer"
+                            className="cursor-pointer"
                             style={{
                               opacity: mounted ? 1 : 0,
-                              transition: `opacity 300ms ease ${rowDelay}ms`,
+                              transition: `opacity 300ms ease ${rowDelay}ms, background 150ms ease`,
                             }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background =
+                                "hsl(22 72% 48% / 0.05)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
                             onClick={() => navigate("/invoices")}
                           >
                             <td>
@@ -509,8 +613,13 @@ export default function VendeurDashboardPage() {
                               {vente.heure}
                             </td>
                             <td className="tabular-nums">{vente.articles}</td>
-                            <td className="font-semibold tabular-nums text-right">
-                              {vente.total}
+                            <td className="text-right">
+                              <span
+                                className="font-bold tabular-nums"
+                                style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                              >
+                                {vente.total}
+                              </span>
                             </td>
                             <td>
                               <StatusBadge label="Terminée" variant="success" />

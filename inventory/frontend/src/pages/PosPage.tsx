@@ -471,7 +471,12 @@ export default function PosPage() {
       <>
         <Topbar title="Point de vente" subtitle="Caisse rapide" onMenuClick={onMenuClick} />
 
-        <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto bg-gradient-to-br from-[hsl(var(--background))] via-[hsl(var(--muted))]/40 to-[hsl(var(--accent))]/10">
+        <div
+          className="flex-1 flex items-center justify-center p-4 overflow-y-auto"
+          style={{
+            background: "radial-gradient(ellipse at 30% 20%, hsl(22 72% 48% / 0.08) 0%, transparent 55%), radial-gradient(ellipse at 70% 80%, hsl(38 88% 55% / 0.06) 0%, transparent 50%), hsl(var(--background))",
+          }}
+        >
           <div
             className="w-full max-w-sm"
             style={{
@@ -481,8 +486,15 @@ export default function PosPage() {
 
             <div className="text-center mb-5">
               <div className="relative inline-flex mb-3">
-                <div className="w-20 h-20 rounded-full bg-success/15 flex items-center justify-center ring-[6px] ring-success/10 shadow-lg shadow-success/10">
-                  <CheckCircle className="w-10 h-10 text-success" strokeWidth={2.2} />
+                <div
+                  className="w-20 h-20 rounded-full bg-success/15 flex items-center justify-center ring-[6px] ring-success/10"
+                  style={{ boxShadow: "0 8px 32px hsl(152 60% 40% / 0.35), 0 4px 12px hsl(152 60% 40% / 0.2)" }}
+                >
+                  <CheckCircle
+                    className="w-10 h-10 text-success"
+                    strokeWidth={2.2}
+                    style={{ filter: "drop-shadow(0 2px 8px hsl(152 60% 40% / 0.5))" }}
+                  />
                 </div>
               </div>
               <h2 className="text-2xl font-black tracking-tight mb-1">Vente enregistrée</h2>
@@ -632,18 +644,21 @@ export default function PosPage() {
                 onChange={e => setSearch(e.target.value)}
                 autoFocus
                 placeholder="Rechercher un produit ou scanner un code-barres..."
-                className="w-full pl-10 pr-24 py-3 rounded-xl text-sm font-medium outline-none transition-all bg-background text-foreground placeholder:text-muted-foreground/60"
+                className="w-full pl-10 pr-24 py-3 text-sm font-medium outline-none transition-all text-foreground placeholder:text-muted-foreground/60"
                 style={{
+                  borderRadius: "12px",
+                  background: "hsl(0 0% 100%)",
                   border: "1.5px solid hsl(var(--border))",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                   fontFamily: "Inter, sans-serif",
                 }}
                 onFocus={e => {
                   e.currentTarget.style.borderColor = "hsl(22 72% 48%)";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.15)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.2)";
                 }}
                 onBlur={e => {
                   e.currentTarget.style.borderColor = "hsl(var(--border))";
-                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.06)";
                 }}
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md"
@@ -697,19 +712,25 @@ export default function PosPage() {
                       )}
                       style={{
                         background: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "16px",
+                        borderTop: "none",
+                        borderLeft: "none",
+                        borderBottom: "1.5px solid hsl(var(--border))",
+                        borderRight: "1.5px solid hsl(var(--border))",
                         boxShadow: "0 1px 3px hsl(22 30% 15% / 0.06)",
                         animationDelay: `${index * 40}ms`,
                       }}
                       onMouseEnter={e => {
                         if (isOut) return;
                         e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.45)";
+                        e.currentTarget.style.borderBottomColor = "hsl(22 72% 48% / 0.45)";
+                        e.currentTarget.style.borderRightColor = "hsl(22 72% 48% / 0.45)";
                         e.currentTarget.style.boxShadow = "0 8px 24px hsl(22 30% 15% / 0.1)";
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.borderColor = "hsl(var(--border))";
+                        e.currentTarget.style.borderBottomColor = "hsl(var(--border))";
+                        e.currentTarget.style.borderRightColor = "hsl(var(--border))";
                         e.currentTarget.style.boxShadow = "0 1px 3px hsl(22 30% 15% / 0.06)";
                       }}
                     >
@@ -757,7 +778,13 @@ export default function PosPage() {
                       <div className="flex items-baseline justify-between">
                         <span
                           className="text-[15px] font-black tabular-nums leading-none"
-                          style={{ fontFamily: "Fraunces, Georgia, serif", color: "hsl(22 72% 48%)" }}
+                          style={{
+                            fontFamily: "Fraunces, Georgia, serif",
+                            background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 58%), hsl(22 60% 52%))",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            backgroundClip: "text",
+                          }}
                         >
                           {product.selling_price.toLocaleString("fr-FR")}
                         </span>
@@ -794,8 +821,25 @@ export default function PosPage() {
             "flex flex-col md:w-[380px] md:shrink-0",
             mobileTab === "cart" ? "flex-1" : "hidden md:flex"
           )}
-          style={{ background: "hsl(20 25% 8%)" }}
+          style={{
+            background: "linear-gradient(160deg, hsl(20 30% 7%), hsl(18 22% 10%))",
+            position: "relative",
+          }}
         >
+          {/* Noise texture overlay */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "repeat",
+              backgroundSize: "128px 128px",
+              opacity: 0.03,
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
           {/* Ticket header */}
           <div
             className="p-5 shrink-0"
@@ -1012,15 +1056,24 @@ export default function PosPage() {
                   </div>
 
                   {/* Divider */}
-                  <div className="my-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }} />
+                  <div
+                    className="my-3"
+                    style={{
+                      height: "1px",
+                      border: "none",
+                      background: "linear-gradient(90deg, transparent, hsl(22 72% 48% / 0.3), transparent)",
+                    }}
+                  />
 
                   {/* Total */}
                   <div className="flex justify-between items-center mb-5">
                     <span className="text-white font-bold text-lg">Total</span>
                     <span
-                      className="font-black text-3xl tabular-nums leading-none"
+                      className="font-black tabular-nums leading-none"
                       style={{
                         fontFamily: "Fraunces, Georgia, serif",
+                        fontSize: "clamp(2rem, 4vw, 2.8rem)",
+                        letterSpacing: "-0.03em",
                         background: "linear-gradient(135deg, hsl(22 72% 65%), hsl(36 88% 72%))",
                         WebkitBackgroundClip: "text",
                         WebkitTextFillColor: "transparent",
@@ -1038,15 +1091,15 @@ export default function PosPage() {
                     className="w-full active:scale-[0.98]"
                     style={{
                       background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                      boxShadow: "0 4px 20px hsl(22 72% 48% / 0.4)",
+                      boxShadow: "0 8px 24px hsl(22 72% 48% / 0.4), 0 4px 8px hsl(22 72% 48% / 0.2)",
                       color: "white",
                       border: "none",
                       borderRadius: "14px",
-                      padding: "1rem",
-                      fontSize: "1rem",
+                      padding: "16px 24px",
+                      fontSize: "1.1rem",
                       fontWeight: "700",
                       cursor: "pointer",
-                      letterSpacing: "-0.01em",
+                      letterSpacing: "0.01em",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1054,8 +1107,8 @@ export default function PosPage() {
                       transition: "box-shadow 200ms ease, transform 200ms ease",
                       animation: cart.length > 0 ? "pulse-subtle 2s ease-in-out infinite" : "none",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 28px hsl(22 72% 48% / 0.55)"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.animationPlayState = "paused"; }}
-                    onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px hsl(22 72% 48% / 0.4)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.animationPlayState = "running"; }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 12px 32px hsl(22 72% 48% / 0.55), 0 6px 12px hsl(22 72% 48% / 0.3)"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.animationPlayState = "paused"; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 8px 24px hsl(22 72% 48% / 0.4), 0 4px 8px hsl(22 72% 48% / 0.2)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.animationPlayState = "running"; }}
                   >
                     <Banknote className="w-5 h-5" />
                     Encaisser · {total.toLocaleString("fr-FR")} F
@@ -1099,7 +1152,10 @@ export default function PosPage() {
                       placeholder="0"
                       value={amountGiven}
                       onChange={e => setAmountGiven(e.target.value)}
-                      className="mt-1.5 text-xl font-black h-14 tabular-nums tracking-tight border-2 rounded-xl bg-white/10 text-white border-white/20 focus-visible:border-[hsl(22_72%_48%)] focus-visible:ring-0"
+                      className="mt-1.5 text-xl font-black h-14 tabular-nums tracking-tight border-2 bg-white/10 text-white border-white/20 focus-visible:border-[hsl(22_72%_48%)] focus-visible:ring-0"
+                      style={{ borderRadius: "12px" }}
+                      onFocus={e => { e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.2)"; }}
+                      onBlur={e => { e.currentTarget.style.boxShadow = "none"; }}
                       autoFocus
                     />
                   </div>

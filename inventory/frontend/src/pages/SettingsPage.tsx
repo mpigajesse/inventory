@@ -150,10 +150,11 @@ function SettingsSection({
 }: SettingsSectionProps) {
   return (
     <section
-      className="rounded-2xl overflow-hidden mb-5"
+      className="overflow-hidden mb-5"
       style={{
         border: "1px solid hsl(var(--border))",
-        boxShadow: "0 2px 10px hsl(22 30% 15% / 0.07)",
+        borderRadius: "20px",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
         ...animationStyle,
       }}
       aria-labelledby={`section-${title}`}
@@ -164,8 +165,9 @@ function SettingsSection({
         style={{ background: "hsl(var(--muted))" }}
       >
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+          className="w-8 h-8 flex items-center justify-center flex-shrink-0"
           style={{
+            borderRadius: "12px",
             background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
             boxShadow: "0 2px 8px hsl(22 72% 48% / 0.30)",
           }}
@@ -301,20 +303,25 @@ export default function SettingsPage() {
                     role="radio"
                     aria-checked={isActive}
                     aria-label={`Thème ${option.label}`}
-                    className={[
-                      "group relative flex flex-col items-center gap-3 p-4 min-h-[112px] rounded-xl border-2 bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      isActive
-                        ? "border-primary shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.45)] bg-primary/[0.04]"
-                        : "border-border hover:border-primary/50 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5",
-                    ].join(" ")}
-                    style={{ transition: "transform 0.15s ease, box-shadow 0.2s ease, border-color 0.15s ease" }}
+                    className="group relative flex flex-col items-center gap-3 p-4 min-h-[112px] bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    style={{
+                      borderRadius: "12px",
+                      border: isActive ? `2px solid ${option.palette.primary}` : "2px solid hsl(var(--border))",
+                      boxShadow: isActive ? `0 4px 16px -4px ${option.palette.primary}55` : "none",
+                      background: isActive ? `${option.palette.primary}0A` : "hsl(var(--card))",
+                      transition: "transform 0.15s ease, box-shadow 0.2s ease, border-color 0.15s ease",
+                    }}
                   >
                     {/* Color swatch */}
                     <div className="relative">
                       <span
-                        className="block w-12 h-12 rounded-full ring-1 ring-black/10 shadow-sm"
+                        className="block w-10 h-10 ring-1 ring-black/10 shadow-sm"
                         style={{
+                          borderRadius: "10px",
+                          width: "40px",
+                          height: "40px",
                           background: `conic-gradient(from 210deg, ${option.palette.primary} 0 45%, ${option.palette.sidebar} 45% 75%, ${option.palette.accent} 75% 100%)`,
+                          boxShadow: isActive ? `0 4px 12px -2px ${option.palette.primary}66` : undefined,
                         }}
                         aria-hidden="true"
                       />
@@ -357,12 +364,15 @@ export default function SettingsPage() {
                     onClick={() => setDisplayMode(option.id)}
                     role="radio"
                     aria-checked={isActive}
-                    className={[
-                      "inline-flex items-center gap-2 px-4 min-h-[44px] rounded-xl border-2 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      isActive
-                        ? "border-primary bg-primary text-primary-foreground shadow-[0_4px_14px_-6px_hsl(var(--primary)/0.6)]"
-                        : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-primary/[0.04]",
-                    ].join(" ")}
+                    className="inline-flex items-center gap-2 px-4 min-h-[44px] text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    style={{
+                      borderRadius: "12px",
+                      border: isActive ? "2px solid hsl(22 72% 48% / 0.30)" : "2px solid hsl(var(--border))",
+                      background: isActive ? "hsl(22 72% 48% / 0.12)" : "hsl(var(--card))",
+                      color: isActive ? "hsl(22 72% 48%)" : "hsl(var(--foreground))",
+                      boxShadow: isActive ? "0 2px 8px hsl(22 72% 48% / 0.2)" : "none",
+                      fontWeight: isActive ? 600 : 500,
+                    }}
                   >
                     {option.icon}
                     {option.label}
@@ -387,7 +397,8 @@ export default function SettingsPage() {
                 <Input
                   id="settings-currency"
                   placeholder="ex : FCFA"
-                  className="h-11 rounded-lg"
+                  className="rounded-xl"
+                  style={{ height: "48px", borderRadius: "12px" }}
                   {...register("currency")}
                 />
                 {errors.currency && (
@@ -402,7 +413,8 @@ export default function SettingsPage() {
                 <Input
                   id="settings-ticket"
                   placeholder="ex : 80mm ou 58mm"
-                  className="h-11 rounded-lg"
+                  className="rounded-xl"
+                  style={{ height: "48px", borderRadius: "12px" }}
                   {...register("ticket_format")}
                 />
                 {errors.ticket_format && (
@@ -417,7 +429,8 @@ export default function SettingsPage() {
                 <Input
                   id="settings-prefix"
                   placeholder="ex : FAC-2026-"
-                  className="h-11 rounded-lg"
+                  className="rounded-xl"
+                  style={{ height: "48px", borderRadius: "12px" }}
                   {...register("invoice_prefix")}
                 />
                 {errors.invoice_prefix && (
@@ -432,7 +445,8 @@ export default function SettingsPage() {
                 <Input
                   id="settings-footer"
                   placeholder="ex : Merci pour votre achat !"
-                  className="h-11 rounded-lg"
+                  className="rounded-xl"
+                  style={{ height: "48px", borderRadius: "12px" }}
                   {...register("ticket_footer")}
                 />
               </div>
@@ -441,8 +455,13 @@ export default function SettingsPage() {
 
           {/* ── Sticky save bar ── */}
           <div
-            className="sticky bottom-0 -mx-4 sm:mx-0 sm:static sm:rounded-2xl backdrop-blur-md bg-card/80 supports-[backdrop-filter]:bg-card/75 border-t sm:border sm:border-border/70 shadow-[0_-8px_24px_-12px_rgba(120,60,20,0.15)] sm:shadow-none px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3"
+            className="sticky bottom-0 -mx-4 sm:mx-0 border-t sm:border sm:rounded-2xl px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3"
             style={{
+              background: "rgba(255,255,255,0.9)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              borderTop: "1px solid hsl(var(--border) / 0.5)",
+              boxShadow: "0 -4px 16px rgba(0,0,0,0.06)",
               transform: isDirty ? "translateY(0)" : "translateY(100%)",
               transition: "transform 0.3s ease",
             }}

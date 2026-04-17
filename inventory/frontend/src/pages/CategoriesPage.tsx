@@ -173,12 +173,12 @@ function CategoryFormModal({ open, category, onClose, onSaved }: CategoryFormMod
 // ─── Color palette for category cards ────────────────────────────────────────
 
 const CARD_COLORS = [
-  { bg: 'hsl(22 72% 48%)', light: 'hsl(22 72% 48% / 0.1)', border: 'hsl(22 72% 48% / 0.2)' },
-  { bg: 'hsl(152 38% 38%)', light: 'hsl(152 38% 38% / 0.1)', border: 'hsl(152 38% 38% / 0.2)' },
-  { bg: 'hsl(210 70% 52%)', light: 'hsl(210 70% 52% / 0.1)', border: 'hsl(210 70% 52% / 0.2)' },
-  { bg: 'hsl(280 60% 52%)', light: 'hsl(280 60% 52% / 0.1)', border: 'hsl(280 60% 52% / 0.2)' },
-  { bg: 'hsl(340 65% 48%)', light: 'hsl(340 65% 48% / 0.1)', border: 'hsl(340 65% 48% / 0.2)' },
-  { bg: 'hsl(45 80% 45%)', light: 'hsl(45 80% 45% / 0.1)', border: 'hsl(45 80% 45% / 0.2)' },
+  { bg: 'hsl(22 72% 48%)', light: 'hsl(22 72% 48% / 0.04)', border: 'hsl(22 72% 48% / 0.2)', shadow: 'hsl(22 72% 48% / 0.25)' },
+  { bg: 'hsl(152 38% 38%)', light: 'hsl(152 38% 38% / 0.04)', border: 'hsl(152 38% 38% / 0.2)', shadow: 'hsl(152 38% 38% / 0.25)' },
+  { bg: 'hsl(210 70% 52%)', light: 'hsl(210 70% 52% / 0.04)', border: 'hsl(210 70% 52% / 0.2)', shadow: 'hsl(210 70% 52% / 0.25)' },
+  { bg: 'hsl(280 60% 52%)', light: 'hsl(280 60% 52% / 0.04)', border: 'hsl(280 60% 52% / 0.2)', shadow: 'hsl(280 60% 52% / 0.25)' },
+  { bg: 'hsl(340 65% 48%)', light: 'hsl(340 65% 48% / 0.04)', border: 'hsl(340 65% 48% / 0.2)', shadow: 'hsl(340 65% 48% / 0.25)' },
+  { bg: 'hsl(45 80% 45%)', light: 'hsl(45 80% 45% / 0.04)', border: 'hsl(45 80% 45% / 0.2)', shadow: 'hsl(45 80% 45% / 0.25)' },
 ];
 
 // ─── Category card ────────────────────────────────────────────────────────────
@@ -197,12 +197,16 @@ function CategoryCard({ category, colorIndex, canManage, onEdit, onDelete }: Cat
 
   return (
     <div
-      className="group relative rounded-2xl p-5 transition-all duration-200"
+      className="group relative cursor-default transition-all duration-200"
       style={{
-        background: 'hsl(var(--card))',
+        borderRadius: '20px',
+        padding: '20px',
+        background: hovered
+          ? `linear-gradient(135deg, hsl(var(--card)), ${color.light})`
+          : `linear-gradient(135deg, hsl(var(--card)), ${color.light})`,
         border: `1px solid ${hovered ? color.bg.replace(')', ' / 0.3)') : 'hsl(var(--border))'}`,
         boxShadow: hovered
-          ? '0 10px 28px hsl(22 30% 15% / 0.1)'
+          ? `0 10px 28px hsl(22 30% 15% / 0.1)`
           : '0 2px 8px hsl(22 30% 15% / 0.06)',
         transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
       }}
@@ -211,38 +215,125 @@ function CategoryCard({ category, colorIndex, canManage, onEdit, onDelete }: Cat
     >
       {/* Icône catégorie */}
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-        style={{ background: color.light, border: `1px solid ${color.border}` }}
+        style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '16px',
+          background: color.light,
+          border: `1px solid ${color.border}`,
+          boxShadow: `0 4px 12px ${color.shadow}`,
+        }}
       >
-        <Tag className="w-6 h-6" style={{ color: color.bg }} />
+        <Tag className="w-5 h-5" style={{ color: color.bg }} />
       </div>
 
-      <h3 className="font-bold text-foreground mb-1 truncate pr-14">{category.name}</h3>
+      <h3
+        style={{
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: '4px',
+          paddingRight: '56px',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          color: 'hsl(var(--foreground))',
+          fontSize: '0.9375rem',
+        }}
+      >
+        {category.name}
+      </h3>
 
       {category.description ? (
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{category.description}</p>
+        <p
+          style={{
+            fontSize: '0.75rem',
+            color: 'hsl(var(--muted-foreground))',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            marginBottom: '8px',
+            lineHeight: '1.4',
+          }}
+        >
+          {category.description}
+        </p>
       ) : (
-        <p className="text-xs text-muted-foreground italic mb-2">Aucune description</p>
+        <p
+          style={{
+            fontSize: '0.75rem',
+            color: 'hsl(var(--muted-foreground))',
+            fontStyle: 'italic',
+            marginBottom: '8px',
+          }}
+        >
+          Aucune description
+        </p>
       )}
 
-      <p className="text-sm font-medium" style={{ color: color.bg }}>
+      <p
+        style={{
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          color: color.bg,
+          fontFamily: "'Fraunces', Georgia, serif",
+        }}
+      >
         {category.product_count ?? 0} produit{(category.product_count ?? 0) !== 1 ? 's' : ''}
       </p>
 
-      {/* Actions hover */}
+      {/* Actions hover — révélées au hover */}
       {canManage && (
-        <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div
+          className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{
+            borderRadius: '8px',
+            padding: '2px',
+            background: 'hsl(var(--background) / 0.7)',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
           <button
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-muted"
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
             title="Modifier"
             onClick={onEdit}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'hsl(var(--muted))'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
           >
             <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
           <button
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-destructive/10"
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
             title="Supprimer"
             onClick={onDelete}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'hsl(var(--destructive) / 0.1)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
           >
             <Trash2 className="w-3.5 h-3.5 text-destructive" />
           </button>
@@ -263,23 +354,38 @@ function NewCategoryCard({ onClick }: NewCategoryCardProps) {
 
   return (
     <div
-      className="rounded-2xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-3 border-2 border-dashed"
-      style={{
-        borderColor: hovered ? 'hsl(22 72% 48% / 0.5)' : 'hsl(22 72% 48% / 0.3)',
-        background: hovered ? 'hsl(22 72% 48% / 0.06)' : 'hsl(22 72% 48% / 0.02)',
-        minHeight: '140px',
-      }}
       onClick={onClick}
+      style={{
+        borderRadius: '20px',
+        padding: '20px',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        border: `2px dashed ${hovered ? 'hsl(22 72% 48% / 0.6)' : 'hsl(22 72% 48% / 0.3)'}`,
+        background: hovered ? 'hsl(22 72% 48% / 0.05)' : 'hsl(22 72% 48% / 0.02)',
+        minHeight: '140px',
+        transition: 'border-color 0.2s ease, background 0.2s ease',
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center"
-        style={{ background: 'hsl(22 72% 48% / 0.1)' }}
+        style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'hsl(22 72% 48% / 0.1)',
+        }}
       >
         <Plus className="w-5 h-5" style={{ color: 'hsl(22 72% 48%)' }} />
       </div>
-      <p className="text-sm font-semibold" style={{ color: 'hsl(22 72% 48%)' }}>
+      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'hsl(22 72% 48%)' }}>
         Nouvelle catégorie
       </p>
     </div>
@@ -381,16 +487,44 @@ export default function CategoriesPage() {
                 Catégories
               </h1>
             </div>
-            <p className="text-sm text-muted-foreground ml-3">
-              {isLoading ? (
-                <span className="opacity-60">Chargement…</span>
-              ) : (
-                <>
-                  <span className="font-medium text-foreground">{categories.length}</span> catégorie{categories.length !== 1 ? 's' : ''}{' '}
-                  · <span className="font-medium text-foreground">{totalProducts}</span> produit{totalProducts !== 1 ? 's' : ''}
-                </>
-              )}
-            </p>
+
+            {/* Dual counter — deux badges pills séparés */}
+            {!isLoading && (
+              <div className="flex items-center gap-2 ml-3 mt-1.5">
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    background: 'hsl(22 72% 48% / 0.08)',
+                    color: 'hsl(22 72% 48%)',
+                    border: '1px solid hsl(22 72% 48% / 0.2)',
+                  }}
+                >
+                  {categories.length} catégorie{categories.length !== 1 ? 's' : ''}
+                </span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    background: 'hsl(var(--muted))',
+                    color: 'hsl(var(--muted-foreground))',
+                    border: '1px solid hsl(var(--border))',
+                  }}
+                >
+                  {totalProducts} produit{totalProducts !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
           </div>
 
           {can('manage_products') && (

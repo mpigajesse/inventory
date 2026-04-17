@@ -20,25 +20,50 @@ function formatFcfa(amount: number): string {
   return amount.toLocaleString("fr-FR") + " FCFA";
 }
 
-// Couleurs premium pour les méthodes de paiement
+// ─── Palette méthodes de paiement ─────────────────────────────────────────────
+// Espèces = vert forêt, Mobile = bleu, Carte = violet, Crédit = amber
+
 const METHOD_COLORS: Record<string, string> = {
   cash:         "hsl(152, 38%, 38%)",  // vert forêt
-  mobile_money: "hsl(22, 72%, 48%)",   // cuivre/terracotta
-  card:         "hsl(210, 70%, 52%)",  // bleu
-  credit:       "hsl(4, 72%, 52%)",    // rouge
+  mobile_money: "hsl(210, 70%, 52%)",  // bleu
+  card:         "hsl(280, 60%, 55%)",  // violet
+  credit:       "hsl(36, 88%, 52%)",   // amber
+};
+
+// Couleur de fond teinté (card background)
+const METHOD_BG_COLORS: Record<string, string> = {
+  cash:         "hsl(152 38% 38% / 0.08)",
+  mobile_money: "hsl(210 70% 52% / 0.08)",
+  card:         "hsl(280 60% 55% / 0.08)",
+  credit:       "hsl(36 88% 52% / 0.08)",
+};
+
+const METHOD_BORDER_COLORS: Record<string, string> = {
+  cash:         "hsl(152 38% 38% / 0.20)",
+  mobile_money: "hsl(210 70% 52% / 0.20)",
+  card:         "hsl(280 60% 55% / 0.20)",
+  credit:       "hsl(36 88% 52% / 0.20)",
 };
 
 const METHOD_FALLBACK_COLORS = [
   "hsl(152, 38%, 38%)",
-  "hsl(22, 72%, 48%)",
   "hsl(210, 70%, 52%)",
-  "hsl(4, 72%, 52%)",
-  "hsl(280, 55%, 52%)",
+  "hsl(280, 60%, 55%)",
   "hsl(36, 88%, 52%)",
+  "hsl(22, 72%, 48%)",
+  "hsl(4, 72%, 52%)",
 ];
 
 function getMethodColor(method: string, index: number): string {
   return METHOD_COLORS[method] ?? METHOD_FALLBACK_COLORS[index % METHOD_FALLBACK_COLORS.length];
+}
+
+function getMethodBgColor(method: string, color: string): string {
+  return METHOD_BG_COLORS[method] ?? `${color}18`;
+}
+
+function getMethodBorderColor(method: string, color: string): string {
+  return METHOD_BORDER_COLORS[method] ?? `${color}30`;
 }
 
 function getMethodIcon(method: string) {
@@ -67,27 +92,29 @@ function CustomPieTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   const item = payload[0];
   const stat = item.payload;
-  const total = stat.total;
   return (
     <div
-      className="rounded-xl px-4 py-3 text-xs min-w-[160px]"
       style={{
         background: "hsl(20 25% 10%)",
         border: "1px solid rgba(255,255,255,0.12)",
         boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+        borderRadius: "12px",
+        padding: "12px 16px",
+        minWidth: "160px",
+        fontSize: "12px",
       }}
     >
       <p style={{ color: "white", fontWeight: "700", fontSize: "13px", marginBottom: "8px" }}>{stat.label}</p>
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between gap-4">
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <span style={{ color: "rgba(255,255,255,0.45)" }}>Montant</span>
-          <span style={{ color: "white", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif" }}>{formatFcfa(total)}</span>
+          <span style={{ color: "white", fontWeight: "700", fontFamily: "Fraunces, Georgia, serif" }}>{formatFcfa(stat.total)}</span>
         </div>
-        <div className="flex items-center justify-between gap-4">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <span style={{ color: "rgba(255,255,255,0.45)" }}>Part</span>
           <span style={{ color: "white", fontWeight: "600" }}>{stat.pct.toFixed(1)} %</span>
         </div>
-        <div className="flex items-center justify-between gap-4">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <span style={{ color: "rgba(255,255,255,0.45)" }}>Transactions</span>
           <span style={{ color: "white", fontWeight: "600" }}>{stat.count}</span>
         </div>
@@ -105,12 +132,37 @@ interface CustomLegendProps {
 function CustomPieLegend({ payload }: CustomLegendProps) {
   if (!payload?.length) return null;
   return (
-    <ul className="flex flex-wrap justify-center gap-3 mt-3">
+    <ul
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: "10px",
+        marginTop: "12px",
+        padding: 0,
+        listStyle: "none",
+      }}
+    >
       {payload.map((entry) => (
-        <li key={entry.value} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <li
+          key={entry.value}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "11px",
+            color: "hsl(var(--muted-foreground))",
+          }}
+        >
           <span
-            className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-            style={{ background: entry.color }}
+            style={{
+              display: "inline-block",
+              width: "10px",
+              height: "10px",
+              borderRadius: "50%",
+              flexShrink: 0,
+              background: entry.color,
+            }}
           />
           {entry.value}
         </li>
@@ -133,7 +185,6 @@ export function PaymentTab({ period }: PaymentTabProps) {
     queryFn: () => statisticsService.getPaymentMethods({ period }),
   });
 
-  // Entrance animation state
   const [pieVisible, setPieVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [cardsVisible, setCardsVisible] = useState(false);
@@ -173,7 +224,6 @@ export function PaymentTab({ period }: PaymentTabProps) {
   const methods = data.data ?? [];
   const totalRevenue = data.total_revenue;
 
-  // Données enrichies avec couleur pour le PieChart
   const pieData = methods.map((m, i) => ({
     ...m,
     color: getMethodColor(m.method, i),
@@ -183,25 +233,36 @@ export function PaymentTab({ period }: PaymentTabProps) {
   return (
     <div className="space-y-6">
 
-      {/* ── PieChart + légende ── */}
+      {/* ── PieChart + Détail ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Pie chart */}
         <div
           className="card-premium p-6"
           style={{
+            borderTop: "3px solid hsl(22 72% 48%)",
             opacity: pieVisible ? 1 : 0,
             transform: pieVisible ? "translateY(0)" : "translateY(12px)",
             transition: "opacity 0.4s ease, transform 0.4s ease",
           }}
         >
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <CreditCard className="w-4 h-4 text-primary" />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "10px",
+                background: "hsl(22 72% 48% / 0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <CreditCard style={{ width: "16px", height: "16px", color: "hsl(22 72% 48%)" }} />
             </div>
             <div>
-              <h2 className="text-sm font-semibold font-heading">Répartition des paiements</h2>
-              <p className="text-xs text-muted-foreground">Part de chaque méthode sur le total</p>
+              <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Répartition des paiements</h2>
+              <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Part de chaque méthode sur le total</p>
             </div>
           </div>
 
@@ -224,7 +285,12 @@ export function PaymentTab({ period }: PaymentTabProps) {
                   nameKey="label"
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" strokeWidth={0} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      stroke="transparent"
+                      strokeWidth={0}
+                    />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomPieTooltip />} />
@@ -233,10 +299,18 @@ export function PaymentTab({ period }: PaymentTabProps) {
             </ResponsiveContainer>
           )}
 
-          {/* Total centré en-dessous */}
-          <div className="mt-3 text-center">
-            <p className="text-xs text-muted-foreground">Total encaissé</p>
-            <p className="text-lg font-bold font-editorial amount-editorial">
+          {/* Total encaissé */}
+          <div style={{ marginTop: "12px", textAlign: "center" }}>
+            <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Total encaissé</p>
+            <p
+              style={{
+                fontSize: "18px",
+                fontWeight: "700",
+                fontFamily: "Fraunces, Georgia, serif",
+                color: "hsl(var(--foreground))",
+                letterSpacing: "-0.02em",
+              }}
+            >
               {formatFcfa(totalRevenue)}
             </p>
           </div>
@@ -246,18 +320,29 @@ export function PaymentTab({ period }: PaymentTabProps) {
         <div
           className="card-premium p-6"
           style={{
+            borderTop: "3px solid hsl(152 38% 38%)",
             opacity: detailVisible ? 1 : 0,
             transform: detailVisible ? "translateY(0)" : "translateY(12px)",
             transition: "opacity 0.4s ease, transform 0.4s ease",
           }}
         >
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-              <ShoppingCart className="w-4 h-4 text-accent" />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "10px",
+                background: "hsl(152 38% 38% / 0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ShoppingCart style={{ width: "16px", height: "16px", color: "hsl(152 38% 38%)" }} />
             </div>
             <div>
-              <h2 className="text-sm font-semibold font-heading">Détail par méthode</h2>
-              <p className="text-xs text-muted-foreground">Montants et transactions</p>
+              <h2 style={{ fontSize: "13px", fontWeight: "600", fontFamily: "var(--font-heading)" }}>Détail par méthode</h2>
+              <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>Montants et transactions</p>
             </div>
           </div>
 
@@ -267,41 +352,68 @@ export function PaymentTab({ period }: PaymentTabProps) {
               <p className="text-sm">Aucune donnée disponible</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {pieData.map((item, idx) => {
                 const MethodIcon = getMethodIcon(item.method);
+                const bgColor = getMethodBgColor(item.method, item.color);
+                const borderColor = getMethodBorderColor(item.method, item.color);
                 return (
                   <div
                     key={item.method}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/30 transition-colors"
                     style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "12px",
+                      borderRadius: "12px",
+                      background: bgColor,
+                      border: `1px solid ${borderColor}`,
                       opacity: detailVisible ? 1 : 0,
                       transform: detailVisible ? "translateY(0)" : "translateY(5px)",
-                      transition: `opacity 0.35s ease, transform 0.35s ease`,
+                      transition: "opacity 0.35s ease, transform 0.35s ease",
                       transitionDelay: `${idx * 60}ms`,
                     }}
                   >
                     {/* Icône colorée */}
                     <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: `${item.color}18` }}
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        background: `${item.color}20`,
+                      }}
                     >
-                      <MethodIcon
-                        className="w-4 h-4"
-                        style={{ color: item.color }}
-                      />
+                      <MethodIcon style={{ width: "16px", height: "16px", color: item.color }} />
                     </div>
 
                     {/* Infos */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-sm font-semibold font-heading truncate">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            fontFamily: "var(--font-heading)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            color: "hsl(var(--foreground))",
+                          }}
+                        >
                           {item.label}
                         </span>
                         <span
-                          className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
                           style={{
-                            background: `${item.color}18`,
+                            fontSize: "11px",
+                            fontWeight: "700",
+                            padding: "2px 8px",
+                            borderRadius: "999px",
+                            flexShrink: 0,
+                            background: `${item.color}20`,
                             color: item.color,
                           }}
                         >
@@ -309,26 +421,44 @@ export function PaymentTab({ period }: PaymentTabProps) {
                         </span>
                       </div>
 
-                      {/* Barre de progression animée */}
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-1.5">
+                      {/* Barre de progression gradient */}
+                      <div
+                        style={{
+                          height: "6px",
+                          borderRadius: "100px",
+                          background: "hsl(var(--muted))",
+                          overflow: "hidden",
+                          marginBottom: "6px",
+                        }}
+                      >
                         <div
-                          className="h-full rounded-full"
                           style={{
+                            height: "100%",
+                            borderRadius: "100px",
                             width: `${item.pct}%`,
-                            background: item.color,
+                            background: `linear-gradient(90deg, ${item.color}, ${item.color}99)`,
                             transform: barVisible ? "scaleX(1)" : "scaleX(0)",
                             transformOrigin: "left",
-                            transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+                            transition: "transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)",
                             transitionDelay: `${idx * 80}ms`,
                           }}
                         />
                       </div>
 
-                      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                        <span className="font-semibold text-foreground">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: "700",
+                            fontFamily: "Fraunces, Georgia, serif",
+                            color: "hsl(var(--foreground))",
+                          }}
+                        >
                           {formatFcfa(item.total)}
                         </span>
-                        <span>{item.count} transaction{item.count !== 1 ? "s" : ""}</span>
+                        <span style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>
+                          {item.count} transaction{item.count !== 1 ? "s" : ""}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -344,32 +474,67 @@ export function PaymentTab({ period }: PaymentTabProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {pieData.map((item, idx) => {
             const MethodIcon = getMethodIcon(item.method);
+            const bgColor = getMethodBgColor(item.method, item.color);
+            const borderColor = getMethodBorderColor(item.method, item.color);
             return (
               <div
                 key={item.method}
-                className="card-premium p-4 flex flex-col gap-2"
                 style={{
+                  background: "hsl(var(--card))",
+                  border: `1px solid hsl(var(--border))`,
+                  borderTop: `3px solid ${item.color}`,
+                  borderRadius: "16px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
                   opacity: cardsVisible ? 1 : 0,
                   transform: cardsVisible ? "translateY(0)" : "translateY(12px)",
-                  transition: `opacity 0.4s ease, transform 0.4s ease`,
+                  transition: "opacity 0.4s ease, transform 0.4s ease",
                   transitionDelay: `${idx * 60}ms`,
                 }}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
                     {item.label}
                   </span>
                   <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ background: `${item.color}18` }}
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: bgColor,
+                    }}
                   >
-                    <MethodIcon className="w-3.5 h-3.5" style={{ color: item.color }} />
+                    <MethodIcon style={{ width: "14px", height: "14px", color: item.color }} />
                   </div>
                 </div>
-                <p className="text-base font-bold font-editorial amount-editorial leading-tight">
+                <p
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    fontFamily: "Fraunces, Georgia, serif",
+                    color: "hsl(var(--foreground))",
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.2,
+                  }}
+                >
                   {formatFcfa(item.total)}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))" }}>
                   {item.count} transaction{item.count !== 1 ? "s" : ""}
                 </p>
               </div>

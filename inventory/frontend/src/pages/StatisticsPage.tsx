@@ -98,10 +98,11 @@ function KpiCard({ label, value, hint, changePct, icon: Icon, tint, isMoney = fa
       <div className="relative">
         {/* Icon */}
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shrink-0"
+          className="w-10 h-10 flex items-center justify-center mb-3 shrink-0"
           style={{
             background: `linear-gradient(135deg, ${g.from}, ${g.to})`,
-            boxShadow: `0 4px 12px ${g.shadow}`,
+            boxShadow: `0 4px 12px ${g.shadow}, inset 0 1px 0 rgba(255,255,255,0.15)`,
+            borderRadius: "14px",
           }}
         >
           <Icon className="w-4 h-4 text-white" />
@@ -214,18 +215,40 @@ interface PeriodSelectorProps {
 
 function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
   return (
-    <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary/60 border border-border">
+    <div className="flex items-center gap-1 p-1 bg-secondary/60 border border-border" style={{ borderRadius: "100px" }}>
       {PERIOD_OPTIONS.map(({ value: p, label }) => (
         <button
           key={p}
           onClick={() => onChange(p)}
           className={cn(
-            "px-3.5 py-1.5 rounded-lg text-xs font-semibold",
-            value === p
-              ? "bg-card shadow-sm text-foreground border border-border"
-              : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+            "px-3.5 py-1.5 text-xs font-semibold",
           )}
-          style={{ transition: "background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease" }}
+          style={{
+            borderRadius: "100px",
+            transition: "background 0.25s cubic-bezier(0.16,1,0.3,1), color 0.2s ease, box-shadow 0.25s ease",
+            ...(value === p
+              ? {
+                  background: "hsl(22 72% 48% / 0.15)",
+                  color: "hsl(22 72% 48%)",
+                  boxShadow: "0 1px 4px hsl(22 72% 48% / 0.15)",
+                }
+              : {
+                  background: "transparent",
+                  color: "hsl(var(--muted-foreground))",
+                }),
+          }}
+          onMouseEnter={(e) => {
+            if (value !== p) {
+              (e.currentTarget as HTMLButtonElement).style.background = "hsl(22 72% 48% / 0.08)";
+              (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--foreground))";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (value !== p) {
+              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--muted-foreground))";
+            }
+          }}
         >
           {label}
         </button>
@@ -255,28 +278,44 @@ interface TabNavProps {
 function TabNav({ active, onChange }: TabNavProps) {
   return (
     <div
-      className="flex items-center gap-1 p-1 rounded-xl overflow-x-auto mb-6"
+      className="flex items-center gap-1 p-1 overflow-x-auto mb-6"
       style={{
         background: "hsl(var(--muted))",
         border: "1px solid hsl(var(--border))",
+        borderRadius: "14px",
       }}
     >
       {TABS.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           onClick={() => onChange(id)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap shrink-0"
-          style={
-            active === id
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold whitespace-nowrap shrink-0"
+          style={{
+            borderRadius: "10px",
+            transition: "background 0.25s cubic-bezier(0.16,1,0.3,1), color 0.2s ease, box-shadow 0.25s ease",
+            ...(active === id
               ? {
-                  background: "hsl(var(--card))",
-                  color: "hsl(22 72% 48%)",
-                  boxShadow: "0 1px 4px hsl(22 30% 15% / 0.1)",
+                  background: "linear-gradient(135deg, hsl(22, 72%, 48%), hsl(36, 88%, 52%))",
+                  color: "white",
+                  boxShadow: "0 4px 12px hsl(22 72% 48% / 0.3)",
                 }
               : {
+                  background: "transparent",
                   color: "hsl(var(--muted-foreground))",
-                }
-          }
+                }),
+          }}
+          onMouseEnter={(e) => {
+            if (active !== id) {
+              (e.currentTarget as HTMLButtonElement).style.background = "hsl(22 72% 48% / 0.08)";
+              (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--foreground))";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (active !== id) {
+              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--muted-foreground))";
+            }
+          }}
         >
           <Icon className="w-4 h-4 shrink-0" />
           <span className="hidden sm:inline">{label}</span>
@@ -338,8 +377,8 @@ export default function StatisticsPage() {
         `}</style>
 
         {/* ── Decorative background orbs ── */}
-        <div aria-hidden className="pointer-events-none fixed top-16 right-8 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, hsl(22 72% 48% / 0.06) 0%, transparent 70%)", animation: "stats-float 4s ease-in-out infinite", zIndex: 0 }} />
-        <div aria-hidden className="pointer-events-none fixed bottom-24 left-12 w-48 h-48 rounded-full" style={{ background: "radial-gradient(circle, hsl(152 38% 38% / 0.05) 0%, transparent 70%)", animation: "stats-float 4s ease-in-out infinite 2s", zIndex: 0 }} />
+        <div aria-hidden className="pointer-events-none fixed top-16 right-8 w-72 h-72 rounded-full" style={{ background: "radial-gradient(circle, hsl(22 72% 48% / 0.07) 0%, transparent 68%)", animation: "stats-float 6s ease-in-out infinite", zIndex: -1 }} />
+        <div aria-hidden className="pointer-events-none fixed bottom-24 left-12 w-56 h-56 rounded-full" style={{ background: "radial-gradient(circle, hsl(152 38% 38% / 0.05) 0%, transparent 68%)", animation: "stats-float 6s ease-in-out infinite 3s", zIndex: -1 }} />
 
         {/* ── Premium page header ── */}
         <div className="mb-2">

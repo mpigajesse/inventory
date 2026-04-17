@@ -27,7 +27,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { exportSuppliers } from "@/lib/exportSuppliers";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supplierService } from "@/services/supplierService";
@@ -140,10 +139,11 @@ export default function SuppliersPage() {
             {can("manage_suppliers") && (
               <Button
                 size="sm"
-                className="h-9 rounded-lg text-white font-semibold shadow-md transition-all hover:brightness-105 hover:-translate-y-px border-0"
+                className="h-9 text-white font-semibold transition-all hover:brightness-105 hover:-translate-y-px border-0"
                 style={{
                   background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                  boxShadow: "0 4px 14px hsl(22 72% 48% / 0.3)",
+                  boxShadow: "0 4px 16px hsl(22 72% 48% / 0.38), 0 1px 3px hsl(22 72% 48% / 0.2)",
+                  borderRadius: "10px",
                 }}
                 onClick={() => navigate("/suppliers/new")}
               >
@@ -183,7 +183,7 @@ export default function SuppliersPage() {
 
         {/* ── Supplier Cards ──────────────────────────────────────────── */}
         {!isLoading && suppliers.length > 0 && (
-          <div key={search} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div key={search} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: "1.25rem" }}>
             {suppliers.map((supplier, index) => {
               const ordersCount = supplier.orders_count ?? 0;
               const isActive = ordersCount > 0;
@@ -285,17 +285,18 @@ function SupplierCard({
 
   function handleMouseLeave(e: React.MouseEvent<HTMLDivElement>) {
     e.currentTarget.style.transform = "translateY(0)";
-    e.currentTarget.style.boxShadow = "0 2px 8px hsl(22 30% 15% / 0.06)";
-    e.currentTarget.style.borderColor = "hsl(var(--border))";
+    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)";
+    e.currentTarget.style.borderColor = "hsl(var(--border) / 0.6)";
   }
 
   return (
     <div
-      className="group flex flex-col rounded-2xl p-5"
+      className="group flex flex-col p-5"
       style={{
         background: "hsl(var(--card))",
-        border: "1px solid hsl(var(--border))",
-        boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+        border: "1px solid hsl(var(--border) / 0.6)",
+        borderRadius: "20px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
         animation: "slideInUp 0.35s ease forwards",
         animationDelay: `${animationDelay}ms`,
         opacity: 0,
@@ -309,9 +310,13 @@ function SupplierCard({
         <div className="flex items-center gap-3 min-w-0">
           {/* Avatar initiales */}
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
+            className="flex items-center justify-center text-white font-bold text-base flex-shrink-0"
             style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "14px",
               background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+              boxShadow: "0 2px 8px hsl(22 72% 48% / 0.25)",
             }}
           >
             {initials}
@@ -327,11 +332,34 @@ function SupplierCard({
         </div>
 
         <div className="flex items-center gap-1 shrink-0 ml-2">
-          {/* Badge statut */}
-          <StatusBadge
-            label={isActive ? "Actif" : "Inactif"}
-            variant={isActive ? "success" : "default"}
-          />
+          {/* Badge statut amélioré */}
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold"
+            style={{
+              borderRadius: "8px",
+              background: isActive
+                ? "hsl(152 38% 38% / 0.12)"
+                : "hsl(220 14% 60% / 0.12)",
+              color: isActive ? "hsl(152 38% 32%)" : "hsl(220 14% 46%)",
+            }}
+          >
+            {isActive ? (
+              <span
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{
+                  background: "hsl(152 38% 38%)",
+                  boxShadow: "0 0 0 0 hsl(152 38% 38% / 0.4)",
+                  animation: "supplierPulse 2s ease-in-out infinite",
+                }}
+              />
+            ) : (
+              <span
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ background: "hsl(220 14% 60%)" }}
+              />
+            )}
+            {isActive ? "Actif" : "Inactif"}
+          </span>
           {/* Actions (visibles au hover si gestionnaire) */}
           {canManage && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ml-1">
@@ -413,20 +441,30 @@ function SupplierCard({
 
         {/* Balance si disponible */}
         {supplier.balance !== undefined && supplier.balance !== 0 && (
-          <span
-            className="text-xs font-bold tabular-nums"
-            style={{
-              fontFamily: "Fraunces, serif",
-              color:
-                supplier.balance > 0
-                  ? "hsl(152 38% 38%)"
-                  : "hsl(4 72% 52%)",
-              transition: "color 0.3s ease",
-            }}
-          >
-            {supplier.balance > 0 ? "+" : ""}
-            {supplier.balance.toLocaleString("fr-FR")} FCFA
-          </span>
+          supplier.balance > 0 ? (
+            <span
+              className="text-xs font-bold tabular-nums"
+              style={{
+                fontFamily: "Fraunces, serif",
+                background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              +{supplier.balance.toLocaleString("fr-FR")} FCFA
+            </span>
+          ) : (
+            <span
+              className="text-xs font-bold tabular-nums"
+              style={{
+                fontFamily: "Fraunces, serif",
+                color: "hsl(4 72% 52%)",
+              }}
+            >
+              {supplier.balance.toLocaleString("fr-FR")} FCFA
+            </span>
+          )
         )}
       </div>
     </div>
