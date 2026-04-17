@@ -1,6 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -137,7 +138,7 @@ interface SettingsSectionProps {
   title: string;
   description?: string;
   children: React.ReactNode;
-  animationDelay?: string;
+  animationStyle?: React.CSSProperties;
 }
 
 function SettingsSection({
@@ -145,16 +146,15 @@ function SettingsSection({
   title,
   description,
   children,
-  animationDelay,
+  animationStyle,
 }: SettingsSectionProps) {
   return (
     <section
-      className="rounded-2xl overflow-hidden mb-5 animate-fade-scale opacity-0"
+      className="rounded-2xl overflow-hidden mb-5"
       style={{
         border: "1px solid hsl(var(--border))",
         boxShadow: "0 2px 10px hsl(22 30% 15% / 0.07)",
-        animationFillMode: "forwards",
-        animationDelay: animationDelay ?? "0ms",
+        ...animationStyle,
       }}
       aria-labelledby={`section-${title}`}
     >
@@ -205,10 +205,36 @@ const DEFAULT_POS_SETTINGS: PosSettingsFormValues = {
 const FIELD_LABEL_CLASSES =
   "text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.14em]";
 
+function useSettingsStagger(count: number, initialDelay = 0, step = 90) {
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < count; i++) {
+      timers.push(
+        setTimeout(() => setVisibleCount((prev) => Math.max(prev, i + 1)), initialDelay + i * step)
+      );
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [count, initialDelay, step]);
+
+  return visibleCount;
+}
+
+function settingsSectionStyle(index: number, visibleCount: number): React.CSSProperties {
+  const visible = visibleCount > index;
+  return {
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0)" : "translateY(10px)",
+    transition: "opacity 380ms cubic-bezier(0.16, 1, 0.3, 1), transform 380ms cubic-bezier(0.16, 1, 0.3, 1)",
+  };
+}
+
 export default function SettingsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const { theme, setTheme, displayMode, setDisplayMode } = useTheme();
   const { can } = usePermissions();
+  const visibleCount = useSettingsStagger(2);
 
   const {
     register,
@@ -256,7 +282,7 @@ export default function SettingsPage() {
             icon={<Palette />}
             title="Apparence"
             description="Personnalisez les couleurs et le mode d'affichage de l'interface."
-            animationDelay="80ms"
+            animationStyle={settingsSectionStyle(0, visibleCount)}
           >
             {/* Theme palette grid */}
             <h3 className={`${FIELD_LABEL_CLASSES} mb-3`}>Thème de couleurs</h3>
@@ -276,11 +302,12 @@ export default function SettingsPage() {
                     aria-checked={isActive}
                     aria-label={`Thème ${option.label}`}
                     className={[
-                      "group relative flex flex-col items-center gap-3 p-4 min-h-[112px] rounded-xl border-2 bg-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      "group relative flex flex-col items-center gap-3 p-4 min-h-[112px] rounded-xl border-2 bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       isActive
                         ? "border-primary shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.45)] bg-primary/[0.04]"
                         : "border-border hover:border-primary/50 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5",
                     ].join(" ")}
+                    style={{ transition: "transform 0.15s ease, box-shadow 0.2s ease, border-color 0.15s ease" }}
                   >
                     {/* Color swatch */}
                     <div className="relative">
@@ -350,7 +377,7 @@ export default function SettingsPage() {
             icon={<Printer />}
             title="Configuration caisse"
             description="Paramètres de facturation, impression de ticket et numérotation."
-            animationDelay="220ms"
+            animationStyle={settingsSectionStyle(1, visibleCount)}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-1.5">
@@ -413,7 +440,13 @@ export default function SettingsPage() {
           </SettingsSection>
 
           {/* ── Sticky save bar ── */}
-          <div className="sticky bottom-0 -mx-4 sm:mx-0 sm:static sm:rounded-2xl backdrop-blur-md bg-card/80 supports-[backdrop-filter]:bg-card/75 border-t sm:border sm:border-border/70 shadow-[0_-8px_24px_-12px_rgba(120,60,20,0.15)] sm:shadow-none px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
+          <div
+            className="sticky bottom-0 -mx-4 sm:mx-0 sm:static sm:rounded-2xl backdrop-blur-md bg-card/80 supports-[backdrop-filter]:bg-card/75 border-t sm:border sm:border-border/70 shadow-[0_-8px_24px_-12px_rgba(120,60,20,0.15)] sm:shadow-none px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3"
+            style={{
+              transform: isDirty ? "translateY(0)" : "translateY(100%)",
+              transition: "transform 0.3s ease",
+            }}
+          >
             <Button
               type="button"
               variant="outline"

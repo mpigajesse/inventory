@@ -234,6 +234,8 @@ export default function PosPage() {
   const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
   const [currentTicket, setCurrentTicket] = useState({ number: "", date: "", time: "" });
   const [flashItem, setFlashItem] = useState<number | null>(null);
+  const [newlyAdded, setNewlyAdded] = useState<Set<number>>(new Set());
+  const [removing, setRemoving] = useState<Set<number>>(new Set());
 
   const searchRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -329,6 +331,15 @@ export default function PosPage() {
     });
     setFlashItem(product.id);
     setTimeout(() => setFlashItem(null), 600);
+    // Entrance animation: mark as newly added then remove after 300ms
+    setNewlyAdded(prev => new Set(prev).add(product.id));
+    setTimeout(() => {
+      setNewlyAdded(prev => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }, 300);
     setMobileTab("cart");
 
     if (product.stock_quantity < 1) {
@@ -400,7 +411,15 @@ export default function PosPage() {
   };
 
   const removeItem = (id: number) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+    setRemoving(prev => new Set(prev).add(id));
+    setTimeout(() => {
+      setCart(prev => prev.filter(item => item.id !== id));
+      setRemoving(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 200);
   };
 
   // ─── Payment confirmation ─────────────────────────────────────────────────
@@ -453,7 +472,12 @@ export default function PosPage() {
         <Topbar title="Point de vente" subtitle="Caisse rapide" onMenuClick={onMenuClick} />
 
         <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto bg-gradient-to-br from-[hsl(var(--background))] via-[hsl(var(--muted))]/40 to-[hsl(var(--accent))]/10">
-          <div className="w-full max-w-sm animate-slide-in">
+          <div
+            className="w-full max-w-sm"
+            style={{
+              animation: "pos-success-in 350ms ease-out both",
+            }}
+          >
 
             <div className="text-center mb-5">
               <div className="relative inline-flex mb-3">
@@ -655,7 +679,7 @@ export default function PosPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {catalog.map(product => {
+                {catalog.map((product, index) => {
                   const isOut = product.stock_quantity === 0;
                   const isLow = product.stock_quantity > 0 && product.stock_quantity <= 5;
                   return (
@@ -665,7 +689,7 @@ export default function PosPage() {
                       disabled={isOut}
                       title={isOut ? "Rupture de stock" : product.name}
                       className={cn(
-                        "group relative rounded-xl p-3 text-left cursor-pointer transition-all duration-200",
+                        "group relative rounded-xl p-3 text-left cursor-pointer transition-all duration-200 animate-slide-in",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]",
                         isOut
                           ? "opacity-50 cursor-not-allowed"
@@ -675,6 +699,7 @@ export default function PosPage() {
                         background: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
                         boxShadow: "0 1px 3px hsl(22 30% 15% / 0.06)",
+                        animationDelay: `${index * 40}ms`,
                       }}
                       onMouseEnter={e => {
                         if (isOut) return;
@@ -859,11 +884,13 @@ export default function PosPage() {
                 {cart.map(item => {
                   const lineTotal = item.price * item.qty;
                   const hasWarning = item.qty > item.stock;
+                  const isNew = newlyAdded.has(item.id);
+                  const isRemoving = removing.has(item.id);
                   return (
                     <div
                       key={item.id}
                       className={cn(
-                        "group flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
+                        "group flex items-center gap-3 p-3 rounded-xl",
                         flashItem === item.id && "scale-[1.01]"
                       )}
                       style={{
@@ -877,6 +904,16 @@ export default function PosPage() {
                           : hasWarning
                           ? "1px solid rgba(234,179,8,0.25)"
                           : "1px solid rgba(255,255,255,0.07)",
+                        transition: "opacity 200ms ease-out, transform 200ms ease-out, background 200ms ease, border-color 200ms ease",
+                        opacity: isRemoving ? 0 : 1,
+                        transform: isNew
+                          ? "translateX(0)"
+                          : isRemoving
+                          ? "translateX(12px)"
+                          : "translateX(0)",
+                        ...(isNew && {
+                          animation: "pos-cart-in 250ms ease-out both",
+                        }),
                       }}
                     >
                       {/* Icon */}
@@ -988,6 +1025,7 @@ export default function PosPage() {
                         WebkitBackgroundClip: "text",
                         WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
+                        transition: "all 0.3s ease",
                       }}
                     >
                       {total.toLocaleString("fr-FR")} <span style={{ fontSize: "1.1rem" }}>FCFA</span>
@@ -997,7 +1035,7 @@ export default function PosPage() {
                   {/* Valider button */}
                   <button
                     onClick={() => setShowPayment(true)}
-                    className="w-full transition-all active:scale-[0.98]"
+                    className="w-full active:scale-[0.98]"
                     style={{
                       background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                       boxShadow: "0 4px 20px hsl(22 72% 48% / 0.4)",
@@ -1013,9 +1051,11 @@ export default function PosPage() {
                       alignItems: "center",
                       justifyContent: "center",
                       gap: "0.5rem",
+                      transition: "box-shadow 200ms ease, transform 200ms ease",
+                      animation: cart.length > 0 ? "pulse-subtle 2s ease-in-out infinite" : "none",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 28px hsl(22 72% 48% / 0.55)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px hsl(22 72% 48% / 0.4)"; e.currentTarget.style.transform = "translateY(0)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 28px hsl(22 72% 48% / 0.55)"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.animationPlayState = "paused"; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px hsl(22 72% 48% / 0.4)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.animationPlayState = "running"; }}
                   >
                     <Banknote className="w-5 h-5" />
                     Encaisser · {total.toLocaleString("fr-FR")} F

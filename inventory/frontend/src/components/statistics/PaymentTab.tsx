@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   PieChart,
@@ -133,6 +133,25 @@ export function PaymentTab({ period }: PaymentTabProps) {
     queryFn: () => statisticsService.getPaymentMethods({ period }),
   });
 
+  // Entrance animation state
+  const [pieVisible, setPieVisible] = useState(false);
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [cardsVisible, setCardsVisible] = useState(false);
+  const [barVisible, setBarVisible] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPieVisible(true), 30);
+    const t2 = setTimeout(() => setDetailVisible(true), 150);
+    const t3 = setTimeout(() => setCardsVisible(true), 200);
+    const t4 = setTimeout(() => setBarVisible(true), 300);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24 gap-3 text-muted-foreground">
@@ -168,7 +187,14 @@ export function PaymentTab({ period }: PaymentTabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Pie chart */}
-        <div className="card-premium p-6">
+        <div
+          className="card-premium p-6"
+          style={{
+            opacity: pieVisible ? 1 : 0,
+            transform: pieVisible ? "translateY(0)" : "translateY(12px)",
+            transition: "opacity 0.4s ease, transform 0.4s ease",
+          }}
+        >
           <div className="flex items-center gap-2 mb-5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <CreditCard className="w-4 h-4 text-primary" />
@@ -217,7 +243,14 @@ export function PaymentTab({ period }: PaymentTabProps) {
         </div>
 
         {/* Détail par méthode */}
-        <div className="card-premium p-6">
+        <div
+          className="card-premium p-6"
+          style={{
+            opacity: detailVisible ? 1 : 0,
+            transform: detailVisible ? "translateY(0)" : "translateY(12px)",
+            transition: "opacity 0.4s ease, transform 0.4s ease",
+          }}
+        >
           <div className="flex items-center gap-2 mb-5">
             <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
               <ShoppingCart className="w-4 h-4 text-accent" />
@@ -235,12 +268,18 @@ export function PaymentTab({ period }: PaymentTabProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {pieData.map((item) => {
+              {pieData.map((item, idx) => {
                 const MethodIcon = getMethodIcon(item.method);
                 return (
                   <div
                     key={item.method}
                     className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/30 transition-colors"
+                    style={{
+                      opacity: detailVisible ? 1 : 0,
+                      transform: detailVisible ? "translateY(0)" : "translateY(5px)",
+                      transition: `opacity 0.35s ease, transform 0.35s ease`,
+                      transitionDelay: `${idx * 60}ms`,
+                    }}
                   >
                     {/* Icône colorée */}
                     <div
@@ -270,11 +309,18 @@ export function PaymentTab({ period }: PaymentTabProps) {
                         </span>
                       </div>
 
-                      {/* Barre de progression */}
+                      {/* Barre de progression animée */}
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-1.5">
                         <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${item.pct}%`, background: item.color }}
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${item.pct}%`,
+                            background: item.color,
+                            transform: barVisible ? "scaleX(1)" : "scaleX(0)",
+                            transformOrigin: "left",
+                            transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+                            transitionDelay: `${idx * 80}ms`,
+                          }}
                         />
                       </div>
 
@@ -296,12 +342,18 @@ export function PaymentTab({ period }: PaymentTabProps) {
       {/* ── Cartes résumé ── */}
       {methods.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {pieData.map((item) => {
+          {pieData.map((item, idx) => {
             const MethodIcon = getMethodIcon(item.method);
             return (
               <div
                 key={item.method}
                 className="card-premium p-4 flex flex-col gap-2"
+                style={{
+                  opacity: cardsVisible ? 1 : 0,
+                  transform: cardsVisible ? "translateY(0)" : "translateY(12px)",
+                  transition: `opacity 0.4s ease, transform 0.4s ease`,
+                  transitionDelay: `${idx * 60}ms`,
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">

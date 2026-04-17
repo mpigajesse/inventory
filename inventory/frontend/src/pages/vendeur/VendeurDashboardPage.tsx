@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -11,6 +12,9 @@ import {
   UserCheck,
   ShoppingBag,
   Zap,
+  Sun,
+  Sunset,
+  Moon,
 } from "lucide-react";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -47,6 +51,13 @@ function getGreeting(date: Date): string {
   if (h < 12) return "Bonjour";
   if (h < 18) return "Bon après-midi";
   return "Bonsoir";
+}
+
+function getGreetingIcon(date: Date): React.ComponentType<{ className?: string; strokeWidth?: number }> {
+  const h = date.getHours();
+  if (h < 12) return Sun;
+  if (h < 18) return Sunset;
+  return Moon;
 }
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
@@ -145,6 +156,9 @@ const mesDerniereVentes = [
   { id: "VNT-019", heure: "09:32", articles: 3, total: "45 000 FCFA" },
 ];
 
+// Easing for entrance animations
+const ENTRANCE_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function VendeurDashboardPage() {
@@ -152,11 +166,19 @@ export default function VendeurDashboardPage() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
+  // Mount flag drives all entrance animations
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const today = new Date();
   const fullName = currentUser?.name;
   const firstName = getFirstName(fullName);
   const initials = getInitials(fullName);
   const greeting = getGreeting(today);
+  const GreetingIcon = getGreetingIcon(today);
 
   return (
     <>
@@ -168,9 +190,16 @@ export default function VendeurDashboardPage() {
 
       <div className="page-container animate-slide-in">
 
-        {/* ── Salutation personnalisée ── */}
+        {/* ── Salutation personnalisée — entrance from left ── */}
         <div className="mb-7">
-          <div className="flex items-center gap-4">
+          <div
+            className="flex items-center gap-4"
+            style={{
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? "translateX(0)" : "translateX(-12px)",
+              transition: `opacity 400ms ${ENTRANCE_EASE}, transform 400ms ${ENTRANCE_EASE}`,
+            }}
+          >
             {/* Avatar */}
             <div
               className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-lg shrink-0"
@@ -192,10 +221,11 @@ export default function VendeurDashboardPage() {
             {/* Text */}
             <div className="min-w-0">
               <p
-                className="text-[11px] font-bold uppercase tracking-[0.14em] mb-0.5"
+                className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.14em] mb-0.5"
                 style={{ color: "hsl(var(--primary))" }}
               >
-                {greeting} 👋
+                <GreetingIcon className="w-5 h-5 shrink-0" strokeWidth={1.75} />
+                {greeting}
               </p>
               <h1
                 className="text-xl md:text-2xl font-extrabold font-heading tracking-tight truncate"
@@ -209,18 +239,20 @@ export default function VendeurDashboardPage() {
           </div>
         </div>
 
-        {/* ── KPI cards ── */}
+        {/* ── KPI cards — stagger in ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
           {vendeurKpis.map((kpi, index) => {
             const Icon = kpi.icon;
             const t = tintStyles[kpi.tint];
+            const delay = 200 + index * 80;
             return (
               <div
                 key={kpi.label}
                 className="relative overflow-hidden rounded-2xl border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                 style={{
-                  animation: "fadeScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
-                  animationDelay: `${index * 60}ms`,
+                  opacity: mounted ? 1 : 0,
+                  transform: mounted ? "translateY(0)" : "translateY(12px)",
+                  transition: `opacity 400ms ${ENTRANCE_EASE} ${delay}ms, transform 400ms ${ENTRANCE_EASE} ${delay}ms`,
                   boxShadow:
                     "0 1px 2px hsl(20 25% 12% / 0.04), 0 2px 12px hsl(22 72% 48% / 0.04)",
                 }}
@@ -292,13 +324,16 @@ export default function VendeurDashboardPage() {
           })}
         </div>
 
-        {/* ── CTA Caisse ── */}
+        {/* ── CTA Caisse — slides up with delay ── */}
         <div
           className="relative overflow-hidden rounded-2xl p-6 md:p-8 mb-7"
           style={{
             background:
               "linear-gradient(135deg, hsl(20 30% 8%), hsl(22 26% 13%))",
             boxShadow: "0 4px 24px hsl(0 0% 0% / 0.18)",
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "translateY(0)" : "translateY(16px)",
+            transition: `opacity 400ms ${ENTRANCE_EASE} 400ms, transform 400ms ${ENTRANCE_EASE} 400ms`,
           }}
         >
           {/* Decorative glow */}
@@ -353,13 +388,13 @@ export default function VendeurDashboardPage() {
               </div>
             </div>
 
+            {/* Caisse CTA button — pulsing glow */}
             <button
               onClick={() => navigate("/vendeur/pos")}
-              className="group inline-flex items-center justify-center gap-2 shrink-0 font-bold text-[15px] text-white rounded-xl px-6 py-3.5 transition-all active:scale-[0.97]"
+              className="group inline-flex items-center justify-center gap-2 shrink-0 font-bold text-[15px] text-white rounded-xl px-6 py-3.5 transition-all active:scale-[0.97] animate-glow-pulse"
               style={{
                 background:
                   "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                boxShadow: "0 4px 20px hsl(22 72% 48% / 0.45)",
               }}
             >
               <ShoppingCart className="w-4.5 h-4.5" strokeWidth={2.2} />
@@ -403,33 +438,40 @@ export default function VendeurDashboardPage() {
               <>
                 {/* Mobile cards */}
                 <div className="md:hidden divide-y">
-                  {mesDerniereVentes.map((vente) => (
-                    <div
-                      key={vente.id}
-                      className="p-4 flex items-start justify-between gap-3 hover:bg-primary/5 transition-colors cursor-pointer"
-                      onClick={() => navigate("/invoices")}
-                    >
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                          <ShoppingBag className="w-4 h-4 text-primary" />
+                  {mesDerniereVentes.map((vente, index) => {
+                    const rowDelay = 200 + index * 40;
+                    return (
+                      <div
+                        key={vente.id}
+                        className="p-4 flex items-start justify-between gap-3 hover:bg-primary/5 transition-colors cursor-pointer"
+                        style={{
+                          opacity: mounted ? 1 : 0,
+                          transition: `opacity 300ms ease ${rowDelay}ms`,
+                        }}
+                        onClick={() => navigate("/invoices")}
+                      >
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                            <ShoppingBag className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">
+                              {vente.id}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                              {vente.heure} ·{" "}
+                              {vente.articles} article
+                              {vente.articles !== 1 ? "s" : ""}
+                            </p>
+                            <p className="text-sm font-bold mt-1 tabular-nums">
+                              {vente.total}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">
-                            {vente.id}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                            {vente.heure} ·{" "}
-                            {vente.articles} article
-                            {vente.articles !== 1 ? "s" : ""}
-                          </p>
-                          <p className="text-sm font-bold mt-1 tabular-nums">
-                            {vente.total}
-                          </p>
-                        </div>
+                        <StatusBadge label="Terminée" variant="success" />
                       </div>
-                      <StatusBadge label="Terminée" variant="success" />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Desktop table */}
@@ -445,30 +487,37 @@ export default function VendeurDashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mesDerniereVentes.map((vente) => (
-                        <tr
-                          key={vente.id}
-                          className="hover:bg-primary/5 transition-colors cursor-pointer"
-                          onClick={() => navigate("/invoices")}
-                        >
-                          <td>
-                            <div className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                              <span className="font-semibold">{vente.id}</span>
-                            </div>
-                          </td>
-                          <td className="text-muted-foreground tabular-nums">
-                            {vente.heure}
-                          </td>
-                          <td className="tabular-nums">{vente.articles}</td>
-                          <td className="font-semibold tabular-nums text-right">
-                            {vente.total}
-                          </td>
-                          <td>
-                            <StatusBadge label="Terminée" variant="success" />
-                          </td>
-                        </tr>
-                      ))}
+                      {mesDerniereVentes.map((vente, index) => {
+                        const rowDelay = 200 + index * 40;
+                        return (
+                          <tr
+                            key={vente.id}
+                            className="hover:bg-primary/5 transition-colors cursor-pointer"
+                            style={{
+                              opacity: mounted ? 1 : 0,
+                              transition: `opacity 300ms ease ${rowDelay}ms`,
+                            }}
+                            onClick={() => navigate("/invoices")}
+                          >
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                                <span className="font-semibold">{vente.id}</span>
+                              </div>
+                            </td>
+                            <td className="text-muted-foreground tabular-nums">
+                              {vente.heure}
+                            </td>
+                            <td className="tabular-nums">{vente.articles}</td>
+                            <td className="font-semibold tabular-nums text-right">
+                              {vente.total}
+                            </td>
+                            <td>
+                              <StatusBadge label="Terminée" variant="success" />
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

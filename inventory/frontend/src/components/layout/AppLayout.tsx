@@ -65,9 +65,10 @@ export function AppLayout() {
         {/* Spacer — only rendered on md+ to reserve sidebar space */}
         <div
           className={[
-            "hidden md:block shrink-0 transition-all duration-200",
+            "hidden md:block shrink-0",
             collapsed ? "w-[64px]" : "w-[256px]",
           ].join(" ")}
+          style={{ transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
         />
         <main
           className="flex flex-col flex-1 h-screen min-w-0 max-w-full overflow-x-hidden overflow-y-auto"

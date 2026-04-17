@@ -1278,6 +1278,33 @@ html.theme-couchant {
   }
 }
 
+@keyframes pulse-subtle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+@keyframes pos-success-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pos-cart-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @keyframes pulseSoft {
   0%, 100% {
     box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35);
@@ -1290,6 +1317,11 @@ html.theme-couchant {
 @keyframes shimmerBar {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px hsl(22 72% 48% / 0.4); }
+  50%       { box-shadow: 0 0 24px hsl(22 72% 48% / 0.7); }
 }
 
 @keyframes gradientPulse {
@@ -1313,6 +1345,7 @@ html.theme-couchant {
   .animate-fade-scale-out { animation: fadeScaleOut 0.2s ease-in both; }
   .animate-count-up       { animation: countUp 0.55s var(--ease-out-expo) both; }
   .animate-pulse-soft     { animation: pulseSoft 2s ease-out infinite; }
+  .animate-glow-pulse     { animation: glow-pulse 2.5s ease-in-out infinite; }
 
   .skeleton-shimmer {
     background: linear-gradient(
@@ -1671,6 +1704,81 @@ html.theme-couchant {
 @keyframes skeleton-shimmer {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.5; }
+}
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes scaleInX {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes stockBarGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes invoiceDetailIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Activity log keyframes ─────────────────────────────────────────────── */
+@keyframes activityRowIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes mobileGroupIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes mobileRowIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes dateDividerIn {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ── 404 NotFound keyframes ──────────────────────────────────────────────── */
+@keyframes notFound404In {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes notFoundSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes notFoundFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Barcode card stagger keyframes ─────────────────────────────────────── */
+@keyframes barcodeCardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── ProductFormPage keyframes ───────────────────────────────────────────── */
+@keyframes fieldErrorIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes imageReveal {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── LoginPage keyframes ─────────────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
 }
 
 @layer utilities {

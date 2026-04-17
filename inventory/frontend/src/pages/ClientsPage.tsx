@@ -290,7 +290,7 @@ export default function ClientsPage() {
         </div>
 
         {/* ── Search bar ──────────────────────────────────────────────────── */}
-        <div className="mb-5">
+        <div className="mb-5" style={{ transition: "opacity 0.2s ease" }}>
           <SearchInput
             placeholder="Rechercher un client par nom, téléphone ou email..."
             value={search}
@@ -326,13 +326,14 @@ export default function ClientsPage() {
                   <th className="px-4 py-3 text-right text-muted-foreground">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody key={search}>
                 {isLoading
                   ? [1, 2, 3, 4, 5, 6].map((i) => <TableRowSkeleton key={i} />)
-                  : clients.map((client) => (
+                  : clients.map((client, index) => (
                       <ClientRow
                         key={client.id}
                         client={client}
+                        index={index}
                         canManage={can("manage_clients")}
                         onHistory={() => setHistoryClient(client)}
                         onEdit={() => navigate(`/clients/${client.id}/edit`)}
@@ -397,13 +398,14 @@ export default function ClientsPage() {
 
 interface ClientRowProps {
   client: Client;
+  index: number;
   canManage: boolean;
   onHistory: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function ClientRow({ client, canManage, onHistory, onEdit, onDelete }: ClientRowProps) {
+function ClientRow({ client, index, canManage, onHistory, onEdit, onDelete }: ClientRowProps) {
   const [hovered, setHovered] = useState(false);
 
   const creditBalance = client.credit_balance ?? 0;
@@ -411,7 +413,12 @@ function ClientRow({ client, canManage, onHistory, onEdit, onDelete }: ClientRow
   return (
     <tr
       className="group border-b border-border/60 transition-colors"
-      style={{ background: hovered ? "hsl(22 72% 48% / 0.03)" : "transparent" }}
+      style={{
+        background: hovered ? "hsl(22 72% 48% / 0.03)" : "transparent",
+        animation: "slideInUp 0.3s ease forwards",
+        animationDelay: `${index * 45}ms`,
+        opacity: 0,
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -422,6 +429,9 @@ function ClientRow({ client, canManage, onHistory, onEdit, onDelete }: ClientRow
             className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
             style={{
               background: `linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))`,
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              transform: hovered ? "scale(1.08)" : "scale(1)",
+              boxShadow: hovered ? "0 4px 12px hsl(22 72% 48% / 0.35)" : "none",
             }}
           >
             {initials(client.name)}
@@ -473,13 +483,23 @@ function ClientRow({ client, canManage, onHistory, onEdit, onDelete }: ClientRow
       <td className="px-4 py-3.5 hidden lg:table-cell">
         {creditBalance > 0 ? (
           <span
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold overflow-hidden"
             style={{
               background: "hsl(4 72% 52% / 0.1)",
               color: "hsl(4 72% 52%)",
             }}
           >
-            ↑ {creditBalance.toLocaleString("fr-FR")} FCFA dû
+            <span
+              className="inline-block"
+              style={{
+                transformOrigin: "left",
+                animation: `scaleInX 0.5s ease-out forwards`,
+                animationDelay: `${index * 45 + 120}ms`,
+                transform: "scaleX(0)",
+              }}
+            >
+              ↑ {creditBalance.toLocaleString("fr-FR")} FCFA dû
+            </span>
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">—</span>

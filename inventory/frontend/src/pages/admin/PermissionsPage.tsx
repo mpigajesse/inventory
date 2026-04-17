@@ -102,6 +102,8 @@ function getInitials(name: string): string {
 
 // ─── Row component ────────────────────────────────────────────────────────────
 
+const NUM_COLS = PERMISSIONS.length;
+
 interface UserRowProps {
   user: UserListItem;
   draft: Set<Permission>;
@@ -116,11 +118,21 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
   const displayName = user.full_name || user.username;
   const initials = getInitials(displayName);
   const isEven = rowIndex % 2 === 0;
+  const [pressingKey, setPressingKey] = useState<string | null>(null);
+
+  function handleToggleWithFeedback(userId: number, perm: Permission) {
+    setPressingKey(perm);
+    setTimeout(() => setPressingKey(null), 150);
+    onToggle(userId, perm);
+  }
 
   return (
     <tr
-      className="transition-colors group"
-      style={{ background: isEven ? "transparent" : "hsl(22 72% 48% / 0.015)" }}
+      className="group"
+      style={{
+        background: isEven ? "transparent" : "hsl(22 72% 48% / 0.015)",
+        transition: "background 0.15s ease",
+      }}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = "hsl(22 72% 48% / 0.04)";
       }}
@@ -187,13 +199,20 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
       </td>
 
       {/* Permission toggles */}
-      {PERMISSIONS.map((perm) => {
+      {PERMISSIONS.map((perm, colIndex) => {
         const isChecked = isAdmin || draft.has(perm.key);
+        const isPressing = pressingKey === perm.key;
+        const staggerDelay = (rowIndex * NUM_COLS + colIndex) * 25;
         return (
           <td
             key={perm.key}
             className="text-center px-2 py-3"
-            style={{ borderBottom: "1px solid hsl(var(--border) / 0.6)" }}
+            style={{
+              borderBottom: "1px solid hsl(var(--border) / 0.6)",
+              opacity: 0,
+              animation: "permFadeIn 0.2s ease forwards",
+              animationDelay: `${staggerDelay}ms`,
+            }}
           >
             <div className="flex justify-center">
               {isAdmin ? (
@@ -216,8 +235,8 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
                 </Tooltip>
               ) : (
                 <button
-                  onClick={() => onToggle(user.id, perm.key)}
-                  className="w-5 h-5 rounded-md flex items-center justify-center transition-all focus:outline-none focus-visible:ring-2"
+                  onClick={() => handleToggleWithFeedback(user.id, perm.key)}
+                  className="w-5 h-5 rounded-md flex items-center justify-center focus:outline-none focus-visible:ring-2"
                   style={{
                     background: isChecked ? "hsl(22 72% 48%)" : "hsl(var(--muted))",
                     border: isChecked
@@ -226,6 +245,8 @@ function UserRow({ user, draft, isModified, rowIndex, onToggle, onApplyPreset }:
                     boxShadow: isChecked
                       ? "0 2px 6px hsl(22 72% 48% / 0.3)"
                       : "none",
+                    transform: isPressing ? "scale(0.9)" : "scale(1)",
+                    transition: "transform 0.1s ease, background 0.15s ease, box-shadow 0.15s ease",
                   }}
                   aria-label={perm.label}
                   aria-pressed={isChecked}
@@ -477,6 +498,12 @@ export default function PermissionsPage() {
 
   return (
     <>
+      <style>{`
+        @keyframes permFadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <Topbar
         title="Gestion des permissions"
         subtitle="Attribuez les accès par utilisateur"
@@ -616,7 +643,7 @@ export default function PermissionsPage() {
                 </th>
 
                 {/* Permission columns */}
-                {PERMISSIONS.map((perm) => {
+                {PERMISSIONS.map((perm, colIndex) => {
                   const Icon = perm.icon;
                   return (
                     <th
@@ -626,6 +653,9 @@ export default function PermissionsPage() {
                         background: "hsl(var(--muted))",
                         borderBottom: "1px solid hsl(var(--border))",
                         minWidth: "76px",
+                        opacity: 0,
+                        animation: "permFadeIn 0.25s ease forwards",
+                        animationDelay: `${colIndex * 60}ms`,
                       }}
                     >
                       <Tooltip>
@@ -743,23 +773,55 @@ export default function PermissionsPage() {
           </div>
         )}
 
-        {/* ── Bulk save button ─────────────────────────────────────────── */}
-        {pendingCount > 0 && (
-          <div className="flex justify-end">
+        {/* ── Bulk save bar (slides up from bottom) ───────────────────── */}
+        <div
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            display: "flex",
+            justifyContent: "center",
+            padding: "0 1rem 1rem",
+            transform: pendingCount > 0 ? "translateY(0)" : "translateY(100%)",
+            transition: "transform 0.3s ease",
+            pointerEvents: pendingCount > 0 ? "auto" : "none",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: "14px",
+              padding: "0.75rem 1.25rem",
+              boxShadow: "0 8px 32px hsl(22 30% 15% / 0.18)",
+            }}
+          >
+            <span
+              className="text-xs font-semibold"
+              style={{ color: "hsl(22 72% 40%)" }}
+            >
+              {pendingCount} modification{pendingCount > 1 ? "s" : ""} en attente
+            </span>
             <button
               onClick={handleSaveAll}
               disabled={saveBulkMutation.isPending}
-              className="flex items-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                 boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
                 color: "white",
                 border: "none",
-                borderRadius: "10px",
-                padding: "0.625rem 1.5rem",
+                borderRadius: "8px",
+                padding: "0.5rem 1.25rem",
                 fontWeight: "600",
-                fontSize: "0.875rem",
+                fontSize: "0.8125rem",
                 cursor: "pointer",
+                transition: "opacity 0.2s ease",
               }}
             >
               {saveBulkMutation.isPending ? (
@@ -767,10 +829,10 @@ export default function PermissionsPage() {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              Enregistrer toutes les modifications ({pendingCount})
+              Enregistrer tout
             </button>
           </div>
-        )}
+        </div>
 
       </div>
     </>

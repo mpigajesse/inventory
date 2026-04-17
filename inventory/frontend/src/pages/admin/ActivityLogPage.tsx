@@ -169,13 +169,18 @@ function ActionTypeIcon({ type }: { type: ActionType }) {
   return (
     <div
       className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 border-card ${isColored ? '' : bg}`}
-      style={isColored ? {
-        background: type === 'vente'
-          ? 'linear-gradient(135deg, hsl(152 38% 38%), hsl(152 38% 48%))'
-          : type === 'produit'
-          ? 'linear-gradient(135deg, hsl(36 88% 52%), hsl(22 72% 48%))'
-          : 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
-      } : undefined}
+      style={{
+        transition: 'transform 0.2s ease',
+        ...(isColored ? {
+          background: type === 'vente'
+            ? 'linear-gradient(135deg, hsl(152 38% 38%), hsl(152 38% 48%))'
+            : type === 'produit'
+            ? 'linear-gradient(135deg, hsl(36 88% 52%), hsl(22 72% 48%))'
+            : 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+        } : {}),
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.12)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
     >
       <Icon className={`w-3.5 h-3.5 ${isColored ? 'text-white' : color}`} />
     </div>
@@ -401,10 +406,16 @@ export default function ActivityLogPage() {
                     </td>
                   </tr>
                 ) : (
-                  typedPaginated.map((entry) => (
+                  typedPaginated.map((entry, index) => (
                     <tr
                       key={entry.id}
                       className="animate-fade-scale"
+                      style={{
+                        opacity: 0,
+                        transform: 'translateY(5px)',
+                        animation: `activityRowIn 0.3s ease forwards`,
+                        animationDelay: `${index * 35}ms`,
+                      }}
                     >
                       <td>
                         <ActionTypeIcon type={entry.actionType} />
@@ -461,28 +472,54 @@ export default function ActivityLogPage() {
                   if (!groups[dateKey]) groups[dateKey] = [];
                   groups[dateKey].push(entry);
                 });
-                return Object.entries(groups).map(([dateKey, entries]) => (
+                return Object.entries(groups).map(([dateKey, entries], groupIndex) => (
                   <div key={dateKey}>
                     {/* Séparateur de date */}
                     <div className="flex items-center gap-3 py-3">
-                      <div className="flex-1 h-px bg-border/60" />
+                      <div
+                        className="flex-1 h-px bg-border/60"
+                        style={{
+                          transformOrigin: 'left',
+                          transform: 'scaleX(0)',
+                          animation: 'dateDividerIn 400ms ease forwards',
+                          animationDelay: `${groupIndex * 80}ms`,
+                        }}
+                      />
                       <span className="text-xs font-bold text-muted-foreground px-2 py-0.5 rounded-full bg-muted">
                         {dateKey}
                       </span>
-                      <div className="flex-1 h-px bg-border/60" />
+                      <div
+                        className="flex-1 h-px bg-border/60"
+                        style={{
+                          transformOrigin: 'left',
+                          transform: 'scaleX(0)',
+                          animation: 'dateDividerIn 400ms ease forwards',
+                          animationDelay: `${groupIndex * 80 + 50}ms`,
+                        }}
+                      />
                     </div>
 
                     {/* Entrées du groupe */}
                     <div
                       className="rounded-2xl overflow-hidden mb-2"
-                      style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                      style={{
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        opacity: 0,
+                        transform: 'translateX(-6px)',
+                        animation: 'mobileGroupIn 0.35s ease forwards',
+                        animationDelay: `${groupIndex * 80}ms`,
+                      }}
                     >
                       {entries.map((entry, idx) => (
                         <div
                           key={entry.id}
-                          className="flex items-start gap-4 px-4 py-3.5 transition-colors animate-fade-scale"
+                          className="flex items-start gap-4 px-4 py-3.5 transition-colors"
                           style={{
                             borderBottom: idx < entries.length - 1 ? '1px solid hsl(var(--border) / 0.5)' : 'none',
+                            opacity: 0,
+                            animation: 'mobileRowIn 0.3s ease forwards',
+                            animationDelay: `${groupIndex * 80 + idx * 30}ms`,
                           }}
                           onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'hsl(22 72% 48% / 0.02)'; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}

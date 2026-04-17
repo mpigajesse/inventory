@@ -560,12 +560,36 @@ export default function VendeurPosPage() {
   });
   const [flashItem, setFlashItem] = useState<number | null>(null);
 
+  // Animation state: newly-added cart items (entrance animation)
+  const [newlyAdded, setNewlyAdded] = useState<Set<number>>(new Set());
+  // Animation state: items being removed (exit animation)
+  const [removingItems, setRemovingItems] = useState<Set<number>>(new Set());
+  // Product grid mount flag for staggered entrance
+  const [gridMounted, setGridMounted] = useState(false);
+  // Success screen mount flag
+  const [successMounted, setSuccessMounted] = useState(false);
+
   const searchRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
   const change = Math.max(0, Number(amountGiven) - total);
+
+  // Trigger product grid stagger entrance on mount
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGridMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // Trigger success screen entrance animation
+  useEffect(() => {
+    if (saleComplete) {
+      setSuccessMounted(false);
+      const id = requestAnimationFrame(() => setSuccessMounted(true));
+      return () => cancelAnimationFrame(id);
+    }
+  }, [saleComplete]);
 
   const vendeurName = getFirstName(currentUser?.name);
 
@@ -592,6 +616,15 @@ export default function VendeurPosPage() {
     });
     setFlashItem(product.id);
     setTimeout(() => setFlashItem(null), 600);
+    // Mark as newly added for entrance animation; clear after 300ms
+    setNewlyAdded((prev) => new Set(prev).add(product.id));
+    setTimeout(() => {
+      setNewlyAdded((prev) => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }, 300);
     setMobileTab("cart");
   }, []);
 
@@ -638,7 +671,16 @@ export default function VendeurPosPage() {
   };
 
   const removeItem = (id: number) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+    // Trigger exit animation first, then remove after 200ms
+    setRemovingItems((prev) => new Set(prev).add(id));
+    setTimeout(() => {
+      setCart((prev) => prev.filter((item) => item.id !== id));
+      setRemovingItems((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 200);
   };
 
   const handlePayment = () => {
@@ -693,7 +735,14 @@ export default function VendeurPosPage() {
               "linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted) / 0.4), hsl(var(--accent) / 0.08))",
           }}
         >
-          <div className="w-full max-w-sm animate-slide-in">
+          <div
+            className="w-full max-w-sm"
+            style={{
+              opacity: successMounted ? 1 : 0,
+              transform: successMounted ? "scale(1)" : "scale(0.96)",
+              transition: "opacity 350ms ease-out, transform 350ms ease-out",
+            }}
+          >
 
             {/* Success icon */}
             <div className="text-center mb-5">
@@ -988,7 +1037,7 @@ export default function VendeurPosPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                {filtered.map((product) => (
+                {filtered.map((product, index) => (
                   <button
                     key={product.id}
                     onClick={() => addToCart(product)}
@@ -1000,6 +1049,10 @@ export default function VendeurPosPage() {
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                       "min-h-[44px] cursor-pointer",
                     )}
+                    style={{
+                      opacity: gridMounted ? 1 : 0,
+                      transition: `opacity 300ms ease ${index * 40}ms`,
+                    }}
                     title={product.name}
                   >
                     <div className="aspect-square rounded-lg bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-2.5 overflow-hidden group-hover:from-primary/10 group-hover:to-accent/5 transition-colors">
@@ -1149,15 +1202,28 @@ export default function VendeurPosPage() {
               <div className="p-2 md:p-2.5 space-y-1.5">
                 {cart.map((item) => {
                   const lineTotal = item.price * item.qty;
+                  const isNew = newlyAdded.has(item.id);
+                  const isRemoving = removingItems.has(item.id);
                   return (
                     <div
                       key={item.id}
                       className={cn(
-                        "group rounded-xl border bg-card px-3 py-2.5 transition-all duration-200",
+                        "group rounded-xl border bg-card px-3 py-2.5",
                         flashItem === item.id
                           ? "border-primary/60 bg-primary/5 shadow-sm shadow-primary/10 scale-[1.005]"
                           : "border-[hsl(var(--border))] hover:border-[hsl(var(--border))]/80",
                       )}
+                      style={{
+                        opacity: isRemoving ? 0 : isNew ? 0 : 1,
+                        transform: isRemoving
+                          ? "translateX(10px)"
+                          : isNew
+                          ? "translateX(10px)"
+                          : "translateX(0)",
+                        transition: isRemoving
+                          ? "opacity 200ms ease, transform 200ms ease"
+                          : "opacity 250ms ease, transform 250ms ease, border-color 200ms, background 200ms, box-shadow 200ms, scale 200ms",
+                      }}
                     >
                       <div className="flex items-center gap-2.5">
                         {/* Icon */}
@@ -1272,6 +1338,7 @@ export default function VendeurPosPage() {
                             "linear-gradient(135deg, hsl(22 72% 62%), hsl(36 88% 62%))",
                           WebkitBackgroundClip: "text",
                           WebkitTextFillColor: "transparent",
+                          transition: "all 0.3s ease",
                         }}
                       >
                         {total.toLocaleString("fr-FR")}{" "}
@@ -1282,11 +1349,10 @@ export default function VendeurPosPage() {
 
                   <button
                     onClick={() => setShowPayment(true)}
-                    className="w-full h-16 text-base font-bold rounded-xl text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    className="w-full h-16 text-base font-bold rounded-xl text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] animate-glow-pulse"
                     style={{
                       background:
                         "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                      boxShadow: "0 6px 20px hsl(22 72% 48% / 0.35)",
                     }}
                   >
                     <Banknote className="w-5 h-5" strokeWidth={2.2} />
@@ -1313,7 +1379,7 @@ export default function VendeurPosPage() {
                     <p
                       key={total}
                       className="text-[34px] font-black tabular-nums leading-none animate-count-up"
-                      style={{ color: "hsl(var(--foreground))" }}
+                      style={{ color: "hsl(var(--foreground))", transition: "all 0.3s ease" }}
                     >
                       {total.toLocaleString("fr-FR")}{" "}
                       <span className="text-lg">FCFA</span>
@@ -1403,14 +1469,13 @@ export default function VendeurPosPage() {
                         "flex-[2] h-16 font-bold text-base rounded-xl text-white flex items-center justify-center gap-2",
                         "transition-all active:scale-[0.98]",
                         "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none",
+                        Number(amountGiven) >= total && "animate-glow-pulse",
                       )}
                       style={
                         Number(amountGiven) >= total
                           ? {
                               background:
                                 "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
-                              boxShadow:
-                                "0 6px 20px hsl(22 72% 48% / 0.4)",
                             }
                           : {
                               background: "hsl(var(--muted))",

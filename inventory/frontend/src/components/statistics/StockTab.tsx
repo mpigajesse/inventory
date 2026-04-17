@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -41,9 +42,11 @@ interface ProgressBarProps {
   count: number;
   total: number;
   color: string;
+  barVisible: boolean;
+  delay: number;
 }
 
-function ProgressBar({ label, count, total, color }: ProgressBarProps) {
+function ProgressBar({ label, count, total, color, barVisible, delay }: ProgressBarProps) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div className="space-y-1.5">
@@ -55,8 +58,15 @@ function ProgressBar({ label, count, total, color }: ProgressBarProps) {
       </div>
       <div className="h-2 rounded-full bg-muted overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${pct}%`, background: color }}
+          className="h-full rounded-full"
+          style={{
+            width: `${pct}%`,
+            background: color,
+            transform: barVisible ? "scaleX(1)" : "scaleX(0)",
+            transformOrigin: "left",
+            transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+            transitionDelay: `${delay}ms`,
+          }}
         />
       </div>
     </div>
@@ -86,6 +96,28 @@ export function StockTab() {
     staleTime: 60_000,
   });
 
+  // Entrance animation state
+  const [kpiVisible, setKpiVisible] = useState(false);
+  const [alertsVisible, setAlertsVisible] = useState(false);
+  const [chartVisible, setChartVisible] = useState(false);
+  const [barVisible, setBarVisible] = useState(false);
+  const [rowsVisible, setRowsVisible] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setKpiVisible(true), 30);
+    const t2 = setTimeout(() => setAlertsVisible(true), 100);
+    const t3 = setTimeout(() => setChartVisible(true), 300);
+    const t4 = setTimeout(() => setBarVisible(true), 200);
+    const t5 = setTimeout(() => setRowsVisible(true), 80);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      clearTimeout(t5);
+    };
+  }, []);
+
   if (isError) {
     return (
       <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-destructive/25 bg-destructive/5 text-destructive text-sm">
@@ -114,63 +146,96 @@ export function StockTab() {
   // ── Section 3 : Top valeur stockée ───────────────────────────────────────
   const topValueProducts = (data?.top_value_products ?? []).slice(0, 10);
 
+  const kpiCards = [0, 1, 2];
+
   return (
     <div className="space-y-6">
 
       {/* ── Section 1 : KPI cards ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          label="Valeur totale du stock"
-          value={isLoading ? "—" : formatFcfa(totalValue)}
-          icon={Wallet}
-          animated={!isLoading && totalValue > 0}
-          numericValue={isLoading ? undefined : totalValue}
-        />
-        <StatCard
-          label="Total produits en stock"
-          value={isLoading ? "—" : String(totalProducts)}
-          icon={Package}
-        />
-        <div className="stat-card">
-          <div className="flex items-center justify-between mb-3">
-            <span className="stat-label">Répartition des niveaux</span>
-            <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-4 h-4 text-warning" />
-            </div>
+        {kpiCards.map((idx) => (
+          <div
+            key={idx}
+            style={{
+              opacity: kpiVisible ? 1 : 0,
+              transform: kpiVisible ? "translateY(0)" : "translateY(12px)",
+              transition: `opacity 0.4s ease, transform 0.4s ease`,
+              transitionDelay: `${idx * 65}ms`,
+            }}
+          >
+            {idx === 0 && (
+              <StatCard
+                label="Valeur totale du stock"
+                value={isLoading ? "—" : formatFcfa(totalValue)}
+                icon={Wallet}
+                animated={!isLoading && totalValue > 0}
+                numericValue={isLoading ? undefined : totalValue}
+              />
+            )}
+            {idx === 1 && (
+              <StatCard
+                label="Total produits en stock"
+                value={isLoading ? "—" : String(totalProducts)}
+                icon={Package}
+              />
+            )}
+            {idx === 2 && (
+              <div className="stat-card">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="stat-label">Répartition des niveaux</span>
+                  <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-4 h-4 text-warning" />
+                  </div>
+                </div>
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-2 bg-muted rounded skeleton-shimmer" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    <ProgressBar
+                      label="Normal"
+                      count={normalCount}
+                      total={totalProducts}
+                      color="hsl(var(--success))"
+                      barVisible={barVisible}
+                      delay={0}
+                    />
+                    <ProgressBar
+                      label="Bas"
+                      count={lowCount}
+                      total={totalProducts}
+                      color="hsl(var(--warning))"
+                      barVisible={barVisible}
+                      delay={80}
+                    />
+                    <ProgressBar
+                      label="Critique"
+                      count={criticalCount}
+                      total={totalProducts}
+                      color="hsl(var(--destructive))"
+                      barVisible={barVisible}
+                      delay={160}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-2 bg-muted rounded skeleton-shimmer" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3 pt-1">
-              <ProgressBar
-                label="Normal"
-                count={normalCount}
-                total={totalProducts}
-                color="hsl(var(--success))"
-              />
-              <ProgressBar
-                label="Bas"
-                count={lowCount}
-                total={totalProducts}
-                color="hsl(var(--warning))"
-              />
-              <ProgressBar
-                label="Critique"
-                count={criticalCount}
-                total={totalProducts}
-                color="hsl(var(--destructive))"
-              />
-            </div>
-          )}
-        </div>
+        ))}
       </div>
 
       {/* ── Section 2 : Tableau des alertes ──────────────────────────────── */}
-      <div className="card-premium overflow-hidden">
+      <div
+        className="card-premium overflow-hidden"
+        style={{
+          opacity: alertsVisible ? 1 : 0,
+          transform: alertsVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+        }}
+      >
         <div className="flex items-center justify-between gap-2 px-6 py-4 border-b">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
@@ -209,10 +274,18 @@ export function StockTab() {
                 </tr>
               </thead>
               <tbody>
-                {alerts.map((alert) => {
+                {alerts.map((alert, idx) => {
                   const isCritical = alert.status === "critical" || alert.status === "critique";
                   return (
-                    <tr key={alert.product_id}>
+                    <tr
+                      key={alert.product_id}
+                      style={{
+                        opacity: rowsVisible ? 1 : 0,
+                        transform: rowsVisible ? "translateY(0)" : "translateY(5px)",
+                        transition: `opacity 0.35s ease, transform 0.35s ease`,
+                        transitionDelay: `${idx * 45}ms`,
+                      }}
+                    >
                       <td className="font-medium text-sm">{alert.product_name}</td>
                       <td className="text-right font-mono tabular-nums text-sm">{alert.quantity}</td>
                       <td className="text-right font-mono tabular-nums text-sm text-muted-foreground">
@@ -234,7 +307,14 @@ export function StockTab() {
       </div>
 
       {/* ── Section 3 : Top produits par valeur stockée ───────────────────── */}
-      <div className="card-premium p-6">
+      <div
+        className="card-premium p-6"
+        style={{
+          opacity: chartVisible ? 1 : 0,
+          transform: chartVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+        }}
+      >
         <div className="flex items-center gap-2 mb-5">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <BarChart2 className="w-4 h-4 text-primary" />

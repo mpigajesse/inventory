@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
@@ -429,6 +429,13 @@ export default function UserDetailPage() {
   const queryClient = useQueryClient();
 
   const [editOpen, setEditOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // Trigger entrance animations on mount
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // ── All hooks must be declared before any guard ───────────────────────────
 
@@ -562,6 +569,9 @@ export default function UserDetailPage() {
           className="relative overflow-hidden rounded-2xl mb-6 p-6"
           style={{
             background: "linear-gradient(135deg, hsl(20 30% 8%) 0%, hsl(22 26% 13%) 100%)",
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "none" : "translateY(-8px)",
+            transition: "opacity 0.4s ease-out, transform 0.4s ease-out",
           }}
         >
           {/* Diagonal pattern overlay */}
@@ -678,24 +688,22 @@ export default function UserDetailPage() {
 
         {/* ── KPI row ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <KpiCard
-            label="Ventes réalisées"
-            value={String(user.total_sales ?? 0)}
-            icon={ShoppingCart}
-            accent="copper"
-          />
-          <KpiCard
-            label="Chiffre d'affaires"
-            value={formatRevenue(user.total_revenue ?? 0)}
-            icon={TrendingUp}
-            accent="green"
-          />
-          <KpiCard
-            label="Permissions accordées"
-            value={`${permissionCount} / ${ALL_PERMISSIONS.length}`}
-            icon={ShieldCheck}
-            accent="blue"
-          />
+          {([
+            { label: "Ventes réalisées", value: String(user.total_sales ?? 0), icon: ShoppingCart, accent: "copper" as const },
+            { label: "Chiffre d'affaires", value: formatRevenue(user.total_revenue ?? 0), icon: TrendingUp, accent: "green" as const },
+            { label: "Permissions accordées", value: `${permissionCount} / ${ALL_PERMISSIONS.length}`, icon: ShieldCheck, accent: "blue" as const },
+          ] as const).map((kpi, i) => (
+            <div
+              key={kpi.label}
+              style={{
+                opacity: mounted ? 1 : 0,
+                transform: mounted ? "none" : "translateY(8px)",
+                transition: `opacity 0.35s ease-out ${300 + i * 80}ms, transform 0.35s ease-out ${300 + i * 80}ms`,
+              }}
+            >
+              <KpiCard label={kpi.label} value={kpi.value} icon={kpi.icon} accent={kpi.accent} />
+            </div>
+          ))}
         </div>
 
         {/* ── Main grid ── */}
@@ -704,6 +712,7 @@ export default function UserDetailPage() {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Informations personnelles */}
+            <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 540ms, transform 0.4s ease-out 540ms" }}>
             <SectionCard title="Informations personnelles">
               <div className="divide-y divide-border/40">
                 <InfoRow icon={Users} label="Prénom" value={user.first_name || "—"} />
@@ -719,8 +728,10 @@ export default function UserDetailPage() {
                 />
               </div>
             </SectionCard>
+            </div>
 
             {/* Permissions */}
+            <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 640ms, transform 0.4s ease-out 640ms" }}>
             <SectionCard
               title="Permissions"
               action={
@@ -792,7 +803,7 @@ export default function UserDetailPage() {
                           checked={granted}
                           readOnly
                           className="h-4 w-4 rounded border-input cursor-default shrink-0"
-                          style={{ accentColor: "hsl(22 72% 48%)" }}
+                          style={{ accentColor: "hsl(22 72% 48%)", transition: "accent-color 0.2s, opacity 0.2s" }}
                           aria-label={PERMISSION_LABELS[p]}
                         />
                         <Icon
@@ -824,8 +835,10 @@ export default function UserDetailPage() {
                 </div>
               )}
             </SectionCard>
+            </div>
 
             {/* Activité récente */}
+            <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 740ms, transform 0.4s ease-out 740ms" }}>
             <SectionCard title="Activité récente">
               {activityLoading ? (
                 <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
@@ -839,13 +852,18 @@ export default function UserDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {activityLogs.slice(0, 20).map((log) => {
+                  {activityLogs.slice(0, 20).map((log, logIdx) => {
                     const Icon = resolveActivityIcon(log.action, log.target_model);
                     const colorClass = resolveActivityColor(log.action, log.target_model);
                     return (
                       <div
                         key={log.id}
                         className="flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0"
+                        style={{
+                          animationDelay: `${logIdx * 35}ms`,
+                          animation: "slideInUp 0.25s ease forwards",
+                          opacity: 0,
+                        }}
                       >
                         <div
                           className={[
@@ -880,12 +898,14 @@ export default function UserDetailPage() {
                 </div>
               )}
             </SectionCard>
+            </div>
           </div>
 
           {/* Right column (1/3): Quick actions */}
           <div className="space-y-4">
 
             {/* Quick actions card */}
+            <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 540ms, transform 0.4s ease-out 540ms" }}>
             <div
               className="rounded-2xl overflow-hidden"
               style={{
@@ -960,8 +980,10 @@ export default function UserDetailPage() {
                 </button>
               </div>
             </div>
+            </div>
 
             {/* Last login card */}
+            <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 640ms, transform 0.4s ease-out 640ms" }}>
             <div
               className="rounded-2xl p-4"
               style={{
@@ -976,8 +998,10 @@ export default function UserDetailPage() {
               <p className={[FIELD_LABEL_CLASSES, "mt-3 mb-1"].join(" ")}>Membre depuis</p>
               <p className="text-sm font-semibold text-foreground">{memberSince}</p>
             </div>
+            </div>
 
             {/* Role info card */}
+            <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 740ms, transform 0.4s ease-out 740ms" }}>
             <div
               className="rounded-2xl p-4"
               style={{
@@ -1014,6 +1038,7 @@ export default function UserDetailPage() {
                   ? "Accès complet à toutes les fonctionnalités et paramètres du système."
                   : `${permissionCount} permission${permissionCount > 1 ? "s" : ""} accordée${permissionCount > 1 ? "s" : ""} sur ${ALL_PERMISSIONS.length} disponibles.`}
               </p>
+            </div>
             </div>
           </div>
         </div>

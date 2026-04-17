@@ -12,8 +12,6 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight,
-  Menu,
   X,
   Bell,
   Truck,
@@ -26,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions, type Permission } from "@/hooks/usePermissions";
 import { useNotificationStore } from "@/stores/notificationStore";
+import { useEffect, useState } from "react";
 
 interface NavItemDef {
   label: string;
@@ -126,6 +125,13 @@ export function AppSidebar({
   const { can } = usePermissions();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
 
+  // Track mount state for user-area slide-in animation
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const handleNavClick = (): void => {
     onMobileOpenChange(false);
   };
@@ -170,7 +176,7 @@ export function AppSidebar({
 
       <aside
         className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-[width,transform] duration-200 ease-out",
+          "fixed left-0 top-0 bottom-0 z-40 flex flex-col",
           "md:translate-x-0",
           collapsed ? "md:w-[64px]" : "md:w-[256px]",
           "w-[256px]",
@@ -179,6 +185,7 @@ export function AppSidebar({
         style={{
           background: "linear-gradient(to bottom, hsl(20 30% 9%), hsl(18 25% 6%))",
           boxShadow: "inset -1px 0 0 hsl(20 22% 17% / 0.8), 4px 0 24px hsl(0 0% 0% / 0.18)",
+          transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
         aria-label="Navigation principale"
       >
@@ -207,12 +214,14 @@ export function AppSidebar({
               <Store className="w-[18px] h-[18px] text-white" strokeWidth={2.25} />
             </span>
 
-            {/* Wordmark — hidden when collapsed on desktop */}
+            {/* Wordmark — fades/slides out when collapsed */}
             <span
-              className={cn(
-                "flex flex-col min-w-0 leading-none",
-                collapsed && "md:hidden"
-              )}
+              className="flex flex-col min-w-0 leading-none overflow-hidden"
+              style={{
+                opacity: collapsed ? 0 : 1,
+                maxWidth: collapsed ? 0 : "160px",
+                transition: "opacity 0.2s ease, max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
             >
               <span
                 className="text-[13px] font-bold tracking-[0.18em]"
@@ -229,21 +238,25 @@ export function AppSidebar({
             </span>
           </Link>
 
-          {/* Desktop collapse toggle — visible only when expanded */}
-          {!collapsed && (
-            <button
-              type="button"
-              onClick={() => onCollapsedChange(!collapsed)}
-              className={cn(
-                "hidden md:flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-150 shrink-0",
-                "hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
-              )}
-              style={{ color: "hsl(0 0% 100% / 0.45)" }}
-              aria-label="Réduire la barre latérale"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          )}
+          {/* Desktop collapse toggle — always rendered, chevron rotates */}
+          <button
+            type="button"
+            onClick={() => onCollapsedChange(!collapsed)}
+            className={cn(
+              "hidden md:flex items-center justify-center w-7 h-7 rounded-lg shrink-0",
+              "hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+            )}
+            style={{ color: "hsl(0 0% 100% / 0.45)" }}
+            aria-label={collapsed ? "Développer la barre latérale" : "Réduire la barre latérale"}
+          >
+            <ChevronLeft
+              className="w-4 h-4"
+              style={{
+                transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.3s ease",
+              }}
+            />
+          </button>
 
           {/* Mobile close */}
           <button
@@ -256,26 +269,6 @@ export function AppSidebar({
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Collapsed-state expand button — floats below brand */}
-        {collapsed && (
-          <div className="hidden md:flex justify-center pt-3 pb-1">
-            <button
-              type="button"
-              onClick={() => onCollapsedChange(false)}
-              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-150 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-              style={{
-                color: "hsl(22 72% 52%)",
-                background: "hsl(22 72% 48% / 0.1)",
-                border: "1px solid hsl(22 72% 48% / 0.2)",
-              }}
-              aria-label="Développer la barre latérale"
-              title="Développer"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
         {/* ── Nav ────────────────────────────────────────────────────── */}
         <nav
@@ -291,15 +284,21 @@ export function AppSidebar({
                 groupIdx > 0 && "mt-2"
               )}
             >
-              {/* Group label — only visible when expanded */}
-              {!collapsed && (
-                <p
-                  className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-1.5 mt-3"
-                  style={{ color: "hsl(0 0% 100% / 0.25)" }}
-                >
-                  {group.label}
-                </p>
-              )}
+              {/* Group label — fades out when collapsed */}
+              <p
+                className="text-[10px] font-semibold uppercase tracking-widest px-3 overflow-hidden"
+                style={{
+                  color: "hsl(0 0% 100% / 0.25)",
+                  opacity: collapsed ? 0 : 1,
+                  maxHeight: collapsed ? 0 : "2rem",
+                  marginBottom: collapsed ? 0 : "0.375rem",
+                  marginTop: collapsed ? 0 : "0.75rem",
+                  transition: "opacity 0.2s ease, max-height 0.3s ease, margin 0.3s ease",
+                }}
+                aria-hidden={collapsed}
+              >
+                {group.label}
+              </p>
 
               {/* Collapsed divider instead of label */}
               {collapsed && groupIdx > 0 && (
@@ -339,6 +338,10 @@ export function AppSidebar({
                           borderLeft: isActive
                             ? "3px solid hsl(22 72% 48%)"
                             : "3px solid transparent",
+                          borderLeftColor: isActive
+                            ? "hsl(22 72% 48%)"
+                            : "transparent",
+                          transition: "border-left-color 0.2s ease, background 0.15s ease, color 0.15s ease",
                           paddingLeft: collapsed
                             ? undefined
                             : isActive
@@ -388,10 +391,12 @@ export function AppSidebar({
 
                         {/* Label + expanded badge */}
                         <span
-                          className={cn(
-                            "flex-1 flex items-center justify-between min-w-0",
-                            collapsed && "md:hidden"
-                          )}
+                          className="flex-1 flex items-center justify-between min-w-0 overflow-hidden"
+                          style={{
+                            opacity: collapsed ? 0 : 1,
+                            maxWidth: collapsed ? 0 : "200px",
+                            transition: "opacity 0.2s ease, max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          }}
                         >
                           <span className="truncate">{item.label}</span>
                           {item.badge !== undefined && item.badge > 0 && (
@@ -420,7 +425,12 @@ export function AppSidebar({
         {/* ── Footer: avatar + user info + logout ─────────────────────── */}
         <div
           className="shrink-0 pt-3 pb-2 px-2"
-          style={{ borderTop: "1px solid hsl(0 0% 100% / 0.08)" }}
+          style={{
+            borderTop: "1px solid hsl(0 0% 100% / 0.08)",
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "translateY(0)" : "translateY(8px)",
+            transition: "opacity 0.4s ease 0.3s, transform 0.4s ease 0.3s",
+          }}
         >
           {/* User info row — expanded only */}
           {!collapsed && (

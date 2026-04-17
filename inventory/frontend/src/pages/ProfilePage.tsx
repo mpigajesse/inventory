@@ -26,7 +26,7 @@ import {
   Info,
   Lock,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -88,7 +88,13 @@ const FIELD_LABEL_CLASSES =
 function IdentityCard() {
   const { currentUser } = useAuth();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setIsVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   const initials = getInitials(currentUser?.name ?? "");
   const isAdmin = currentUser?.role === "admin";
@@ -111,7 +117,12 @@ function IdentityCard() {
   return (
     <section
       className="relative overflow-hidden rounded-2xl mb-6"
-      style={{ background: "linear-gradient(135deg, hsl(20 30% 8%), hsl(22 26% 14%))" }}
+      style={{
+        background: "linear-gradient(135deg, hsl(20 30% 8%), hsl(22 26% 14%))",
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(16px)",
+        transition: "opacity 450ms cubic-bezier(0.16, 1, 0.3, 1), transform 450ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
       aria-labelledby="profile-identity-title"
     >
       {/* Diagonal stripe pattern */}
@@ -226,6 +237,7 @@ interface PremiumSectionProps {
   description?: string;
   children: React.ReactNode;
   tinted?: boolean;
+  animationStyle?: React.CSSProperties;
 }
 
 function PremiumSection({
@@ -235,6 +247,7 @@ function PremiumSection({
   description,
   children,
   tinted = false,
+  animationStyle,
 }: PremiumSectionProps) {
   return (
     <section
@@ -245,6 +258,7 @@ function PremiumSection({
           ? "1px solid hsl(36 88% 52% / 0.22)"
           : "1px solid hsl(var(--border))",
         boxShadow: "0 2px 10px hsl(22 30% 15% / 0.07)",
+        ...animationStyle,
       }}
     >
       {/* Section header strip */}
@@ -406,7 +420,8 @@ function ProfileSection() {
           <Button
             type="submit"
             disabled={updateMutation.isPending}
-            className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+            className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] active:scale-[0.97]"
+            style={{ transition: "transform 0.15s ease, box-shadow 0.2s ease" }}
           >
             {updateMutation.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -478,6 +493,7 @@ function SecuritySection() {
               type="button"
               onClick={() => setShowCurrentPassword(!showCurrentPassword)}
               className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                style={{ transition: "color 0.2s ease, background-color 0.2s ease" }}
               aria-label={showCurrentPassword ? "Masquer" : "Afficher"}
             >
               {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -505,6 +521,7 @@ function SecuritySection() {
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                style={{ transition: "color 0.2s ease, background-color 0.2s ease" }}
                 aria-label={showNewPassword ? "Masquer" : "Afficher"}
               >
                 {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -531,6 +548,7 @@ function SecuritySection() {
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                style={{ transition: "color 0.2s ease, background-color 0.2s ease" }}
                 aria-label={showConfirmPassword ? "Masquer" : "Afficher"}
               >
                 {showConfirmPassword ? (
@@ -639,7 +657,8 @@ function PreferencesSection() {
         <div className="sm:col-span-2 flex justify-end pt-1">
           <Button
             type="submit"
-            className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)]"
+            className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] active:scale-[0.97]"
+            style={{ transition: "transform 0.15s ease, box-shadow 0.2s ease" }}
           >
             <Save className="w-4 h-4 mr-2" />
             Sauvegarder
@@ -686,10 +705,36 @@ function VendeurInfoBanner() {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+function useSectionStagger(count: number, initialDelay = 200, step = 100) {
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < count; i++) {
+      timers.push(
+        setTimeout(() => setVisibleCount((prev) => Math.max(prev, i + 1)), initialDelay + i * step)
+      );
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [count, initialDelay, step]);
+
+  return visibleCount;
+}
+
+function sectionAnimStyle(index: number, visibleCount: number): React.CSSProperties {
+  const visible = visibleCount > index;
+  return {
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0)" : "translateY(12px)",
+    transition: "opacity 400ms cubic-bezier(0.16, 1, 0.3, 1), transform 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+  };
+}
+
 export default function ProfilePage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const { currentUser } = useAuth();
   const isVendeur = currentUser?.role === "vendeur";
+  const visibleCount = useSectionStagger(3);
 
   return (
     <>
@@ -701,10 +746,16 @@ export default function ProfilePage() {
       <div className="page-container animate-slide-in">
         <IdentityCard />
         {isVendeur && <VendeurInfoBanner />}
-        <ProfileSection />
-        <SecuritySection />
+        <div style={sectionAnimStyle(0, visibleCount)}>
+          <ProfileSection />
+        </div>
+        <div style={sectionAnimStyle(1, visibleCount)}>
+          <SecuritySection />
+        </div>
         <PermissionGate permission="manage_settings">
-          <PreferencesSection />
+          <div style={sectionAnimStyle(2, visibleCount)}>
+            <PreferencesSection />
+          </div>
         </PermissionGate>
       </div>
     </>

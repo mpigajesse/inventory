@@ -173,6 +173,7 @@ function RolePill({ role }: { role: UserRole }) {
         background: isAdmin ? "hsl(22 72% 48% / 0.12)" : "hsl(210 70% 52% / 0.12)",
         color: isAdmin ? "hsl(22 72% 48%)" : "hsl(210 70% 52%)",
         border: `1px solid ${isAdmin ? "hsl(22 72% 48% / 0.25)" : "hsl(210 70% 52% / 0.25)"}`,
+        transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
       }}
     >
       {isAdmin ? <Crown className="w-3 h-3" aria-hidden="true" /> : <ShoppingBag className="w-3 h-3" aria-hidden="true" />}
@@ -190,11 +191,12 @@ function StatusDot({ active }: { active: boolean }) {
       style={{
         background: active ? "hsl(152 38% 38% / 0.1)" : "hsl(var(--muted))",
         color: active ? "hsl(152 38% 38%)" : "hsl(var(--muted-foreground))",
+        transition: "background-color 0.3s ease, color 0.3s ease",
       }}
     >
       <span
         className="w-1.5 h-1.5 rounded-full"
-        style={{ background: "currentColor" }}
+        style={{ background: "currentColor", transition: "background-color 0.3s ease" }}
       />
       {active ? "Actif" : "Inactif"}
     </span>
@@ -1082,7 +1084,7 @@ export default function UsersPage() {
                       </td>
                     </tr>
                   )}
-                  {typedPaginated.map((user) => {
+                  {typedPaginated.map((user, index) => {
                     const displayName = user.full_name || user.username;
                     const userRole = user.profile.role as UserRole;
                     const isAdmin = userRole === "admin";
@@ -1091,7 +1093,12 @@ export default function UsersPage() {
                       <tr
                         key={user.id}
                         className="group border-b border-border/40 last:border-0 transition-colors"
-                        style={isSelected(user.id) ? { background: "hsl(22 72% 48% / 0.04)" } : undefined}
+                        style={{
+                          ...(isSelected(user.id) ? { background: "hsl(22 72% 48% / 0.04)" } : {}),
+                          animationDelay: `${index * 50}ms`,
+                          animation: "slideInUp 0.3s ease forwards",
+                          opacity: 0,
+                        }}
                         onMouseEnter={(e) => {
                           if (!isSelected(user.id)) {
                             e.currentTarget.style.background = "hsl(22 72% 48% / 0.025)";
@@ -1169,7 +1176,7 @@ export default function UsersPage() {
                         {/* Actions */}
                         <td className="px-4 py-3.5">
                           {can('manage_users') && (
-                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                               <Link
                                 to={`/users/${user.id}`}
                                 className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

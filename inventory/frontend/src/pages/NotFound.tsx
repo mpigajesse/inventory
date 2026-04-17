@@ -1,11 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const NotFound = () => {
   const location = useLocation();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    // Trigger mount animations on next frame so initial opacity:0 is painted first
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
   }, [location.pathname]);
 
   return (
@@ -24,6 +28,9 @@ const NotFound = () => {
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             letterSpacing: '-0.04em',
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'scale(1)' : 'scale(0.92)',
+            transition: 'opacity 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           404
@@ -31,11 +38,23 @@ const NotFound = () => {
 
         <h1
           className="text-2xl font-extrabold text-foreground font-heading mb-2"
-          style={{ letterSpacing: '-0.025em' }}
+          style={{
+            letterSpacing: '-0.025em',
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(10px)',
+            transition: 'opacity 400ms ease 200ms, transform 400ms ease 200ms',
+          }}
         >
           Page introuvable
         </h1>
-        <p className="text-muted-foreground text-sm mb-8">
+        <p
+          className="text-muted-foreground text-sm mb-8"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(10px)',
+            transition: 'opacity 400ms ease 200ms, transform 400ms ease 200ms',
+          }}
+        >
           Cette page n'existe pas ou vous n'avez pas les droits nécessaires.
         </p>
 
@@ -52,22 +71,30 @@ const NotFound = () => {
               fontSize: '0.9rem',
               boxShadow: '0 4px 14px hsl(22 72% 48% / 0.35)',
               cursor: 'pointer',
-              transition: 'opacity 0.15s, transform 0.15s',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 400ms ease 350ms',
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? 'translateY(0)' : 'translateY(10px)',
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.opacity = '0.9';
-              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px hsl(22 72% 48% / 0.45), 0 0 0 4px hsl(22 72% 48% / 0.15)';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.opacity = '1';
               (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 14px hsl(22 72% 48% / 0.35)';
             }}
           >
             ← Retour au tableau de bord
           </button>
         </Link>
 
-        <p className="text-xs text-muted-foreground/50 mt-8">
+        <p
+          className="text-xs text-muted-foreground/50 mt-8"
+          style={{
+            opacity: mounted ? 0.5 : 0,
+            transition: 'opacity 600ms ease 500ms',
+          }}
+        >
           NAOSERVICES INVENTORY · MPJ HIGH-TECH
         </p>
       </div>

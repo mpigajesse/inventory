@@ -24,7 +24,7 @@ import {
   type Notification,
 } from "@/services/notificationService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,6 +121,9 @@ export default function NotificationsPage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>("toutes");
   const [removingId, setRemovingId] = useState<number | null>(null);
+  const [tabVisible, setTabVisible] = useState(true);
+  const [prevUnreadCount, setPrevUnreadCount] = useState<number | null>(null);
+  const [badgeScale, setBadgeScale] = useState(false);
 
   // ── Queries & mutations ────────────────────────────────────────────────────
 
@@ -180,6 +183,30 @@ export default function NotificationsPage() {
 
   const displayed = filterByTab(notifications, activeTab);
 
+  // ── Animation effects ───────────────────────────────────────────────────────
+
+  // Tab switch fade
+  function handleTabSwitch(tab: TabKey) {
+    if (tab === activeTab) return;
+    setTabVisible(false);
+    setTimeout(() => {
+      setActiveTab(tab);
+      setTabVisible(true);
+    }, 150);
+  }
+
+  // Unread badge scale-pop when count changes
+  useEffect(() => {
+    if (prevUnreadCount !== null && prevUnreadCount !== unreadCount) {
+      setBadgeScale(true);
+      const timer = setTimeout(() => setBadgeScale(false), 200);
+      setPrevUnreadCount(unreadCount);
+      return () => clearTimeout(timer);
+    }
+    setPrevUnreadCount(unreadCount);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadCount]);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   function handleMarkAllRead() {
@@ -236,7 +263,12 @@ export default function NotificationsPage() {
                 {unreadCount > 0 && (
                   <span
                     className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                    style={{ background: "hsl(22 72% 48%)" }}
+                    style={{
+                      background: "hsl(22 72% 48%)",
+                      transition: "transform 0.2s ease",
+                      transform: badgeScale ? "scale(1.2)" : "scale(1)",
+                      display: "inline-block",
+                    }}
                   >
                     {unreadCount}
                   </span>
@@ -270,44 +302,58 @@ export default function NotificationsPage() {
 
         {/* ── KPIs ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            label="Total"
-            value={String(notifications.length)}
-            icon={Bell}
-            animated
-            numericValue={notifications.length}
-            animationDuration={800}
-          />
-          <StatCard
-            label="Non lues"
-            value={String(unreadCount)}
-            changeType={unreadCount > 0 ? "negative" : "positive"}
-            change={unreadCount > 0 ? "Action requise" : "Tout à jour"}
-            icon={Bell}
-            animated
-            numericValue={unreadCount}
-            animationDuration={800}
-          />
-          <StatCard
-            label="Alertes stock"
-            value={String(stockAlertCount)}
-            changeType={stockAlertCount > 0 ? "negative" : "positive"}
-            change={stockAlertCount > 0 ? "Vérifier le stock" : "Aucune alerte"}
-            icon={AlertTriangle}
-            animated
-            numericValue={stockAlertCount}
-            animationDuration={800}
-          />
-          <StatCard
-            label="Ventes aujourd'hui"
-            value={String(salesTodayCount)}
-            changeType="positive"
-            change="Ventes du jour"
-            icon={ShoppingCart}
-            animated
-            numericValue={salesTodayCount}
-            animationDuration={800}
-          />
+          {[
+            {
+              label: "Total",
+              value: String(notifications.length),
+              icon: Bell,
+              numericValue: notifications.length,
+            },
+            {
+              label: "Non lues",
+              value: String(unreadCount),
+              changeType: unreadCount > 0 ? "negative" as const : "positive" as const,
+              change: unreadCount > 0 ? "Action requise" : "Tout à jour",
+              icon: Bell,
+              numericValue: unreadCount,
+            },
+            {
+              label: "Alertes stock",
+              value: String(stockAlertCount),
+              changeType: stockAlertCount > 0 ? "negative" as const : "positive" as const,
+              change: stockAlertCount > 0 ? "Vérifier le stock" : "Aucune alerte",
+              icon: AlertTriangle,
+              numericValue: stockAlertCount,
+            },
+            {
+              label: "Ventes aujourd'hui",
+              value: String(salesTodayCount),
+              changeType: "positive" as const,
+              change: "Ventes du jour",
+              icon: ShoppingCart,
+              numericValue: salesTodayCount,
+            },
+          ].map((card, index) => (
+            <div
+              key={card.label}
+              style={{
+                opacity: 0,
+                animation: "slideInLeft 0.3s ease forwards",
+                animationDelay: `${index * 70}ms`,
+              }}
+            >
+              <StatCard
+                label={card.label}
+                value={card.value}
+                changeType={card.changeType}
+                change={card.change}
+                icon={card.icon}
+                animated
+                numericValue={card.numericValue}
+                animationDuration={800}
+              />
+            </div>
+          ))}
         </div>
 
         {/* ── Panneau principal ── */}
@@ -325,7 +371,7 @@ export default function NotificationsPage() {
               {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => handleTabSwitch(tab)}
                   className={cn(
                     "relative flex items-center gap-1.5 px-4 py-3 text-xs font-semibold rounded-t-lg whitespace-nowrap transition-all duration-200",
                     activeTab === tab
@@ -377,7 +423,12 @@ export default function NotificationsPage() {
 
           {/* Liste */}
           {!isLoading && !isError && (
-            <div>
+            <div
+              style={{
+                opacity: tabVisible ? 1 : 0,
+                transition: "opacity 0.15s ease",
+              }}
+            >
               {displayed.length === 0 ? (
                 <div className="py-16 flex flex-col items-center gap-3">
                   <div
@@ -404,14 +455,17 @@ export default function NotificationsPage() {
                       key={notif.id}
                       onClick={() => handleNotifClick(notif)}
                       style={{
-                        animationDelay: `${index * 30}ms`,
+                        opacity: 0,
+                        animation: "slideInLeft 0.3s ease forwards",
+                        animationDelay: `${index * 50}ms`,
                         background: !notif.is_read ? `color-mix(in srgb, ${typeColor} 5%, transparent)` : "transparent",
                         borderLeft: `3px solid ${!notif.is_read ? typeColor : "transparent"}`,
+                        transition: "border-left-color 0.3s ease, background 0.3s ease, opacity 0.3s ease, transform 0.3s ease",
                         cursor: "pointer",
                       }}
                       className={cn(
-                        "group relative flex items-start gap-4 px-5 py-4 border-b border-border/50 last:border-0 animate-fade-scale",
-                        "transition-colors duration-200 overflow-hidden",
+                        "group relative flex items-start gap-4 px-5 py-4 border-b border-border/50 last:border-0",
+                        "overflow-hidden",
                         removingId === notif.id && "opacity-0 scale-95",
                         notif.is_read ? "opacity-80 hover:opacity-100" : ""
                       )}

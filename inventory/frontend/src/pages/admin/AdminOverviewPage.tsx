@@ -42,7 +42,7 @@ import {
   Cpu,
   Server,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { dashboardService } from "@/services/dashboardService";
 import { activityService } from "@/services/activityService";
 import type { ActivityLog } from "@/services/activityService";
@@ -179,6 +179,14 @@ export default function AdminOverviewPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [disablingUser, setDisablingUser] = useState<AdminUser | null>(null);
   const [resetUser, setResetUser] = useState<AdminUser | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const accentBarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Trigger stagger + accent bar on mount
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   if (currentUser?.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
@@ -202,6 +210,12 @@ export default function AdminOverviewPage() {
 
   return (
     <>
+      <style>{`
+        @keyframes adminFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <Topbar
         title="Administration"
         subtitle="Vue d'ensemble du système"
@@ -214,7 +228,16 @@ export default function AdminOverviewPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-1 h-6 rounded-full" style={{ background: 'linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))' }} />
+              <div
+                ref={accentBarRef}
+                className="w-1 h-6 rounded-full flex-shrink-0"
+                style={{
+                  background: 'linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))',
+                  transformOrigin: 'left',
+                  transform: mounted ? 'scaleX(1)' : 'scaleX(0)',
+                  transition: 'transform 0.3s ease-out',
+                }}
+              />
               <h1 className="text-2xl font-extrabold font-heading" style={{ letterSpacing: '-0.025em' }}>Vue d'ensemble Admin</h1>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5 pl-3">
@@ -228,18 +251,28 @@ export default function AdminOverviewPage() {
         <section>
           <SectionHeader icon={CheckCircle2} title="Santé du système" />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {HEALTH_ITEMS.map(({ icon: Icon, label, status, variant }) => (
+            {HEALTH_ITEMS.map(({ icon: Icon, label, status, variant }, index) => (
               <div
                 key={label}
                 className="card-premium p-4 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5"
-                style={{ boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)' }}
+                style={{
+                  boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)',
+                  opacity: 0,
+                  animation: mounted ? 'adminFadeUp 0.35s ease forwards' : 'none',
+                  animationDelay: `${index * 60}ms`,
+                }}
                 onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px hsl(22 30% 15% / 0.12)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)'; }}
               >
                 <div className="flex items-center gap-2">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+                    style={{
+                      background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+                      transition: 'transform 0.2s ease',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
                   >
                     <Icon className="w-3.5 h-3.5 text-white" />
                   </div>
@@ -271,11 +304,16 @@ export default function AdminOverviewPage() {
                 label: "Transactions ce mois",
                 value: statsLoading ? "—" : String(stats?.month.sales_count ?? 0),
               },
-            ].map(({ icon: Icon, label, value }) => (
+            ].map(({ icon: Icon, label, value }, index) => (
               <div
                 key={label}
                 className="card-premium p-5 flex flex-col gap-2 transition-all duration-200 hover:-translate-y-0.5"
-                style={{ boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)' }}
+                style={{
+                  boxShadow: '0 1px 4px hsl(22 30% 15% / 0.06)',
+                  opacity: 0,
+                  animation: mounted ? 'adminFadeUp 0.35s ease forwards' : 'none',
+                  animationDelay: `${300 + index * 70}ms`,
+                }}
                 onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px hsl(22 30% 15% / 0.12)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)'; }}
               >
@@ -285,7 +323,12 @@ export default function AdminOverviewPage() {
                   </span>
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))' }}
+                    style={{
+                      background: 'linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))',
+                      transition: 'transform 0.2s ease',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
                   >
                     <Icon className="w-4 h-4 text-white" />
                   </div>

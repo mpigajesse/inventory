@@ -38,7 +38,7 @@ import {
 import { exportProducts } from "@/lib/exportProducts";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -193,6 +193,20 @@ export default function ProductsPage() {
   const typedPaginated = paginated as unknown as Product[];
   const allPageIds = typedPaginated.map((p) => p.id);
 
+  // Animation key — changes on filter/search so the grid re-mounts and stagger replays
+  const [animKey, setAnimKey] = useState(0);
+  const prevFilterRef = useRef({ search: "", category: "" });
+
+  useEffect(() => {
+    const prev = prevFilterRef.current;
+    const searchChanged = prev.search !== search;
+    const categoryChanged = prev.category !== categoryFilter;
+    if (searchChanged || categoryChanged) {
+      setAnimKey((k) => k + 1);
+    }
+    prevFilterRef.current = { search, category: categoryFilter };
+  }, [search, categoryFilter]);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   function handleDelete() {
@@ -331,7 +345,7 @@ export default function ProductsPage() {
               {/* "Tous" pill */}
               <button
                 onClick={() => { setCategoryFilter(""); clearSelection(); }}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150"
+                className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200"
                 style={
                   categoryFilter === ""
                     ? {
@@ -380,7 +394,7 @@ export default function ProductsPage() {
           {/* View toggle */}
           <div
             className="flex rounded-lg overflow-hidden border border-border shrink-0"
-            style={{ background: "hsl(var(--muted)/0.4)" }}
+            style={{ background: "hsl(var(--muted)/0.4)", transition: "opacity 0.2s ease" }}
           >
             <button
               aria-label="Vue liste"
@@ -466,6 +480,7 @@ export default function ProductsPage() {
                 style={{
                   background: "hsl(var(--card))",
                   borderColor: "hsl(var(--border))",
+                  animation: "fadeIn 0.4s ease both",
                 }}
               >
                 <Package className="w-10 h-10 opacity-25" />
@@ -473,8 +488,8 @@ export default function ProductsPage() {
               </div>
             )}
             {!isLoading && typedPaginated.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {typedPaginated.map((product) => (
+              <div key={animKey} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {typedPaginated.map((product, index) => (
                   <ProductCard
                     key={product.id}
                     product={product}
@@ -482,6 +497,7 @@ export default function ProductsPage() {
                     onEdit={() => navigate(`/products/${product.id}/edit`)}
                     onDelete={() => setModal({ type: "delete", product })}
                     onView={() => setModal({ type: "view", product })}
+                    animIndex={index}
                   />
                 ))}
               </div>
@@ -500,7 +516,10 @@ export default function ProductsPage() {
             </div>
           )}
           {!isLoading && typedPaginated.length === 0 && (
-            <div className="bg-card border rounded-2xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
+            <div
+              className="bg-card border rounded-2xl py-10 flex flex-col items-center gap-2 text-muted-foreground"
+              style={{ animation: "fadeIn 0.4s ease both" }}
+            >
               <Package className="w-8 h-8 opacity-40" />
               <p className="text-sm">Aucun produit trouvé.</p>
             </div>
@@ -963,6 +982,7 @@ interface ProductCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onView: () => void;
+  animIndex?: number;
 }
 
 function ProductCard({
@@ -971,6 +991,7 @@ function ProductCard({
   onEdit,
   onDelete,
   onView,
+  animIndex = 0,
 }: ProductCardProps) {
   return (
     <div
@@ -980,6 +1001,8 @@ function ProductCard({
         border: "1px solid hsl(var(--border))",
         boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
         transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease",
+        animation: `slideInUp 0.35s ease both`,
+        animationDelay: `${animIndex * 60}ms`,
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLDivElement;

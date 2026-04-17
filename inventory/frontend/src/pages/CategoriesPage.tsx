@@ -425,7 +425,7 @@ export default function CategoriesPage() {
         {!isLoading && filtered.length === 0 && !search && (
           <div
             className="rounded-2xl p-12 flex flex-col items-center gap-4 text-center"
-            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', opacity: 0, animation: 'fadeIn 0.4s ease forwards' }}
           >
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center"
@@ -449,7 +449,7 @@ export default function CategoriesPage() {
 
         {!isLoading && filtered.length === 0 && search && (
           <div className="rounded-2xl p-10 flex flex-col items-center gap-2 text-muted-foreground"
-               style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}>
+               style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', opacity: 0, animation: 'fadeIn 0.4s ease forwards' }}>
             <Tag className="w-8 h-8 opacity-40" />
             <p className="text-sm">Aucune catégorie correspond à « {search} ».</p>
           </div>
@@ -457,21 +457,37 @@ export default function CategoriesPage() {
 
         {/* ── Category grid ─────────────────────────────────────────────────── */}
         {!isLoading && filtered.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div key={search} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map((category, idx) => (
-              <CategoryCard
+              <div
                 key={category.id}
-                category={category}
-                colorIndex={idx}
-                canManage={can('manage_products')}
-                onEdit={() => setModal({ type: "form", category })}
-                onDelete={() => setModal({ type: "delete", category })}
-              />
+                style={{
+                  opacity: 0,
+                  animation: 'slideInUp 0.35s ease forwards',
+                  animationDelay: `${idx * 65}ms`,
+                }}
+              >
+                <CategoryCard
+                  category={category}
+                  colorIndex={idx}
+                  canManage={can('manage_products')}
+                  onEdit={() => setModal({ type: "form", category })}
+                  onDelete={() => setModal({ type: "delete", category })}
+                />
+              </div>
             ))}
 
             {/* Add new category card — only shown when not searching */}
             {!search && can('manage_products') && (
-              <NewCategoryCard onClick={openCreateModal} />
+              <div
+                style={{
+                  opacity: 0,
+                  animation: 'slideInUp 0.35s ease forwards',
+                  animationDelay: `${filtered.length * 65}ms`,
+                }}
+              >
+                <NewCategoryCard onClick={openCreateModal} />
+              </div>
             )}
           </div>
         )}

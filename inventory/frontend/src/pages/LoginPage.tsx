@@ -12,7 +12,7 @@ import {
   Package,
   TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -76,9 +76,15 @@ export default function LoginPage() {
   const [password, setPassword]         = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError]               = useState<string | null>(null);
+  const [isMounted, setIsMounted]       = useState(false);
 
   const { login } = useAuth();
   const navigate  = useNavigate();
+
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setIsMounted(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -138,6 +144,8 @@ export default function LoginPage() {
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
           style={{
             background: "radial-gradient(circle, hsl(22 72% 48% / 0.12) 0%, transparent 70%)",
+            animation: "float 6s ease-in-out infinite",
+            animationDelay: "0s",
           }}
         />
 
@@ -147,6 +155,19 @@ export default function LoginPage() {
           className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full pointer-events-none"
           style={{
             background: "radial-gradient(circle, hsl(152 38% 38% / 0.10) 0%, transparent 70%)",
+            animation: "float 6s ease-in-out infinite",
+            animationDelay: "2s",
+          }}
+        />
+
+        {/* Orbe ambre — top-right (3e phase float) */}
+        <div
+          aria-hidden
+          className="absolute top-12 right-24 w-48 h-48 rounded-full pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, hsl(36 88% 52% / 0.07) 0%, transparent 70%)",
+            animation: "float 6s ease-in-out infinite",
+            animationDelay: "4s",
           }}
         />
 
@@ -229,13 +250,16 @@ export default function LoginPage() {
 
           {/* Feature cards */}
           <div className="space-y-3">
-            {HERO_FEATURES.map(({ icon: Icon, label, desc }) => (
+            {HERO_FEATURES.map(({ icon: Icon, label, desc }, index) => (
               <div
                 key={label}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl"
                 style={{
                   background: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.07)",
+                  opacity: isMounted ? 1 : 0,
+                  transform: isMounted ? 'translateX(0)' : 'translateX(-10px)',
+                  transition: `opacity 0.35s ease ${index * 100}ms, transform 0.35s ease ${index * 100}ms`,
                 }}
               >
                 <div
@@ -291,7 +315,14 @@ export default function LoginPage() {
         className="flex-1 lg:w-[45%] flex items-center justify-center p-6 lg:p-12"
         style={{ background: "hsl(30 18% 97%)" }}
       >
-        <div className="w-full max-w-md">
+        <div
+          className="w-full max-w-md"
+          style={{
+            opacity: isMounted ? 1 : 0,
+            transform: isMounted ? 'translateY(0)' : 'translateY(20px)',
+            transition: 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        >
 
           {/* Header du formulaire */}
           <div className="mb-8">
@@ -320,7 +351,7 @@ export default function LoginPage() {
               className="text-[2rem] font-extrabold text-foreground mb-1"
               style={{ letterSpacing: "-0.025em" }}
             >
-              Bon retour&nbsp;👋
+              Bon retour
             </h2>
             <p className="text-sm text-muted-foreground">
               Connectez-vous à votre espace de gestion
@@ -342,11 +373,12 @@ export default function LoginPage() {
                 id="username"
                 type="text"
                 placeholder="admin"
-                className="w-full h-11 px-4 rounded-xl border-[1.5px] bg-card transition-all duration-200 focus-visible:ring-2 outline-none"
+                className="w-full h-11 px-4 rounded-xl border-[1.5px] bg-card focus-visible:ring-2 outline-none"
                 style={
                   {
                     "--tw-ring-color": "hsl(22 72% 48% / 0.20)",
                     borderColor: "hsl(var(--border))",
+                    transition: "box-shadow 0.2s ease, border-color 0.2s ease",
                   } as React.CSSProperties
                 }
                 onFocus={(e) => {
@@ -379,7 +411,8 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Votre mot de passe"
-                  className="w-full h-11 px-4 pr-11 rounded-xl border-[1.5px] bg-card transition-all duration-200 outline-none"
+                  className="w-full h-11 px-4 pr-11 rounded-xl border-[1.5px] bg-card outline-none"
+                  style={{ transition: "box-shadow 0.2s ease, border-color 0.2s ease" }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = "hsl(22 72% 48% / 0.65)";
                     e.currentTarget.style.boxShadow   = "0 0 0 3px hsl(22 72% 48% / 0.12)";
@@ -417,14 +450,20 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 rounded-xl font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 active:brightness-100 disabled:opacity-60 disabled:cursor-wait disabled:translate-y-0"
+              className="w-full h-12 rounded-xl font-semibold text-white hover:brightness-110 active:brightness-100 disabled:opacity-60 disabled:cursor-wait"
+              onMouseEnter={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ''; }}
+              onMouseDown={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+              onMouseUp={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
               style={
                 isSubmitting
                   ? {
+                      transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s, filter 0.15s ease",
                       background: "linear-gradient(135deg, hsl(22 72% 48% / 0.70), hsl(36 88% 52% / 0.70))",
                       boxShadow: "none",
                     }
                   : {
+                      transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s, filter 0.15s ease",
                       background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                       boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
                     }

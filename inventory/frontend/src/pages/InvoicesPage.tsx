@@ -14,8 +14,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus } from "lucide-react";
-import { useState, useRef } from "react";
+import { Eye, Printer, FileSpreadsheet, Package, FileText, Plus, Banknote, Smartphone, CreditCard } from "lucide-react";
+import React, { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { useTableManager } from "@/hooks/useTableManager";
 import { invoiceService } from "@/services/invoiceService";
@@ -72,12 +72,17 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 
 // ─── Payment method helpers ───────────────────────────────────────────────────
 
-function getPaymentLabel(method: string | undefined): string {
+function getPaymentLabel(method: string | undefined): React.ReactNode {
+  const iconClass = "w-3.5 h-3.5 inline-block align-middle mr-1";
   switch (method) {
-    case "cash": return "💵 Espèces";
-    case "mobile_money": return "📱 Mobile";
-    case "card": return "💳 Carte";
-    default: return "📋 Crédit";
+    case "cash":
+      return <><Banknote className={iconClass} />Espèces</>;
+    case "mobile_money":
+      return <><Smartphone className={iconClass} />Mobile</>;
+    case "card":
+      return <><CreditCard className={iconClass} />Carte</>;
+    default:
+      return <><FileText className={iconClass} />Crédit</>;
   }
 }
 
@@ -317,6 +322,9 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
         </div>
       </div>
 
+      {/* ── Dialog content — animated entrance ── */}
+      <div style={{ opacity: 0, animation: 'invoiceDetailIn 0.25s ease forwards' }}>
+
       {/* ── Dialog header premium ── */}
       <div
         className="-mx-6 -mt-2 mb-5 px-6 py-5 rounded-t-lg"
@@ -453,6 +461,8 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
           Imprimer
         </Button>
       </DialogFooter>
+
+      </div>{/* end animated entrance wrapper */}
     </>
   );
 }
@@ -714,7 +724,7 @@ export default function InvoicesPage() {
                       <th className="px-4 py-3 w-24" />
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody key={`${statusFilter}-${search}-${page}`}>
                     {typedPaginated.length === 0 && (
                       <tr>
                         <td colSpan={8} className="text-center py-12">
@@ -725,11 +735,16 @@ export default function InvoicesPage() {
                         </td>
                       </tr>
                     )}
-                    {typedPaginated.map((inv) => (
+                    {typedPaginated.map((inv, idx) => (
                       <tr
                         key={inv.id}
                         className="group border-b border-border/60 transition-colors"
-                        style={{ cursor: "pointer" }}
+                        style={{
+                          cursor: "pointer",
+                          opacity: 0,
+                          animation: 'slideInUp 0.3s ease forwards',
+                          animationDelay: `${idx * 45}ms`,
+                        }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(22 72% 48% / 0.03)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
@@ -766,7 +781,7 @@ export default function InvoicesPage() {
                         <td className="px-4 py-3.5 text-right">
                           <span
                             className="font-bold text-sm font-editorial"
-                            style={{ color: "hsl(22 72% 48%)" }}
+                            style={{ color: "hsl(22 72% 48%)", transition: "color 0.3s ease" }}
                           >
                             {formatFCFA(inv.total_amount)}
                           </span>
@@ -776,7 +791,7 @@ export default function InvoicesPage() {
                         <td className="px-4 py-3.5">
                           <span
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
-                            style={getPaymentStyle(inv.payment_method)}
+                            style={{ ...getPaymentStyle(inv.payment_method), transition: "background 0.2s, color 0.2s" }}
                           >
                             {getPaymentLabel(inv.payment_method)}
                           </span>
@@ -837,18 +852,23 @@ export default function InvoicesPage() {
             </div>
 
             {/* Mobile : card list — md:hidden */}
-            <div className="md:hidden space-y-2.5">
+            <div key={`mobile-${statusFilter}-${search}-${page}`} className="md:hidden space-y-2.5">
               {typedPaginated.length === 0 && (
                 <div className="bg-card border rounded-2xl py-10 flex flex-col items-center gap-2 text-muted-foreground">
                   <FileText className="w-8 h-8 opacity-40" />
                   <p className="text-sm">Aucune facture trouvée.</p>
                 </div>
               )}
-              {typedPaginated.map((inv) => (
+              {typedPaginated.map((inv, idx) => (
                 <div
                   key={inv.id}
                   className="bg-card border rounded-2xl p-4 flex flex-col gap-3 shadow-sm transition-all"
-                  style={{ borderColor: "hsl(var(--border))" }}
+                  style={{
+                    borderColor: "hsl(var(--border))",
+                    opacity: 0,
+                    animation: 'slideInUp 0.3s ease forwards',
+                    animationDelay: `${idx * 45}ms`,
+                  }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLDivElement).style.borderColor = "hsl(22 72% 48% / 0.4)";
                     (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px hsl(22 72% 48% / 0.1)";
@@ -904,7 +924,7 @@ export default function InvoicesPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                        style={getPaymentStyle(inv.payment_method)}
+                        style={{ ...getPaymentStyle(inv.payment_method), transition: "background 0.2s, color 0.2s" }}
                       >
                         {getPaymentLabel(inv.payment_method)}
                       </span>

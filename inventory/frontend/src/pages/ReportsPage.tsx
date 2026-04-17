@@ -244,26 +244,23 @@ export default function ReportsPage() {
 
         {/* ── KPIs ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            label="Ventes semaine"
-            value={isLoading ? "—" : formatFcfa(weekRevenue)}
-            icon={DollarSign}
-          />
-          <StatCard
-            label="Transactions"
-            value={isLoading ? "—" : String(weekTransactions)}
-            icon={ShoppingCart}
-          />
-          <StatCard
-            label="Panier moyen"
-            value={isLoading ? "—" : formatFcfa(avgBasket)}
-            icon={TrendingUp}
-          />
-          <StatCard
-            label="Clients actifs"
-            value={isLoading ? "—" : String(totalClients)}
-            icon={Users}
-          />
+          {[
+            { label: "Ventes semaine", value: isLoading ? "—" : formatFcfa(weekRevenue), icon: DollarSign },
+            { label: "Transactions", value: isLoading ? "—" : String(weekTransactions), icon: ShoppingCart },
+            { label: "Panier moyen", value: isLoading ? "—" : formatFcfa(avgBasket), icon: TrendingUp },
+            { label: "Clients actifs", value: isLoading ? "—" : String(totalClients), icon: Users },
+          ].map((card, index) => (
+            <div
+              key={card.label}
+              style={{
+                opacity: 0,
+                animation: "slideInLeft 0.3s ease forwards",
+                animationDelay: `${index * 70}ms`,
+              }}
+            >
+              <StatCard label={card.label} value={card.value} icon={card.icon} />
+            </div>
+          ))}
         </div>
 
         {/* ── Erreur ── */}
@@ -275,7 +272,14 @@ export default function ReportsPage() {
         )}
 
         {/* ── Grille graphiques ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        <div
+          className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5"
+          style={{
+            opacity: 0,
+            animation: "fadeIn 0.5s ease forwards",
+            animationDelay: "200ms",
+          }}
+        >
 
           {/* Graphique barres — ventes par jour */}
           <div className="card-premium p-6">
@@ -469,14 +473,18 @@ export default function ReportsPage() {
 
           {/* Cards de rapport */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {REPORTS.map((report) => (
+            {REPORTS.map((report, index) => (
               <div
                 key={report.id}
-                className="rounded-2xl overflow-hidden transition-all duration-200"
+                className="rounded-2xl overflow-hidden"
                 style={{
                   background: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
                   boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+                  opacity: 0,
+                  animation: "slide-in-up 0.35s ease forwards",
+                  animationDelay: `${index * 70}ms`,
+                  transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-3px)";
@@ -542,7 +550,7 @@ export default function ReportsPage() {
                   >
                     {report.isLoading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                        <Download className="w-4 h-4 animate-spin" />
                         Export en cours...
                       </>
                     ) : (

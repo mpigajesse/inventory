@@ -1,5 +1,6 @@
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -195,17 +196,24 @@ function PremiumKpi({
   trend,
 }: PremiumKpiProps) {
   const tc = tintConfig[tint];
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50 + delay);
+    return () => clearTimeout(timer);
+  }, [delay]);
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl cursor-default transition-all duration-300"
+      className="relative overflow-hidden rounded-2xl cursor-default"
       style={{
         background: "hsl(var(--card))",
         border: "1px solid hsl(var(--border))",
         boxShadow:
           "0 2px 8px hsl(22 30% 15% / 0.06), 0 8px 24px hsl(22 30% 15% / 0.04)",
-        animation: "fadeScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
-        animationDelay: `${delay}ms`,
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(16px)",
+        transition: `opacity 0.4s ease ${delay}ms, transform 0.4s ease ${delay}ms, box-shadow 0.3s ease`,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-3px)";
@@ -329,13 +337,29 @@ function SectionHeader({
   title,
   kicker,
   right,
+  animDelay = 0,
 }: {
   title: string;
   kicker?: string;
   right?: React.ReactNode;
+  animDelay?: number;
 }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50 + animDelay);
+    return () => clearTimeout(timer);
+  }, [animDelay]);
+
   return (
-    <div className="flex items-center gap-3 mb-4">
+    <div
+      className="flex items-center gap-3 mb-4"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateX(0)" : "translateX(-8px)",
+        transition: `opacity 0.35s ease ${animDelay}ms, transform 0.35s ease ${animDelay}ms`,
+      }}
+    >
       <div
         className="w-1 h-5 rounded-full shrink-0"
         style={{
@@ -355,6 +379,60 @@ function SectionHeader({
       </div>
       <div className="flex-1 h-px bg-border/60 ml-1" />
       {right}
+    </div>
+  );
+}
+
+// ─── Stock alert banner ───────────────────────────────────────────────────────
+
+function StockAlertBanner({ lowCount }: { lowCount: number }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div
+      className="flex items-center gap-3 p-4 rounded-xl mb-6 border"
+      style={{
+        background:
+          "linear-gradient(135deg, hsl(36 88% 52% / 0.08), hsl(22 72% 48% / 0.05))",
+        borderColor: "hsl(36 88% 52% / 0.3)",
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(-8px)",
+        transition: "opacity 0.3s ease-out, transform 0.3s ease-out",
+      }}
+    >
+      <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+        style={{ background: "hsl(36 88% 52% / 0.15)" }}
+      >
+        <AlertTriangle
+          className="w-4 h-4"
+          style={{ color: "hsl(36 80% 42%)" }}
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-sm font-semibold"
+          style={{ color: "hsl(22 25% 20%)" }}
+        >
+          {lowCount} produit{lowCount !== 1 ? "s" : ""} en rupture ou stock
+          critique
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Vérifiez votre stock pour maintenir vos ventes
+        </p>
+      </div>
+      <Link
+        to="/stock"
+        className="ml-auto text-xs font-semibold shrink-0 hover:underline"
+        style={{ color: "hsl(22 72% 48%)" }}
+      >
+        Voir le stock →
+      </Link>
     </div>
   );
 }
@@ -388,12 +466,12 @@ function GradientButton({
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-1px)";
+        e.currentTarget.style.transform = "translateY(-1px) scale(1.02)";
         e.currentTarget.style.boxShadow =
           "0 6px 20px hsl(22 72% 48% / 0.45)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.transform = "translateY(0) scale(1)";
         e.currentTarget.style.boxShadow =
           "0 4px 14px hsl(22 72% 48% / 0.35)";
       }}
@@ -528,43 +606,7 @@ export default function DashboardPage() {
 
         {/* ── Bandeau alerte stock ── */}
         {!isLoading && lowCount > 0 && (
-          <div
-            className="flex items-center gap-3 p-4 rounded-xl mb-6 border"
-            style={{
-              background:
-                "linear-gradient(135deg, hsl(36 88% 52% / 0.08), hsl(22 72% 48% / 0.05))",
-              borderColor: "hsl(36 88% 52% / 0.3)",
-            }}
-          >
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: "hsl(36 88% 52% / 0.15)" }}
-            >
-              <AlertTriangle
-                className="w-4 h-4"
-                style={{ color: "hsl(36 80% 42%)" }}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-sm font-semibold"
-                style={{ color: "hsl(22 25% 20%)" }}
-              >
-                {lowCount} produit{lowCount !== 1 ? "s" : ""} en rupture ou
-                stock critique
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Vérifiez votre stock pour maintenir vos ventes
-              </p>
-            </div>
-            <Link
-              to="/stock"
-              className="ml-auto text-xs font-semibold shrink-0 hover:underline"
-              style={{ color: "hsl(22 72% 48%)" }}
-            >
-              Voir le stock →
-            </Link>
-          </div>
+          <StockAlertBanner lowCount={lowCount} />
         )}
 
         {/* ── KPI Cards ── */}
@@ -650,6 +692,7 @@ export default function DashboardPage() {
             <SectionHeader
               kicker="Activité"
               title="Ventes récentes"
+              animDelay={420}
               right={
                 <button
                   onClick={() => navigate("/invoices")}
@@ -787,6 +830,7 @@ export default function DashboardPage() {
               <SectionHeader
                 kicker="Stock"
                 title="Alertes"
+                animDelay={420}
                 right={
                   !isLoading && lowCount > 0 ? (
                     <span
@@ -883,6 +927,7 @@ export default function DashboardPage() {
               <SectionHeader
                 kicker="Performance"
                 title="Top produits"
+                animDelay={620}
                 right={<Trophy className="w-4 h-4 text-warning shrink-0" />}
               />
               <div

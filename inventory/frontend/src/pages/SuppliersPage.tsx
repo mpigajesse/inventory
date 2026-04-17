@@ -173,16 +173,18 @@ export default function SuppliersPage() {
 
         {/* ── Empty state ─────────────────────────────────────────────── */}
         {!isLoading && suppliers.length === 0 && (
-          <EmptyState
-            message="Aucun fournisseur trouvé."
-            icon={<Truck className="w-10 h-10" />}
-          />
+          <div style={{ animation: "fadeIn 0.4s ease forwards" }}>
+            <EmptyState
+              message="Aucun fournisseur trouvé."
+              icon={<Truck className="w-10 h-10" />}
+            />
+          </div>
         )}
 
         {/* ── Supplier Cards ──────────────────────────────────────────── */}
         {!isLoading && suppliers.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {suppliers.map((supplier) => {
+          <div key={search} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {suppliers.map((supplier, index) => {
               const ordersCount = supplier.orders_count ?? 0;
               const isActive = ordersCount > 0;
               const locationLabel = [supplier.city, supplier.country]
@@ -200,6 +202,7 @@ export default function SuppliersPage() {
                   canManage={can("manage_suppliers")}
                   onEdit={() => navigate(`/suppliers/${supplier.id}/edit`)}
                   onDelete={() => setDeletingSupplier(supplier)}
+                  animationDelay={index * 65}
                 />
               );
             })}
@@ -260,6 +263,7 @@ interface SupplierCardProps {
   canManage: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  animationDelay?: number;
 }
 
 function SupplierCard({
@@ -271,6 +275,7 @@ function SupplierCard({
   canManage,
   onEdit,
   onDelete,
+  animationDelay = 0,
 }: SupplierCardProps) {
   function handleMouseEnter(e: React.MouseEvent<HTMLDivElement>) {
     e.currentTarget.style.transform = "translateY(-3px)";
@@ -286,11 +291,15 @@ function SupplierCard({
 
   return (
     <div
-      className="group flex flex-col rounded-2xl p-5 transition-all duration-250"
+      className="group flex flex-col rounded-2xl p-5"
       style={{
         background: "hsl(var(--card))",
         border: "1px solid hsl(var(--border))",
         boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+        animation: "slideInUp 0.35s ease forwards",
+        animationDelay: `${animationDelay}ms`,
+        opacity: 0,
+        transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -393,6 +402,7 @@ function SupplierCard({
               style={{
                 fontFamily: "Fraunces, serif",
                 color: "hsl(22 72% 48%)",
+                transition: "color 0.3s ease",
               }}
             >
               {ordersCount}
@@ -411,6 +421,7 @@ function SupplierCard({
                 supplier.balance > 0
                   ? "hsl(152 38% 38%)"
                   : "hsl(4 72% 52%)",
+              transition: "color 0.3s ease",
             }}
           >
             {supplier.balance > 0 ? "+" : ""}

@@ -136,9 +136,10 @@ interface SectionCardProps {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  animationDelay?: number;
 }
 
-function SectionCard({ title, icon, children }: SectionCardProps) {
+function SectionCard({ title, icon, children, animationDelay = 0 }: SectionCardProps) {
   return (
     <div
       className="rounded-2xl p-6"
@@ -146,6 +147,9 @@ function SectionCard({ title, icon, children }: SectionCardProps) {
         background: "hsl(var(--card))",
         border: "1px solid hsl(var(--border))",
         boxShadow: "0 2px 8px hsl(22 30% 15% / 0.05)",
+        animation: "slideInUp 0.35s ease forwards",
+        animationDelay: `${animationDelay}ms`,
+        opacity: 0,
       }}
     >
       {/* Section header */}
@@ -255,11 +259,12 @@ function StyledInput(props: React.ComponentProps<typeof Input>) {
     <Input
       {...props}
       className={[
-        "h-11 rounded-xl bg-background transition-shadow",
+        "h-11 rounded-xl bg-background",
         props.className ?? "",
       ].join(" ")}
       style={{
         border: "1.5px solid hsl(var(--border))",
+        transition: "border-color 0.2s ease, box-shadow 0.2s ease",
         ...(props.style ?? {}),
       }}
       onFocus={(e) => {
@@ -342,7 +347,10 @@ export default function SupplierFormPage() {
         subtitle={pageSubtitle}
         onMenuClick={onMenuClick}
       />
-      <div className="page-container animate-slide-in">
+      <div
+        className="page-container"
+        style={{ animation: "fadeIn 0.3s ease forwards" }}
+      >
 
         {/* ── Breadcrumb ────────────────────────────────────────────── */}
         <div className="mb-6">
@@ -396,6 +404,7 @@ export default function SupplierFormPage() {
             <SectionCard
               title="Informations entreprise"
               icon={<Building2 className="w-3.5 h-3.5" />}
+              animationDelay={0}
             >
               <Field
                 label="Nom du fournisseur"
@@ -483,6 +492,7 @@ export default function SupplierFormPage() {
               <SectionCard
                 title="Produits fournis"
                 icon={<Tag className="w-3.5 h-3.5" />}
+                animationDelay={90}
               >
                 <Field label="Produits">
                   <TagInput value={productTags} onChange={setProductTags} />
@@ -500,6 +510,7 @@ export default function SupplierFormPage() {
               <SectionCard
                 title="Statut et commandes"
                 icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                animationDelay={180}
               >
                 <Field
                   label="Dernière commande"
@@ -578,10 +589,11 @@ export default function SupplierFormPage() {
             </Button>
             <Button
               type="submit"
-              className="h-10 rounded-xl px-6 text-white font-semibold border-0 transition-all hover:brightness-105 hover:-translate-y-px"
+              className="h-10 rounded-xl px-6 text-white font-semibold border-0 hover:brightness-105 hover:-translate-y-px"
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                 boxShadow: "0 4px 14px hsl(22 72% 48% / 0.30)",
+                transition: "transform 0.15s ease, box-shadow 0.2s ease",
               }}
               disabled={isSubmitting}
             >

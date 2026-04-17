@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useOutletContext } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
@@ -67,9 +67,10 @@ interface KpiCardProps {
   tint: KpiTint;
   isMoney?: boolean;
   delay?: number;
+  isVisible?: boolean;
 }
 
-function KpiCard({ label, value, hint, changePct, icon: Icon, tint, isMoney = false, delay = 0 }: KpiCardProps) {
+function KpiCard({ label, value, hint, changePct, icon: Icon, tint, isMoney = false, delay = 0, isVisible = true }: KpiCardProps) {
   const g = TINT_ICON_GRADIENT[tint];
   const isUp = changePct !== null && changePct !== undefined && changePct > 0;
   const isDown = changePct !== null && changePct !== undefined && changePct < 0;
@@ -77,13 +78,14 @@ function KpiCard({ label, value, hint, changePct, icon: Icon, tint, isMoney = fa
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-300"
+      className="relative overflow-hidden rounded-2xl p-5 hover:-translate-y-0.5"
       style={{
         background: "hsl(var(--card))",
         border: "1px solid hsl(var(--border))",
         boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
-        animation: "fadeScale 0.35s cubic-bezier(0.16,1,0.3,1) both",
-        animationDelay: `${delay}ms`,
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(14px)",
+        transition: `opacity 0.35s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.35s cubic-bezier(0.16,1,0.3,1) ${delay}ms, box-shadow 0.3s ease`,
       }}
     >
       {/* Decorative orb */}
@@ -157,6 +159,18 @@ function KpiCardSkeleton() {
 // ─── Overview KPI Grid ────────────────────────────────────────────────────────
 
 function OverviewKpiGrid({ data, isLoading }: { data: OverviewStats | undefined; isLoading: boolean }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) {
+      // Trigger on next tick so the DOM has painted with opacity:0 first
+      const id = requestAnimationFrame(() => setIsVisible(true));
+      return () => cancelAnimationFrame(id);
+    } else {
+      setIsVisible(false);
+    }
+  }, [isLoading]);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -174,12 +188,12 @@ function OverviewKpiGrid({ data, isLoading }: { data: OverviewStats | undefined;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <KpiCard label="Revenus"           value={data ? fmt(data.revenue.current) : "—"}       hint={`Période préc. : ${data ? fmt(data.revenue.previous) : "—"}`}           changePct={data?.revenue.change_pct}      icon={DollarSign}     tint="primary"     isMoney  delay={0}   />
-      <KpiCard label="Transactions"      value={data ? `${data.transactions.current}` : "—"}  hint={`Période préc. : ${data?.transactions.previous ?? "—"} txns`}             changePct={data?.transactions.change_pct} icon={ShoppingCart}   tint="accent"              delay={50}  />
-      <KpiCard label="Panier moyen"      value={data ? fmt(data.avg_basket.current) : "—"}    hint={`Période préc. : ${data ? fmt(data.avg_basket.previous) : "—"}`}           changePct={data?.avg_basket.change_pct}   icon={ShoppingBag}    tint="info"        isMoney  delay={100} />
-      <KpiCard label="Nouveaux clients"  value={data ? `${data.new_clients.current}` : "—"}   hint={`Période préc. : ${data?.new_clients.previous ?? "—"}`}                    changePct={data?.new_clients.change_pct}  icon={UserCheck}      tint="accent"              delay={150} />
-      <KpiCard label="Alertes stock"     value={data ? `${data.stock_alerts.low} bas · ${data.stock_alerts.critical} critique` : "—"} hint={hasCrit ? "Rupture imminente" : hasLow ? "Réapprovisionnement recommandé" : "Stock en bonne santé"} icon={AlertTriangle} tint={alertTint} delay={200} />
-      <KpiCard label="Paiement dominant" value={topPayLabel}                                   hint="Mode le plus utilisé sur la période"                                       icon={CreditCard}     tint="primary"             delay={250} />
+      <KpiCard label="Revenus"           value={data ? fmt(data.revenue.current) : "—"}       hint={`Période préc. : ${data ? fmt(data.revenue.previous) : "—"}`}           changePct={data?.revenue.change_pct}      icon={DollarSign}     tint="primary"     isMoney  delay={0}   isVisible={isVisible} />
+      <KpiCard label="Transactions"      value={data ? `${data.transactions.current}` : "—"}  hint={`Période préc. : ${data?.transactions.previous ?? "—"} txns`}             changePct={data?.transactions.change_pct} icon={ShoppingCart}   tint="accent"              delay={70}  isVisible={isVisible} />
+      <KpiCard label="Panier moyen"      value={data ? fmt(data.avg_basket.current) : "—"}    hint={`Période préc. : ${data ? fmt(data.avg_basket.previous) : "—"}`}           changePct={data?.avg_basket.change_pct}   icon={ShoppingBag}    tint="info"        isMoney  delay={140} isVisible={isVisible} />
+      <KpiCard label="Nouveaux clients"  value={data ? `${data.new_clients.current}` : "—"}   hint={`Période préc. : ${data?.new_clients.previous ?? "—"}`}                    changePct={data?.new_clients.change_pct}  icon={UserCheck}      tint="accent"              delay={210} isVisible={isVisible} />
+      <KpiCard label="Alertes stock"     value={data ? `${data.stock_alerts.low} bas · ${data.stock_alerts.critical} critique` : "—"} hint={hasCrit ? "Rupture imminente" : hasLow ? "Réapprovisionnement recommandé" : "Stock en bonne santé"} icon={AlertTriangle} tint={alertTint} delay={280} isVisible={isVisible} />
+      <KpiCard label="Paiement dominant" value={topPayLabel}                                   hint="Mode le plus utilisé sur la période"                                       icon={CreditCard}     tint="primary"             delay={350} isVisible={isVisible} />
     </div>
   );
 }
@@ -206,11 +220,12 @@ function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
           key={p}
           onClick={() => onChange(p)}
           className={cn(
-            "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150",
+            "px-3.5 py-1.5 rounded-lg text-xs font-semibold",
             value === p
               ? "bg-card shadow-sm text-foreground border border-border"
               : "text-muted-foreground hover:text-foreground hover:bg-card/50"
           )}
+          style={{ transition: "background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease" }}
         >
           {label}
         </button>
@@ -278,12 +293,32 @@ export default function StatisticsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const [period, setPeriod] = useState<StatPeriod>("week");
   const [activeTab, setActiveTab] = useState<TabId>("ventes");
+  const [displayedTab, setDisplayedTab] = useState<TabId>("ventes");
+  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+  const tabTransitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: overview, isLoading: overviewLoading } = useQuery<OverviewStats>({
     queryKey: ["stats-overview", period],
     queryFn: () => statisticsService.getOverview(period),
     refetchInterval: 60_000,
   });
+
+  function handleTabChange(tab: TabId) {
+    if (tab === activeTab) return;
+    if (tabTransitionRef.current) clearTimeout(tabTransitionRef.current);
+    setActiveTab(tab);
+    setIsTabTransitioning(true);
+    tabTransitionRef.current = setTimeout(() => {
+      setDisplayedTab(tab);
+      setIsTabTransitioning(false);
+    }, 150);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (tabTransitionRef.current) clearTimeout(tabTransitionRef.current);
+    };
+  }, []);
 
   return (
     <>
@@ -294,6 +329,17 @@ export default function StatisticsPage() {
       />
 
       <div className="page-container animate-slide-in space-y-6">
+        {/* ── Float keyframes ── */}
+        <style>{`
+          @keyframes stats-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+          }
+        `}</style>
+
+        {/* ── Decorative background orbs ── */}
+        <div aria-hidden className="pointer-events-none fixed top-16 right-8 w-64 h-64 rounded-full" style={{ background: "radial-gradient(circle, hsl(22 72% 48% / 0.06) 0%, transparent 70%)", animation: "stats-float 4s ease-in-out infinite", zIndex: 0 }} />
+        <div aria-hidden className="pointer-events-none fixed bottom-24 left-12 w-48 h-48 rounded-full" style={{ background: "radial-gradient(circle, hsl(152 38% 38% / 0.05) 0%, transparent 70%)", animation: "stats-float 4s ease-in-out infinite 2s", zIndex: 0 }} />
 
         {/* ── Premium page header ── */}
         <div className="mb-2">
@@ -332,15 +378,23 @@ export default function StatisticsPage() {
         <OverviewKpiGrid data={overview} isLoading={overviewLoading} />
 
         {/* ── Navigation par onglets ── */}
-        <TabNav active={activeTab} onChange={setActiveTab} />
+        <TabNav active={activeTab} onChange={handleTabChange} />
 
-        {/* ── Contenu de l'onglet actif ── */}
-        {activeTab === "ventes"    && <SalesChart period={period} />}
-        {activeTab === "produits"  && <ProductsTab period={period} />}
-        {activeTab === "stock"     && <StockTab />}
-        {activeTab === "clients"   && <ClientsTab period={period} />}
-        {activeTab === "caissiers" && <CashiersTab period={period} />}
-        {activeTab === "paiements" && <PaymentTab period={period} />}
+        {/* ── Contenu de l'onglet actif (avec transition) ── */}
+        <div
+          style={{
+            transition: "opacity 0.15s ease, transform 0.15s ease",
+            opacity: isTabTransitioning ? 0 : 1,
+            transform: isTabTransitioning ? "translateY(6px)" : "none",
+          }}
+        >
+          {displayedTab === "ventes"    && <SalesChart period={period} />}
+          {displayedTab === "produits"  && <ProductsTab period={period} />}
+          {displayedTab === "stock"     && <StockTab />}
+          {displayedTab === "clients"   && <ClientsTab period={period} />}
+          {displayedTab === "caissiers" && <CashiersTab period={period} />}
+          {displayedTab === "paiements" && <PaymentTab period={period} />}
+        </div>
 
       </div>
     </>

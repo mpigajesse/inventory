@@ -40,7 +40,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -213,8 +213,9 @@ function StatusPill({ status }: { status: StockItem["status"] }) {
 
 // ─── Stock bar cell ───────────────────────────────────────────────────────────
 
-function StockBarCell({ item }: { item: StockItem }) {
+function StockBarCell({ item, rowIndex = 0 }: { item: StockItem; rowIndex?: number }) {
   const pct = item.max > 0 ? Math.min(100, Math.round((item.stock / item.max) * 100)) : 0;
+  const delay = `${rowIndex * 40 + 200}ms`;
   return (
     <div className="min-w-[120px]">
       <div className="flex items-center justify-between mb-1">
@@ -231,10 +232,13 @@ function StockBarCell({ item }: { item: StockItem }) {
         style={{ background: "hsl(var(--muted))" }}
       >
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full"
           style={{
             width: `${pct}%`,
             background: statusColor(item.status),
+            transformOrigin: "left",
+            transform: "scaleX(1)",
+            animation: `stockBarGrow 0.6s ease-out ${delay} both`,
           }}
         />
       </div>
@@ -513,6 +517,7 @@ interface HealthBannerProps {
   normalCount: number;
   lowCount: number;
   criticalCount: number;
+  visible?: boolean;
 }
 
 function HealthBanner({
@@ -521,6 +526,7 @@ function HealthBanner({
   normalCount,
   lowCount,
   criticalCount,
+  visible = true,
 }: HealthBannerProps) {
   const total = normalCount + lowCount + criticalCount || 1;
   const normalPct = Math.round((normalCount / total) * 100);
@@ -534,6 +540,9 @@ function HealthBanner({
         background: "hsl(var(--card))",
         border: "1px solid hsl(var(--border))",
         boxShadow: "0 2px 8px hsl(22 30% 15% / 0.06)",
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(-10px)",
+        transition: "opacity 0.4s ease-out, transform 0.4s ease-out",
       }}
     >
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -562,7 +571,7 @@ function HealthBanner({
               color: COLOR.critical,
             }}
           >
-            ⚠ {criticalCount} critique{criticalCount > 1 ? "s" : ""}
+            <AlertTriangle className="w-4 h-4 inline-block mr-1" />{criticalCount} critique{criticalCount > 1 ? "s" : ""}
           </span>
         )}
       </div>
@@ -652,9 +661,10 @@ function LevelFilterPills({
           <button
             key={tab.key}
             onClick={() => onChange(tab.key)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-            style={
-              isActive
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+            style={{
+              transition: "background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease",
+              ...(isActive
                 ? {
                     background: activeGradient,
                     color: "white",
@@ -663,8 +673,8 @@ function LevelFilterPills({
                 : {
                     background: "hsl(var(--muted))",
                     color: "hsl(var(--muted-foreground))",
-                  }
-            }
+                  }),
+            }}
           >
             {tab.label}
             <span
@@ -700,6 +710,12 @@ export default function StockPage() {
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
     (localStorage.getItem("stock-view") as "list" | "grid") ?? "grid"
   );
+  const [bannerVisible, setBannerVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setBannerVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   function setView(mode: "list" | "grid") {
     setViewMode(mode);
@@ -793,6 +809,9 @@ export default function StockPage() {
   const typedPaginated = paginated as unknown as StockItem[];
 
   const allPageIds = typedPaginated.map((i) => i.id);
+
+  // Key changes whenever filters/search/page change → remounts table → replays stagger
+  const tableKey = `${search}|${categoryFilter}|${levelFilter}|${page}|${viewMode}`;
 
   // ── Category filter options derived from API data ──────────────────────────
 
@@ -906,6 +925,7 @@ export default function StockPage() {
             normalCount={normalCount}
             lowCount={lowCount}
             criticalCount={criticalCount}
+            visible={bannerVisible}
           />
         )}
 
@@ -1048,7 +1068,7 @@ export default function StockPage() {
 
         {/* ── Vue grille ─────────────────────────────────────────────────────── */}
         {viewMode === "grid" && !isLoading && (
-          <div>
+          <div key={tableKey}>
             {typedPaginated.length === 0 && (
               <div className="rounded-xl border bg-card py-10 flex flex-col items-center gap-2 text-muted-foreground">
                 <Package className="w-8 h-8 opacity-40" />
@@ -1056,7 +1076,7 @@ export default function StockPage() {
               </div>
             )}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {typedPaginated.map((item) => {
+              {typedPaginated.map((item, index) => {
                 const pct =
                   item.max > 0
                     ? Math.min(100, Math.round((item.stock / item.max) * 100))
@@ -1078,6 +1098,9 @@ export default function StockPage() {
                           : item.status === "bas"
                           ? `3px solid ${COLOR.low}`
                           : "3px solid transparent",
+                      animationDelay: `${index * 40}ms`,
+                      animation: "slideInUp 0.3s ease forwards",
+                      opacity: 0,
                     }}
                   >
                     {/* Icône + Nom + catégorie */}
@@ -1113,10 +1136,12 @@ export default function StockPage() {
                     {/* Barre de progression */}
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full"
                         style={{
                           width: `${pct}%`,
                           background: statusColor(item.status),
+                          transformOrigin: "left",
+                          animation: `stockBarGrow 0.6s ease-out ${index * 40 + 200}ms both`,
                         }}
                       />
                     </div>
@@ -1159,7 +1184,7 @@ export default function StockPage() {
         {viewMode === "list" && isLoading ? (
           <TableSkeleton />
         ) : viewMode === "list" ? (
-          <div className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
+          <div key={tableKey} className="hidden md:block bg-card rounded-xl border shadow-sm overflow-hidden">
             <div className="overflow-x-auto max-h-[70vh]">
               <table className="data-table">
                 <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
@@ -1185,14 +1210,14 @@ export default function StockPage() {
                       </td>
                     </tr>
                   )}
-                  {typedPaginated.map((item) => {
+                  {typedPaginated.map((item, index) => {
                     const pct = item.max > 0
                       ? Math.min(100, Math.round((item.stock / item.max) * 100))
                       : 0;
                     return (
                       <tr
                         key={item.id}
-                        className="group transition-colors"
+                        className="group"
                         style={{
                           background: isSelected(item.id)
                             ? "hsl(var(--primary) / 0.05)"
@@ -1207,6 +1232,9 @@ export default function StockPage() {
                               : item.status === "bas"
                               ? `3px solid ${COLOR.low}`
                               : "3px solid transparent",
+                          animationDelay: `${index * 40}ms`,
+                          animation: "slideInUp 0.3s ease forwards",
+                          opacity: 0,
                         }}
                       >
                         <td className="w-10">
@@ -1223,7 +1251,7 @@ export default function StockPage() {
 
                         {/* Colonne Stock avec barre visuelle */}
                         <td className="px-4 py-3">
-                          <StockBarCell item={item} />
+                          <StockBarCell item={item} rowIndex={index} />
                         </td>
 
                         <td className="tabular-nums text-muted-foreground">{item.min}</td>
@@ -1292,13 +1320,13 @@ export default function StockPage() {
 
         {/* ── Mobile : card list ─────────────────────────────────────────────── */}
         {!isLoading && (
-          <div className="md:hidden space-y-2">
+          <div key={tableKey} className="md:hidden space-y-2">
             {typedPaginated.length === 0 && (
               <div className="text-center py-8 text-muted-foreground text-sm">
                 Aucun produit trouvé.
               </div>
             )}
-            {typedPaginated.map((item) => {
+            {typedPaginated.map((item, index) => {
               const pct = item.max > 0
                 ? Math.min(100, Math.round((item.stock / item.max) * 100))
                 : 0;
@@ -1322,6 +1350,9 @@ export default function StockPage() {
                     background: isSelected(item.id)
                       ? "hsl(var(--primary) / 0.04)"
                       : undefined,
+                    animationDelay: `${index * 40}ms`,
+                    animation: "slideInUp 0.3s ease forwards",
+                    opacity: 0,
                   }}
                 >
                   {/* Header row : nom produit + badge statut */}

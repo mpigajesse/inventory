@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { statisticsService } from "@/services/statisticsService";
 import type { StatPeriod, CashierStat } from "@/services/statisticsService";
@@ -25,11 +25,23 @@ interface CashierRowProps {
   isTop: boolean;
   revenuePct: number;
   rank: number;
+  rowVisible: boolean;
+  rowDelay: number;
+  barVisible: boolean;
+  barDelay: number;
 }
 
-function CashierRow({ stat, isTop, revenuePct, rank }: CashierRowProps) {
+function CashierRow({ stat, isTop, revenuePct, rank, rowVisible, rowDelay, barVisible, barDelay }: CashierRowProps) {
   return (
-    <tr className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+    <tr
+      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+      style={{
+        opacity: rowVisible ? 1 : 0,
+        transform: rowVisible ? "translateY(0)" : "translateY(5px)",
+        transition: `opacity 0.35s ease, transform 0.35s ease`,
+        transitionDelay: `${rowDelay}ms`,
+      }}
+    >
       {/* Rang */}
       <td className="px-4 py-3 text-sm font-medium text-muted-foreground w-12">
         <span
@@ -42,6 +54,11 @@ function CashierRow({ stat, isTop, revenuePct, rank }: CashierRowProps) {
               ? "bg-primary/10 text-primary"
               : "bg-muted/50 text-muted-foreground/60"
           }`}
+          style={{
+            transform: rowVisible ? "scale(1)" : "scale(0)",
+            transition: `transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)`,
+            transitionDelay: `${rowDelay + 60}ms`,
+          }}
         >
           {rank}
         </span>
@@ -98,12 +115,16 @@ function CashierRow({ stat, isTop, revenuePct, rank }: CashierRowProps) {
           </span>
           <div className="h-1 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full"
               style={{
                 width: `${revenuePct}%`,
                 background: isTop
                   ? "linear-gradient(90deg, hsl(36, 88%, 52%), hsl(22, 72%, 48%))"
                   : "linear-gradient(90deg, hsl(22, 72%, 48%), hsl(36, 88%, 52%))",
+                transform: barVisible ? "scaleX(1)" : "scaleX(0)",
+                transformOrigin: "left",
+                transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+                transitionDelay: `${barDelay}ms`,
               }}
             />
           </div>
@@ -130,6 +151,22 @@ export function CashiersTab({ period }: CashiersTabProps) {
     queryKey: ["statistics", "cashiers", period],
     queryFn: () => statisticsService.getCashiers({ period }),
   });
+
+  // Entrance animation state
+  const [headerVisible, setHeaderVisible] = useState(false);
+  const [rowsVisible, setRowsVisible] = useState(false);
+  const [barVisible, setBarVisible] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setHeaderVisible(true), 30);
+    const t2 = setTimeout(() => setRowsVisible(true), 80);
+    const t3 = setTimeout(() => setBarVisible(true), 300);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -161,7 +198,14 @@ export function CashiersTab({ period }: CashiersTabProps) {
     <div className="space-y-6">
 
       {/* En-tête */}
-      <div className="flex items-center gap-2">
+      <div
+        className="flex items-center gap-2"
+        style={{
+          opacity: headerVisible ? 1 : 0,
+          transform: headerVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+        }}
+      >
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
           <Users className="w-4 h-4 text-primary" />
         </div>
@@ -208,6 +252,10 @@ export function CashiersTab({ period }: CashiersTabProps) {
                       isTop={stat.cashier_id === topId}
                       revenuePct={revenuePct}
                       rank={idx + 1}
+                      rowVisible={rowsVisible}
+                      rowDelay={idx * 45}
+                      barVisible={barVisible}
+                      barDelay={idx * 80}
                     />
                   );
                 })}

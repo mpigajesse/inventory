@@ -69,10 +69,11 @@ function PremiumInput({ label, required, error, hint, ...props }: PremiumInputPr
       </label>
       <input
         ref={inputRef}
-        className="w-full h-10 px-3.5 rounded-xl text-sm outline-none transition-all bg-card"
+        className="w-full h-10 px-3.5 rounded-xl text-sm outline-none bg-card"
         style={{
           border: `1.5px solid ${focused ? TERRACOTTA : error ? "hsl(4 72% 52%)" : "hsl(var(--border))"}`,
           boxShadow: focused ? `0 0 0 3px hsl(22 72% 48% / 0.12)` : error ? `0 0 0 3px hsl(4 72% 52% / 0.1)` : "none",
+          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
         }}
         onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
         onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
@@ -207,6 +208,9 @@ export default function ClientFormPage() {
                 background: "hsl(var(--card))",
                 border: "1.5px solid hsl(var(--border))",
                 boxShadow: "0 1px 8px hsl(0 0% 0% / 0.04)",
+                animation: "slideInUp 0.35s ease forwards",
+                animationDelay: "0ms",
+                opacity: 0,
               }}
             >
               <p
@@ -250,6 +254,9 @@ export default function ClientFormPage() {
                 background: "hsl(var(--card))",
                 border: "1.5px solid hsl(var(--border))",
                 boxShadow: "0 1px 8px hsl(0 0% 0% / 0.04)",
+                animation: "slideInUp 0.35s ease forwards",
+                animationDelay: "80ms",
+                opacity: 0,
               }}
             >
               <p
@@ -283,6 +290,7 @@ export default function ClientFormPage() {
                       background: "hsl(36 88% 52% / 0.08)",
                       border: "1px solid hsl(36 88% 52% / 0.2)",
                       color: "hsl(28 75% 38%)",
+                      animation: "slideInUp 0.25s ease forwards",
                     }}
                   >
                     <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
@@ -325,10 +333,11 @@ export default function ClientFormPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 hover:brightness-110 active:scale-95"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 hover:brightness-110 active:scale-95"
               style={{
                 background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})`,
                 boxShadow: `0 4px 14px hsl(22 72% 48% / 0.35)`,
+                transition: "transform 0.15s ease, box-shadow 0.2s ease",
               }}
             >
               {isSubmitting ? (
@@ -374,10 +383,12 @@ function CreditInput({ hasCredit, error, registration }: CreditInputProps) {
         type="number"
         min={0}
         step={100}
-        className="w-full h-10 px-3.5 rounded-xl text-sm outline-none transition-all bg-card"
+        className="w-full h-10 px-3.5 rounded-xl text-sm outline-none bg-card"
         style={{
           border: `1.5px solid ${borderColor}`,
           boxShadow: shadow,
+          background: hasCredit ? "hsl(36 88% 52% / 0.04)" : "hsl(var(--card))",
+          transition: "border-color 0.3s ease, background 0.3s ease, box-shadow 0.2s ease",
         }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}

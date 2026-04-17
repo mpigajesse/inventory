@@ -128,8 +128,12 @@ function PrintableCard({ product }: PrintableCardProps) {
       {/* Visible print button */}
       <button
         type="button"
-        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
-        style={{ background: 'hsl(22 72% 48% / 0.1)', color: 'hsl(22 72% 48%)' }}
+        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold"
+        style={{
+          background: 'hsl(22 72% 48% / 0.1)',
+          color: 'hsl(22 72% 48%)',
+          transition: 'background 0.2s ease, color 0.2s ease',
+        }}
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'hsl(22 72% 48% / 0.18)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'hsl(22 72% 48% / 0.1)'; }}
         onClick={() => handlePrint()}
@@ -148,6 +152,7 @@ interface ProductBarcodeCardProps {
   selected: boolean;
   onToggleSelect: (id: number) => void;
   onGenerate: (id: number) => void;
+  index?: number;
 }
 
 function ProductBarcodeCard({
@@ -155,30 +160,41 @@ function ProductBarcodeCard({
   selected,
   onToggleSelect,
   onGenerate,
+  index = 0,
 }: ProductBarcodeCardProps) {
   const hasBarcode = Boolean(product.barcode);
 
   return (
     <div
       className={[
-        "bg-card rounded-xl p-4 flex flex-col gap-3 transition-all duration-200",
+        "bg-card rounded-xl p-4 flex flex-col gap-3",
         hasBarcode
           ? "border border-l-4 border-l-[hsl(var(--success))] border-border/70"
           : "border border-border/70",
         selected
           ? "ring-2 ring-primary border-primary"
-          : "hover:-translate-y-0.5",
+          : "",
       ].join(" ")}
       style={{
         boxShadow: selected
           ? '0 6px 20px hsl(22 72% 48% / 0.2)'
           : '0 1px 4px hsl(22 30% 15% / 0.06)',
+        transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+        opacity: 0,
+        animation: 'barcodeCardIn 0.35s ease forwards',
+        animationDelay: `${index * 55}ms`,
       }}
       onMouseEnter={e => {
-        if (!selected) (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 14px hsl(22 30% 15% / 0.12)';
+        if (!selected) {
+          (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)';
+          (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 24px hsl(22 45% 30% / 0.18)';
+        }
       }}
       onMouseLeave={e => {
-        if (!selected) (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)';
+        if (!selected) {
+          (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+          (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px hsl(22 30% 15% / 0.06)';
+        }
       }}
     >
       {/* Header */}
@@ -540,13 +556,14 @@ export default function BarcodesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProducts.map((product) => (
+            {filteredProducts.map((product, index) => (
               <ProductBarcodeCard
                 key={product.id}
                 product={product}
                 selected={selected.has(product.id)}
                 onToggleSelect={handleToggleSelect}
                 onGenerate={handleGenerate}
+                index={index}
               />
             ))}
           </div>

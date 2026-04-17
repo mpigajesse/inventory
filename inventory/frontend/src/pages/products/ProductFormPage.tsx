@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { ArrowLeft, Package, Camera, X, Loader2, Image as ImageIcon, DollarSign, Barcode } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -47,13 +47,14 @@ interface SectionCardProps {
   icon: React.ReactNode;
   title: string;
   children: React.ReactNode;
+  animStyle?: React.CSSProperties;
 }
 
-function SectionCard({ icon, title, children }: SectionCardProps) {
+function SectionCard({ icon, title, children, animStyle }: SectionCardProps) {
   return (
     <div
       className="rounded-2xl p-5"
-      style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+      style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', ...animStyle }}
     >
       <h3 className="font-bold text-sm mb-5 flex items-center gap-2 text-foreground">
         <span style={{ color: 'hsl(22 72% 48%)' }}>{icon}</span>
@@ -83,7 +84,16 @@ function Field({ label, required, error, hint, children, htmlFor }: FieldProps) 
       </Label>
       {children}
       {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && (
+        <p
+          className="text-xs text-destructive"
+          style={{
+            animation: 'fieldErrorIn 0.2s ease forwards',
+          }}
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -115,11 +125,12 @@ function ImageUploadZone({
 }: ImageUploadZoneProps) {
   return (
     <div
-      className="relative rounded-2xl overflow-hidden border-2 border-dashed transition-all duration-200 cursor-pointer"
+      className="relative rounded-2xl overflow-hidden border-2 border-dashed cursor-pointer"
       style={{
-        borderColor: isDragging ? 'hsl(22 72% 48%)' : 'hsl(var(--border))',
+        borderColor: isDragging ? 'hsl(22 72% 48% / 0.9)' : 'hsl(22 72% 48% / 0.4)',
         background: isDragging ? 'hsl(22 72% 48% / 0.05)' : 'hsl(var(--muted) / 0.5)',
         minHeight: '200px',
+        transition: 'border-color 0.2s ease, background 0.2s ease',
       }}
       onClick={() => fileInputRef.current?.click()}
       onDrop={onDrop}
@@ -136,7 +147,10 @@ function ImageUploadZone({
             src={previewUrl}
             alt="Aperçu du produit"
             className="w-full object-cover"
-            style={{ maxHeight: '200px' }}
+            style={{
+              maxHeight: '200px',
+              animation: 'imageReveal 0.3s ease forwards',
+            }}
           />
           {/* Overlay on hover */}
           <div
@@ -370,6 +384,21 @@ export default function ProductFormPage() {
     ? `Modification de ${existingProduct?.name ?? "produit"}`
     : "Ajouter un produit au catalogue";
 
+  // ── Mount animation ────────────────────────────────────────────────────────
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setIsMounted(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
+
+  function sectionStagger(index: number): React.CSSProperties {
+    return {
+      opacity: isMounted ? 1 : 0,
+      transform: isMounted ? 'translateY(0)' : 'translateY(10px)',
+      transition: `opacity 0.3s ease ${index * 90}ms, transform 0.3s ease ${index * 90}ms`,
+    };
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
@@ -415,7 +444,14 @@ export default function ProductFormPage() {
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            style={{
+              opacity: isMounted ? 1 : 0,
+              transition: 'opacity 0.3s ease',
+            }}
+          >
 
             {/* ── 2-column layout ─────────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -424,7 +460,7 @@ export default function ProductFormPage() {
               <div className="lg:col-span-2 space-y-5">
 
                 {/* Section: informations produit */}
-                <SectionCard icon={<Package className="w-4 h-4" />} title="Informations produit">
+                <SectionCard icon={<Package className="w-4 h-4" />} title="Informations produit" animStyle={sectionStagger(0)}>
                   <div className="space-y-5">
                     <Field label="Nom du produit" required htmlFor="name" error={errors.name?.message}>
                       <Input
@@ -467,11 +503,23 @@ export default function ProductFormPage() {
                       hint="Scannable avec un lecteur USB ou saisie manuelle."
                     >
                       <div className="relative">
-                        <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Barcode
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                          style={{ color: 'hsl(var(--muted-foreground))', transition: 'color 0.2s ease' }}
+                          data-barcode-icon
+                        />
                         <Input
                           id="barcode"
                           placeholder="Ex : 6001068002802"
                           className="h-11 rounded-lg focus-visible:ring-primary/50 font-mono pl-9"
+                          onFocus={(e) => {
+                            const icon = e.currentTarget.parentElement?.querySelector('[data-barcode-icon]') as HTMLElement | null;
+                            if (icon) icon.style.color = 'hsl(22 72% 48%)';
+                          }}
+                          onBlur={(e) => {
+                            const icon = e.currentTarget.parentElement?.querySelector('[data-barcode-icon]') as HTMLElement | null;
+                            if (icon) icon.style.color = '';
+                          }}
                           {...register("barcode")}
                         />
                       </div>
@@ -490,7 +538,7 @@ export default function ProductFormPage() {
                 </SectionCard>
 
                 {/* Section: tarification */}
-                <SectionCard icon={<DollarSign className="w-4 h-4" />} title="Tarification">
+                <SectionCard icon={<DollarSign className="w-4 h-4" />} title="Tarification" animStyle={sectionStagger(1)}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <Field
                       label="Prix de vente (FCFA)"
@@ -533,7 +581,7 @@ export default function ProductFormPage() {
               <div className="space-y-5">
                 <div
                   className="rounded-2xl p-5"
-                  style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                  style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', ...sectionStagger(2) }}
                 >
                   <h3 className="font-bold text-sm mb-5 text-foreground">Photo du produit</h3>
 
@@ -595,11 +643,29 @@ export default function ProductFormPage() {
                   padding: '0.5rem 1.25rem',
                   fontWeight: '600',
                   fontSize: '0.875rem',
-                  boxShadow: '0 4px 14px hsl(22 72% 48% / 0.3)',
+                  boxShadow: isPending ? 'none' : '0 4px 14px hsl(22 72% 48% / 0.3)',
                   cursor: isPending ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.375rem',
+                  transition: 'transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s',
+                  opacity: isPending ? 0.7 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isPending) {
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px hsl(22 72% 48% / 0.45)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = '';
+                  (e.currentTarget as HTMLElement).style.boxShadow = isPending ? 'none' : '0 4px 14px hsl(22 72% 48% / 0.3)';
+                }}
+                onMouseDown={(e) => {
+                  if (!isPending) (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                }}
+                onMouseUp={(e) => {
+                  if (!isPending) (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
                 }}
               >
                 {isPending && <Loader2 className="w-4 h-4 animate-spin" />}

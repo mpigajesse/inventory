@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart,
@@ -96,6 +96,22 @@ export function ClientsTab({ period }: ClientsTabProps) {
     queryFn: () => statisticsService.getClients({ period }),
   });
 
+  // Entrance animation state
+  const [kpiVisible, setKpiVisible] = useState(false);
+  const [barChartVisible, setBarChartVisible] = useState(false);
+  const [areaChartVisible, setAreaChartVisible] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setKpiVisible(true), 30);
+    const t2 = setTimeout(() => setBarChartVisible(true), 200);
+    const t3 = setTimeout(() => setAreaChartVisible(true), 350);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24 gap-3 text-muted-foreground">
@@ -117,43 +133,72 @@ export function ClientsTab({ period }: ClientsTabProps) {
   const topClients = data.top_clients.slice(0, 10);
   const byPeriod = data.by_period ?? [];
 
+  const kpiDefs = [0, 1, 2, 3];
+
   return (
     <div className="space-y-6">
 
       {/* ── Section 1 : Métriques clés ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Nouveaux clients"
-          value={String(data.new_clients_this_period)}
-          icon={Users}
-          change="Sur la période sélectionnée"
-          changeType="neutral"
-        />
-        <StatCard
-          label="Clients fidèles (≥2 achats)"
-          value={String(data.returning_clients)}
-          icon={UserCheck}
-          change="Ont acheté plusieurs fois"
-          changeType="positive"
-        />
-        <StatCard
-          label="Clients avec crédit"
-          value={String(data.clients_with_credit.count)}
-          icon={CreditCard}
-          change="Crédit en cours"
-          changeType={data.clients_with_credit.count > 0 ? "negative" : "neutral"}
-        />
-        <StatCard
-          label="Total crédit en cours"
-          value={formatFcfaFull(data.clients_with_credit.total_credit)}
-          icon={CreditCard}
-          change="Montant total dû"
-          changeType={data.clients_with_credit.total_credit > 0 ? "negative" : "neutral"}
-        />
+        {kpiDefs.map((idx) => (
+          <div
+            key={idx}
+            style={{
+              opacity: kpiVisible ? 1 : 0,
+              transform: kpiVisible ? "translateY(0)" : "translateY(12px)",
+              transition: `opacity 0.4s ease, transform 0.4s ease`,
+              transitionDelay: `${idx * 65}ms`,
+            }}
+          >
+            {idx === 0 && (
+              <StatCard
+                label="Nouveaux clients"
+                value={String(data.new_clients_this_period)}
+                icon={Users}
+                change="Sur la période sélectionnée"
+                changeType="neutral"
+              />
+            )}
+            {idx === 1 && (
+              <StatCard
+                label="Clients fidèles (≥2 achats)"
+                value={String(data.returning_clients)}
+                icon={UserCheck}
+                change="Ont acheté plusieurs fois"
+                changeType="positive"
+              />
+            )}
+            {idx === 2 && (
+              <StatCard
+                label="Clients avec crédit"
+                value={String(data.clients_with_credit.count)}
+                icon={CreditCard}
+                change="Crédit en cours"
+                changeType={data.clients_with_credit.count > 0 ? "negative" : "neutral"}
+              />
+            )}
+            {idx === 3 && (
+              <StatCard
+                label="Total crédit en cours"
+                value={formatFcfaFull(data.clients_with_credit.total_credit)}
+                icon={CreditCard}
+                change="Montant total dû"
+                changeType={data.clients_with_credit.total_credit > 0 ? "negative" : "neutral"}
+              />
+            )}
+          </div>
+        ))}
       </div>
 
       {/* ── Section 2 : Top 10 clients ── */}
-      <div className="card-premium p-6">
+      <div
+        className="card-premium p-6"
+        style={{
+          opacity: barChartVisible ? 1 : 0,
+          transform: barChartVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+        }}
+      >
         <div className="flex items-center gap-2 mb-5">
           <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
             <Users className="w-4 h-4 text-warning" />
@@ -210,7 +255,14 @@ export function ClientsTab({ period }: ClientsTabProps) {
 
       {/* ── Section 3 : Évolution clients ── */}
       {byPeriod.length > 0 && (
-        <div className="card-premium p-6">
+        <div
+          className="card-premium p-6"
+          style={{
+            opacity: areaChartVisible ? 1 : 0,
+            transform: areaChartVisible ? "translateY(0)" : "translateY(12px)",
+            transition: "opacity 0.4s ease, transform 0.4s ease",
+          }}
+        >
           <div className="flex items-center gap-2 mb-5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-primary" />

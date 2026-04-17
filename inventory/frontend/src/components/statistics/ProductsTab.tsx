@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -88,6 +89,25 @@ export function ProductsTab({ period }: ProductsTabProps) {
     staleTime: 60_000,
   });
 
+  // Entrance animation state
+  const [visible, setVisible] = useState(false);
+  const [chartVisible, setChartVisible] = useState(false);
+  const [pieVisible, setPieVisible] = useState(false);
+  const [slowVisible, setSlowVisible] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setVisible(true), 30);
+    const t2 = setTimeout(() => setChartVisible(true), 150);
+    const t3 = setTimeout(() => setPieVisible(true), 300);
+    const t4 = setTimeout(() => setSlowVisible(true), 80);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, []);
+
   if (isError) {
     return (
       <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-destructive/25 bg-destructive/5 text-destructive text-sm">
@@ -115,7 +135,14 @@ export function ProductsTab({ period }: ProductsTabProps) {
     <div className="space-y-6">
 
       {/* ── Section 1 : Top 10 par revenu ──────────────────────────────────── */}
-      <div className="card-premium p-6">
+      <div
+        className="card-premium p-6"
+        style={{
+          opacity: chartVisible ? 1 : 0,
+          transform: chartVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+        }}
+      >
         <div className="flex items-center gap-2 mb-5">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <BarChart2 className="w-4 h-4 text-primary" />
@@ -166,7 +193,14 @@ export function ProductsTab({ period }: ProductsTabProps) {
       </div>
 
       {/* ── Section 2 : Répartition par catégorie ─────────────────────────── */}
-      <div className="card-premium p-6">
+      <div
+        className="card-premium p-6"
+        style={{
+          opacity: pieVisible ? 1 : 0,
+          transform: pieVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+        }}
+      >
         <div className="flex items-center gap-2 mb-5">
           <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
             <PieChartIcon className="w-4 h-4 text-accent" />
@@ -230,6 +264,12 @@ export function ProductsTab({ period }: ProductsTabProps) {
                 <div
                   key={cat.category}
                   className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors"
+                  style={{
+                    opacity: visible ? 1 : 0,
+                    transform: visible ? "translateY(0)" : "translateY(5px)",
+                    transition: `opacity 0.35s ease, transform 0.35s ease`,
+                    transitionDelay: `${i * 45}ms`,
+                  }}
                 >
                   <span
                     className="w-3 h-3 rounded-full shrink-0"
@@ -250,7 +290,14 @@ export function ProductsTab({ period }: ProductsTabProps) {
       </div>
 
       {/* ── Section 3 : Produits à faible rotation ────────────────────────── */}
-      <div className="card-premium overflow-hidden">
+      <div
+        className="card-premium overflow-hidden"
+        style={{
+          opacity: slowVisible ? 1 : 0,
+          transform: slowVisible ? "translateY(0)" : "translateY(12px)",
+          transition: "opacity 0.4s ease 0.08s, transform 0.4s ease 0.08s",
+        }}
+      >
         <div className="flex items-center gap-2 px-6 py-4 border-b">
           <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
             <TrendingDown className="w-4 h-4 text-warning" />
@@ -286,7 +333,7 @@ export function ProductsTab({ period }: ProductsTabProps) {
                 </tr>
               </thead>
               <tbody>
-                {slowMovers.map((item) => {
+                {slowMovers.map((item, idx) => {
                   const soldBadge =
                     item.total_sold === 0
                       ? "danger"
@@ -301,7 +348,15 @@ export function ProductsTab({ period }: ProductsTabProps) {
                       : `${item.total_sold} ventes`;
 
                   return (
-                    <tr key={item.product_id}>
+                    <tr
+                      key={item.product_id}
+                      style={{
+                        opacity: visible ? 1 : 0,
+                        transform: visible ? "translateY(0)" : "translateY(5px)",
+                        transition: `opacity 0.35s ease, transform 0.35s ease`,
+                        transitionDelay: `${idx * 45}ms`,
+                      }}
+                    >
                       <td className="font-medium text-sm">{item.product_name}</td>
                       <td className="text-sm text-muted-foreground">{item.category}</td>
                       <td className="text-right">
