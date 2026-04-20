@@ -48,14 +48,20 @@ class Invoice(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.invoice_number:
-            from django.db import transaction
-            with transaction.atomic():
-                last = Invoice.objects.select_for_update().order_by('-pk').first()
-                if last:
+            # We must be inside an existing transaction.atomic() (from CreateSaleView).
+            # Lock the latest row to serialise concurrent invoice number generation.
+            # Using select_for_update() on the last row ensures only one writer
+            # advances the counter at a time within a given transaction.
+            # A unique constraint on invoice_number provides the final safety net.
+            last = Invoice.objects.select_for_update().order_by('-pk').first()
+            if last:
+                try:
                     suffix = int(last.invoice_number.split('-')[-1]) + 1
-                else:
-                    suffix = 1
-                self.invoice_number = f'FAC-{suffix:05d}'
+                except (ValueError, IndexError):
+                    suffix = last.pk + 1
+            else:
+                suffix = 1
+            self.invoice_number = f'FAC-{suffix:05d}'
         super().save(*args, **kwargs)
 
     @property

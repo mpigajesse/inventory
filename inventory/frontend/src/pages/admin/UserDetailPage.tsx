@@ -64,6 +64,7 @@ import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import type { Permission } from "@/hooks/usePermissions";
 import { Link } from "react-router-dom";
 import { getRoleLabel } from "@/lib/roleLabel";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -518,6 +519,8 @@ export default function UserDetailPage() {
   const navigate = useNavigate();
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const queryClient = useQueryClient();
+  const { currentUser } = useAuth();
+  const isSelf = currentUser ? String(id) === currentUser.id : false;
 
   const [editOpen, setEditOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -642,7 +645,7 @@ export default function UserDetailPage() {
     role: user.profile.role,
     genre: (user.profile.genre ?? "NC") as "M" | "F" | "NC",
     phone: user.profile.phone ?? "",
-    is_active_profile: user.is_active,
+    is_active_profile: user.profile.is_active,
   };
 
   return (
@@ -769,6 +772,7 @@ export default function UserDetailPage() {
                 <Pencil className="w-3.5 h-3.5" />
                 Modifier
               </button>
+              {!isSelf && (
               <button
                 type="button"
                 onClick={() => activateMutation.mutate()}
@@ -789,6 +793,7 @@ export default function UserDetailPage() {
                 )}
                 {user.is_active ? "Désactiver" : "Réactiver"}
               </button>
+              )}
             </div>
           </div>
         </div>
@@ -1208,6 +1213,7 @@ export default function UserDetailPage() {
                     Gérer les permissions
                   </Link>
                 )}
+                {!isSelf && (
                 <button
                   type="button"
                   onClick={() => activateMutation.mutate()}
@@ -1237,6 +1243,7 @@ export default function UserDetailPage() {
                   </div>
                   {user.is_active ? "Désactiver le compte" : "Réactiver le compte"}
                 </button>
+                )}
               </div>
             </div>
             </div>

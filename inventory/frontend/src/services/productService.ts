@@ -35,22 +35,36 @@ function multipartConfig() {
   return { headers: { 'Content-Type': undefined as unknown as string } };
 }
 
+/** Coerce DRF DecimalField strings to numbers so the frontend always works with numbers. */
+function coerceProductNumbers<T extends Product>(p: T): T {
+  return {
+    ...p,
+    selling_price: Number(p.selling_price),
+    purchase_price: Number(p.purchase_price),
+  };
+}
+
 export const productService = {
   getAll: (params?: Record<string, string>) =>
-    api.get<{ results: Product[]; count: number }>('/products/', { params }).then(r => r.data),
+    api
+      .get<{ results: Product[]; count: number }>('/products/', { params })
+      .then(r => ({
+        ...r.data,
+        results: r.data.results.map(coerceProductNumbers),
+      })),
 
   getById: (id: number) =>
-    api.get<ProductDetail>(`/products/${id}/`).then(r => r.data),
+    api.get<ProductDetail>(`/products/${id}/`).then(r => coerceProductNumbers(r.data)),
 
   create: (data: FormData | Partial<Product>) =>
     api
       .post<Product>('/products/', data, data instanceof FormData ? multipartConfig() : undefined)
-      .then(r => r.data),
+      .then(r => coerceProductNumbers(r.data)),
 
   update: (id: number, data: FormData | Partial<Product>) =>
     api
       .patch<Product>(`/products/${id}/`, data, data instanceof FormData ? multipartConfig() : undefined)
-      .then(r => r.data),
+      .then(r => coerceProductNumbers(r.data)),
 
   delete: (id: number) =>
     api.delete(`/products/${id}/`).then(r => r.data),

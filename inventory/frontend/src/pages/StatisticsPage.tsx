@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
 import { SalesChart } from "@/components/statistics/SalesCharts";
 import { ProductsTab } from "@/components/statistics/ProductsTab";
@@ -327,14 +327,30 @@ function TabNav({ active, onChange }: TabNavProps) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const VALID_PERIODS: StatPeriod[] = ["today", "week", "month", "year"];
+const VALID_TABS: TabId[] = ["ventes", "produits", "stock", "clients", "caissiers", "paiements"];
+
 export default function StatisticsPage() {
   // All hooks before any conditional rendering
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
-  const [period, setPeriod] = useState<StatPeriod>("week");
-  const [activeTab, setActiveTab] = useState<TabId>("ventes");
-  const [displayedTab, setDisplayedTab] = useState<TabId>("ventes");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Restore period and tab from URL — default to "week" / "ventes"
+  const rawPeriod = searchParams.get("period") as StatPeriod | null;
+  const rawTab = searchParams.get("tab") as TabId | null;
+  const initialPeriod: StatPeriod = rawPeriod && VALID_PERIODS.includes(rawPeriod) ? rawPeriod : "week";
+  const initialTab: TabId = rawTab && VALID_TABS.includes(rawTab) ? rawTab : "ventes";
+
+  const [period, setPeriodState] = useState<StatPeriod>(initialPeriod);
+  const [activeTab, setActiveTabState] = useState<TabId>(initialTab);
+  const [displayedTab, setDisplayedTab] = useState<TabId>(initialTab);
   const [isTabTransitioning, setIsTabTransitioning] = useState(false);
   const tabTransitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function setPeriod(p: StatPeriod) {
+    setPeriodState(p);
+    setSearchParams((prev) => { prev.set("period", p); return prev; }, { replace: true });
+  }
 
   const { data: overview, isLoading: overviewLoading } = useQuery<OverviewStats>({
     queryKey: ["stats-overview", period],
@@ -345,7 +361,8 @@ export default function StatisticsPage() {
   function handleTabChange(tab: TabId) {
     if (tab === activeTab) return;
     if (tabTransitionRef.current) clearTimeout(tabTransitionRef.current);
-    setActiveTab(tab);
+    setActiveTabState(tab);
+    setSearchParams((prev) => { prev.set("tab", tab); return prev; }, { replace: true });
     setIsTabTransitioning(true);
     tabTransitionRef.current = setTimeout(() => {
       setDisplayedTab(tab);

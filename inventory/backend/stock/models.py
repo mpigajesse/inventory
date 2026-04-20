@@ -23,7 +23,11 @@ class Stock(models.Model):
 
     @property
     def status(self):
-        if self.quantity <= self.min_threshold * 0.5:
+        # BUG-10 FIX: utiliser la division entière (//) pour éviter la comparaison
+        # int vs float qui peut donner des résultats inattendus (ex: 5 * 0.5 = 2.5,
+        # mais 5 // 2 = 2 — plus prévisible et cohérent avec PositiveIntegerField).
+        critical_threshold = self.min_threshold // 2
+        if self.quantity <= critical_threshold:
             return 'critique'
         if self.quantity <= self.min_threshold:
             return 'bas'

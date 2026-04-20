@@ -146,21 +146,27 @@ export function StatCard({
 
         {effectiveTrend !== null &&
           effectiveTrend !== undefined &&
+          typeof effectiveTrend === "number" &&
+          isFinite(effectiveTrend) &&
           trend !== undefined && (
             <div
               className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold"
               style={{
                 background:
-                  effectiveTrend >= 0
+                  effectiveTrend > 0
                     ? "hsl(152 38% 38% / 0.1)"
-                    : "hsl(4 72% 52% / 0.1)",
+                    : effectiveTrend < 0
+                    ? "hsl(4 72% 52% / 0.1)"
+                    : "hsl(var(--muted))",
                 color:
-                  effectiveTrend >= 0
+                  effectiveTrend > 0
                     ? "hsl(152 38% 38%)"
-                    : "hsl(4 72% 52%)",
+                    : effectiveTrend < 0
+                    ? "hsl(4 72% 52%)"
+                    : "hsl(var(--muted-foreground))",
               }}
             >
-              <span>{effectiveTrend >= 0 ? "↑" : "↓"}</span>
+              <span>{effectiveTrend > 0 ? "↑" : effectiveTrend < 0 ? "↓" : "—"}</span>
               <span>{Math.abs(effectiveTrend).toFixed(1)}%</span>
             </div>
           )}

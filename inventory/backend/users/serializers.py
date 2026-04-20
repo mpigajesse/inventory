@@ -35,7 +35,13 @@ class UserSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=['admin', 'vendeur'], write_only=True, default='vendeur')
     phone = serializers.CharField(required=False, write_only=True)
-    genre = serializers.CharField(required=False, write_only=True, allow_null=True, allow_blank=True)
+    genre = serializers.ChoiceField(
+        choices=[('M', 'Monsieur'), ('F', 'Madame')],
+        required=False,
+        write_only=True,
+        allow_null=True,
+        allow_blank=False,
+    )
     password = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
@@ -70,12 +76,18 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         source='profile.is_active',
         required=False,
     )
+    VALID_PERMISSIONS = [
+        'manage_users', 'manage_products', 'manage_stock', 'view_reports',
+        'manage_settings', 'manage_suppliers', 'view_barcodes',
+        'make_sales', 'view_invoices', 'manage_clients',
+    ]
     permissions = serializers.ListField(
-        child=serializers.CharField(),
+        child=serializers.ChoiceField(choices=VALID_PERMISSIONS),
         source='profile.permissions',
         required=False,
     )
-    genre = serializers.CharField(
+    genre = serializers.ChoiceField(
+        choices=[('M', 'Monsieur'), ('F', 'Madame'), ('', '')],
         source='profile.genre',
         required=False,
         allow_null=True,
@@ -131,6 +143,7 @@ class MeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'profile']
+        read_only_fields = ['id', 'username']
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop('profile', {})
@@ -175,11 +188,21 @@ class UserDetailSerializer(serializers.ModelSerializer):
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
+        # Vérification supplémentaire : le profil applicatif doit être actif.
+        # Django vérifie déjà user.is_active, mais un admin peut désactiver
+        # le profil (profile.is_active=False) indépendamment de user.is_active.
+        try:
+            profile = self.user.profile
+            if not profile.is_active:
+                from rest_framework_simplejwt.exceptions import AuthenticationFailed
+                raise AuthenticationFailed(
+                    'Ce compte a été désactivé. Contactez un administrateur.',
+                    code='account_disabled',
+                )
+            data['role'] = profile.role
+        except UserProfile.DoesNotExist:
+            data['role'] = 'vendeur'
         data['user_id'] = self.user.pk
         data['username'] = self.user.username
         data['full_name'] = self.user.get_full_name() or self.user.username
-        try:
-            data['role'] = self.user.profile.role
-        except UserProfile.DoesNotExist:
-            data['role'] = 'vendeur'
         return data

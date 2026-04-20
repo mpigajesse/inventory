@@ -1,8 +1,9 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { PageTransition } from "./PageTransition";
 import { AdminActivityToast } from "./AdminActivityToast";
+import { SidebarProvider, useSidebar } from "./SidebarContext";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,9 +13,10 @@ export interface AppLayoutContext {
   onSearchClick: () => void;
 }
 
-export function AppLayout() {
+function AppLayoutInner() {
   const { currentUser, isLoading } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const { collapsed, setCollapsed } = useSidebar();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
 
@@ -39,7 +41,7 @@ export function AppLayout() {
   }
 
   if (!currentUser) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
   if (currentUser.role === "vendeur") {
@@ -91,5 +93,13 @@ export function AppLayout() {
       {currentUser?.role === "admin" && <AdminActivityToast />}
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
     </div>
+  );
+}
+
+export function AppLayout() {
+  return (
+    <SidebarProvider>
+      <AppLayoutInner />
+    </SidebarProvider>
   );
 }

@@ -140,7 +140,7 @@ export function ClientsTab({ period }: ClientsTabProps) {
     );
   }
 
-  const topClients = data.top_clients.slice(0, 10);
+  const topClients = (data.top_clients ?? []).slice(0, 10);
   const byPeriod = data.by_period ?? [];
 
   const kpiDefs = [0, 1, 2, 3];

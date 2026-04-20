@@ -1,3 +1,15 @@
+/**
+ * Sanitise un code scanné (USB-HID / clavier).
+ * - Retire tout caractère non alphanumérique sauf tiret et underscore
+ * - Tronque à 64 caractères pour éviter les payloads anormalement longs
+ * Retourne null si le résultat est vide après nettoyage.
+ */
+export function sanitizeBarcode(raw: string): string | null {
+  if (typeof raw !== "string") return null;
+  const cleaned = raw.trim().replace(/[^A-Za-z0-9\-_]/g, "").slice(0, 64);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
 /** Generate a valid EAN-13 barcode string (client-side, for preview only). */
 export function generateEAN13(): string {
   const digits: number[] = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10));

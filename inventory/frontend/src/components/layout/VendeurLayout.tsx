@@ -1,13 +1,15 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { VendeurSidebar } from "./VendeurSidebar";
+import { SidebarProvider, useSidebar } from "./SidebarContext";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 
-export function VendeurLayout() {
+function VendeurLayoutInner() {
   const { currentUser, isLoading } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const { collapsed, setCollapsed } = useSidebar();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   if (isLoading) {
@@ -19,7 +21,7 @@ export function VendeurLayout() {
   }
 
   if (!currentUser) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
   if (currentUser.role === "admin") {
@@ -59,5 +61,13 @@ export function VendeurLayout() {
         </main>
       </div>
     </div>
+  );
+}
+
+export function VendeurLayout() {
+  return (
+    <SidebarProvider>
+      <VendeurLayoutInner />
+    </SidebarProvider>
   );
 }

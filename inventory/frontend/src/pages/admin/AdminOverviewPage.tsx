@@ -46,10 +46,13 @@ function formatFCFA(amount: number): string {
   return new Intl.NumberFormat("fr-FR").format(Math.round(amount)) + " FCFA";
 }
 
+// Fuseau horaire de Libreville (Gabon) — UTC+1, pas de DST
+const LIBREVILLE_TZ = "Africa/Libreville";
+
 function formatTime(isoDate: string): string {
   const d = new Date(isoDate);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: LIBREVILLE_TZ });
 }
 
 function formatRelative(isoDate: string | null): string {
@@ -63,7 +66,8 @@ function formatRelative(isoDate: string | null): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `Il y a ${hrs} h`;
   const days = Math.floor(hrs / 24);
-  return `Il y a ${days} j`;
+  if (days < 7) return `Il y a ${days} j`;
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: LIBREVILLE_TZ });
 }
 
 function getInitials(name: string): string {
@@ -487,6 +491,8 @@ export default function AdminOverviewPage() {
   const { data: vendeurSummaries, isLoading: summaryLoading } = useQuery({
     queryKey: ["vendeur-summary", period],
     queryFn: () => activityService.getVendeurSummary(period),
+    // Aligne avec le polling des activités — évite un re-fetch immédiat au retour sur la page
+    staleTime: 30_000,
   });
 
   // Activity feed — auto-refreshed every 30s
@@ -504,6 +510,7 @@ export default function AdminOverviewPage() {
   const { data: dailyStats, isLoading: statsLoading } = useQuery({
     queryKey: ["daily-stats", period],
     queryFn: () => salesService.getDailyStats(period),
+    staleTime: 30_000,
   });
 
   const { data: productsData, isLoading: productsLoading } = useQuery({

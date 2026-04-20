@@ -36,8 +36,16 @@ export const authService = {
     const { data: tokens } = await api.post<AuthTokens>('/auth/token/', credentials);
     localStorage.setItem('access_token', tokens.access);
     localStorage.setItem('refresh_token', tokens.refresh);
-    const { data: user } = await api.get<AuthUser>('/users/me/');
-    return { tokens, user };
+    try {
+      const { data: user } = await api.get<AuthUser>('/users/me/');
+      return { tokens, user };
+    } catch (err) {
+      // /me failed after token was stored — rollback to avoid an
+      // inconsistent state where tokens exist but currentUser is null.
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      throw err;
+    }
   },
 
   async logout(): Promise<void> {

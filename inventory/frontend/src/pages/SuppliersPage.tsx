@@ -27,7 +27,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { exportSuppliers } from "@/lib/exportSuppliers";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supplierService } from "@/services/supplierService";
 import type { Supplier } from "@/services/supplierService";
@@ -44,12 +44,19 @@ export default function SuppliersPage() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [deletingSupplier, setDeletingSupplier] = useState<Supplier | null>(null);
 
+  // Debounce : évite une requête API à chaque frappe
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["suppliers", search],
+    queryKey: ["suppliers", debouncedSearch],
     queryFn: () =>
-      supplierService.getAll(search ? { search } : undefined),
+      supplierService.getAll(debouncedSearch ? { search: debouncedSearch } : undefined),
   });
 
   const suppliers = data?.results ?? [];
@@ -64,8 +71,22 @@ export default function SuppliersPage() {
       setDeletingSupplier(null);
     },
     onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Impossible d'archiver ce fournisseur. Réessayez.";
+      // Extraire le message Django depuis la réponse Axios
+      let message = "Impossible d'archiver ce fournisseur. Réessayez.";
+      if (
+        error !== null &&
+        typeof error === "object" &&
+        "response" in error
+      ) {
+        const axiosError = error as { response?: { data?: { detail?: string; message?: string } }; message?: string };
+        message =
+          axiosError.response?.data?.detail ??
+          axiosError.response?.data?.message ??
+          axiosError.message ??
+          message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error("Erreur lors de l'archivage", { description: message });
     },
   });
@@ -76,12 +97,15 @@ export default function SuppliersPage() {
   }
 
   function getInitials(name: string): string {
+    if (!name || name.trim() === "") return "?";
     return name
-      .split(" ")
-      .map((n) => n[0])
+      .trim()
+      .split(/\s+/)
+      .map((n) => n[0] ?? "")
+      .filter(Boolean)
       .join("")
-      .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2)
+      .toUpperCase();
   }
 
   return (

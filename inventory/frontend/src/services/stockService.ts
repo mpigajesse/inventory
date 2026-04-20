@@ -40,9 +40,9 @@ export interface PaginatedResponse<T> {
 }
 
 export const stockService = {
-  getAll: (params?: Record<string, string>) =>
+  getAll: (params?: Record<string, string>, signal?: AbortSignal) =>
     api
-      .get<PaginatedResponse<StockItem>>('/stock/', { params })
+      .get<PaginatedResponse<StockItem>>('/stock/', { params, signal })
       .then((res) => res.data),
 
   getAlerts: () =>

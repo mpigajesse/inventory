@@ -67,7 +67,10 @@ export const activityService = {
     api.get<OnlineUser[]>('/users/online/').then(r => r.data),
 
   getRealtime: (sinceId?: number) =>
-    api.get<RealtimeResponse>('/activity/realtime/', sinceId ? { params: { since_id: sinceId } } : {}).then(r => r.data),
+    api.get<RealtimeResponse>(
+      '/activity/realtime/',
+      sinceId !== undefined ? { params: { since_id: sinceId } } : {},
+    ).then(r => r.data),
 
   getAlerts: () =>
     api.get<VendeurAlert[]>('/activity/alerts/').then(r => r.data),

@@ -13,6 +13,8 @@ export interface Supplier {
   is_active: boolean;
   /** Calculé côté backend via SerializerMethodField. */
   orders_count: number;
+  /** Solde dû au fournisseur (positif = on lui doit, négatif = il nous doit). */
+  balance?: number;
   created_at: string;
 }
 

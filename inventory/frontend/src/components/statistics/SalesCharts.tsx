@@ -275,7 +275,7 @@ export function SalesChart({ period }: SalesChartProps) {
 
   const { data, isLoading } = useQuery({
     queryKey: ["stats-sales", period, granularity],
-    queryFn: () => statisticsService.getSales({ granularity }),
+    queryFn: () => statisticsService.getSales({ granularity, period }),
   });
 
   const chartData: SalesPeriodData[] = data?.data ?? [];

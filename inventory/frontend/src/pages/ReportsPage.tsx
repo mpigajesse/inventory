@@ -34,10 +34,12 @@ import { toast } from "sonner";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatFcfa(amount: number): string {
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(2)}M FCFA`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}k FCFA`;
-  return `${amount} FCFA`;
+function formatFcfa(amount: number | null | undefined): string {
+  const n = Number(amount);
+  if (!isFinite(n) || isNaN(n)) return "— FCFA";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M FCFA`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k FCFA`;
+  return `${n} FCFA`;
 }
 
 /** Converts ISO date "2024-01-17" → "17/01" for compact bar chart labels */
@@ -110,7 +112,7 @@ export default function ReportsPage() {
 
   const salesByDay = stats?.sales_by_day ?? [];
   const topProducts = stats?.top_products ?? [];
-  const maxSale = salesByDay.length > 0 ? Math.max(...salesByDay.map((d) => d.total)) : 1;
+  const maxSale = salesByDay.length > 0 ? (Math.max(...salesByDay.map((d) => d.total)) || 1) : 1;
 
   const weekRevenue = salesByDay.reduce((sum, d) => sum + d.total, 0);
   const weekTransactions = salesByDay.reduce((sum, d) => sum + d.count, 0);
@@ -129,8 +131,9 @@ export default function ReportsPage() {
       const data = await salesService.getAll({ created_after: since, page_size: '500' });
       await exportWeeklySales(data.results);
       toast.success('Export ventes semaine téléchargé');
-    } catch {
-      toast.error("Erreur lors de l'export");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'export";
+      toast.error(msg);
     } finally {
       setIsExportingSales(false);
     }
@@ -410,7 +413,7 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 topProducts.map((p, i) => {
-                  const maxRevenue = topProducts[0]?.revenue ?? 1;
+                  const maxRevenue = Math.max(...topProducts.map((t) => t.revenue), 1);
                   const barPct = Math.max(4, (p.revenue / maxRevenue) * 100);
                   return (
                     <div

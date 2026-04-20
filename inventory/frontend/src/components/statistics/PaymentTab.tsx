@@ -112,7 +112,7 @@ function CustomPieTooltip({ active, payload }: CustomTooltipProps) {
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <span style={{ color: "rgba(255,255,255,0.45)" }}>Part</span>
-          <span style={{ color: "white", fontWeight: "600" }}>{stat.pct.toFixed(1)} %</span>
+          <span style={{ color: "white", fontWeight: "600" }}>{(stat.pct ?? 0).toFixed(1)} %</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <span style={{ color: "rgba(255,255,255,0.45)" }}>Transactions</span>
@@ -417,7 +417,7 @@ export function PaymentTab({ period }: PaymentTabProps) {
                             color: item.color,
                           }}
                         >
-                          {item.pct.toFixed(1)} %
+                          {(item.pct ?? 0).toFixed(1)} %
                         </span>
                       </div>
 

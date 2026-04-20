@@ -108,6 +108,21 @@ function IdentityCard() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const MAX_SIZE_MB = 2;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast.error(`La photo ne doit pas dépasser ${MAX_SIZE_MB} Mo.`);
+      e.target.value = "";
+      return;
+    }
+
+    const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      toast.error("Format non supporté. Utilisez JPG, PNG, WebP ou GIF.");
+      e.target.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       setAvatarPreview(reader.result as string);
@@ -325,26 +340,6 @@ function ProfileSection() {
   const { currentUser, setCurrentUser } = useAuth();
   const queryClient = useQueryClient();
 
-  const updateMutation = useMutation({
-    mutationFn: (data: ProfileFormValues) => userService.updateMe(data),
-    onSuccess: (updatedUser) => {
-      setCurrentUser({
-        id: String(updatedUser.id),
-        name: updatedUser.full_name || updatedUser.username,
-        username: updatedUser.username,
-        email: updatedUser.email,
-        role: updatedUser.profile.role,
-        genre: updatedUser.profile.genre ?? null,
-        avatar: updatedUser.profile.avatar_url || undefined,
-      });
-      queryClient.invalidateQueries({ queryKey: ["me"] });
-      toast.success("Profil mis à jour avec succès.");
-    },
-    onError: () => {
-      toast.error("Erreur lors de la mise à jour. Vérifiez les informations saisies.");
-    },
-  });
-
   const nameParts = (currentUser?.name ?? "").split(" ");
   const defaultFirstName = nameParts[0] ?? "";
   const defaultLastName = nameParts.slice(1).join(" ");
@@ -362,6 +357,35 @@ function ProfileSection() {
       last_name: defaultLastName,
       email: currentUser?.email ?? "",
       genre: (currentUser?.genre ?? "NC") as "M" | "F" | "NC",
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: ProfileFormValues) => userService.updateMe(data),
+    onSuccess: (updatedUser) => {
+      const updatedCurrentUser = {
+        id: String(updatedUser.id),
+        name: updatedUser.full_name || updatedUser.username,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        role: updatedUser.profile.role,
+        genre: updatedUser.profile.genre ?? null,
+        avatar: updatedUser.profile.avatar_url || undefined,
+      };
+      setCurrentUser(updatedCurrentUser);
+      // Resync le formulaire avec les valeurs persistées pour vider isDirty
+      const newNameParts = updatedCurrentUser.name.split(" ");
+      reset({
+        first_name: newNameParts[0] ?? "",
+        last_name: newNameParts.slice(1).join(" "),
+        email: updatedCurrentUser.email,
+        genre: (updatedCurrentUser.genre ?? "NC") as "M" | "F" | "NC",
+      });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      toast.success("Profil mis à jour avec succès.");
+    },
+    onError: () => {
+      toast.error("Erreur lors de la mise à jour. Vérifiez les informations saisies.");
     },
   });
 
@@ -719,6 +743,7 @@ function PreferencesSection() {
 // ─── Vendeur info banner ──────────────────────────────────────────────────────
 
 function VendeurInfoBanner() {
+  const { currentUser } = useAuth();
   return (
     <div
       className="flex items-start gap-3 rounded-xl border px-4 py-3.5 mb-5"

@@ -1,5 +1,7 @@
+from django.db import models
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from users.permissions import IsVendeurOrAdmin
@@ -9,10 +11,20 @@ from .serializers import ClientSerializer
 from notifications.utils import notify_new_client
 
 
+class ClientPagination(PageNumberPagination):
+    page_size = 25
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class ClientViewSet(viewsets.ModelViewSet):
-    queryset = Client.objects.filter(is_active=True)
+    queryset = Client.objects.filter(is_active=True).annotate(
+        _purchases_count=models.Count('sales', distinct=True),
+        _total_purchases=models.Sum('sales__total_amount'),
+    )
     serializer_class = ClientSerializer
     permission_classes = [IsVendeurOrAdmin]
+    pagination_class = ClientPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'phone', 'email']
     filterset_fields = ['city', 'is_active']

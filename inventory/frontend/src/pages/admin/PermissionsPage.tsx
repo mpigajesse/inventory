@@ -457,7 +457,26 @@ export default function PermissionsPage() {
     (userId: number, permissions: Permission[]) => {
       const newSet = new Set(permissions);
       setDraft((prev) => ({ ...prev, [userId]: newSet }));
+
+      // Trigger debounced auto-save, same as handleToggle
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const perms = [...permissions] as Permission[];
+        saveOneMutation.mutate(
+          { id: userId, permissions: perms },
+          {
+            onSuccess: () => {
+              setSavedState((prev) => ({
+                ...prev,
+                [userId]: new Set(perms),
+              }));
+              toast.success("Permissions mises à jour.");
+            },
+          }
+        );
+      }, 500);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 

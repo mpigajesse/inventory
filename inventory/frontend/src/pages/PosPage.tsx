@@ -23,6 +23,7 @@ import {
   Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sanitizeBarcode } from "@/lib/barcode";
 import { Receipt } from "@/components/pos/Receipt";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { toast } from "@/hooks/use-toast";
@@ -82,11 +83,16 @@ export default function PosPage() {
 
   const searchRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const subtotal = total;
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
-  const change = Math.max(0, Number(amountGiven) - total);
+  const change = Math.max(0, Math.round(Number(amountGiven) - total));
 
   // ─── Stock warnings ───────────────────────────────────────────────────────
 
@@ -163,22 +169,23 @@ export default function PosPage() {
         {
           id: product.id,
           name: product.name,
-          barcode: product.barcode,
-          price: product.selling_price,
-          category: product.category_name,
-          stock: product.stock_quantity,
+          barcode: product.barcode ?? null,
+          price: Number(product.selling_price) || 0,
+          category: product.category_name ?? "",
+          stock: product.stock_quantity ?? 0,
           qty: 1,
-          imageUrl: product.image_url,
+          imageUrl: product.image_url ?? null,
         },
       ];
     });
     setFlashItem(product.id);
-    setTimeout(() => setFlashItem(null), 600);
+    setTimeout(() => { if (mountedRef.current) setFlashItem(null); }, 600);
     setScanFlash(true);
-    setTimeout(() => setScanFlash(false), 400);
+    setTimeout(() => { if (mountedRef.current) setScanFlash(false); }, 400);
     // Entrance animation: mark as newly added then remove after 300ms
     setNewlyAdded(prev => new Set(prev).add(product.id));
     setTimeout(() => {
+      if (!mountedRef.current) return;
       setNewlyAdded(prev => {
         const next = new Set(prev);
         next.delete(product.id);
@@ -213,8 +220,10 @@ export default function PosPage() {
       if (document.activeElement === searchRef.current) return;
 
       if (e.key === "Enter" && buffer.length > 3) {
-        const code = buffer;
+        const raw = buffer;
         buffer = "";
+        const code = sanitizeBarcode(raw);
+        if (!code) return;
         try {
           const res = await productService.getByBarcode(code);
           addToCart(res);
@@ -256,6 +265,7 @@ export default function PosPage() {
   const removeItem = (id: number) => {
     setRemoving(prev => new Set(prev).add(id));
     setTimeout(() => {
+      if (!mountedRef.current) return;
       setCart(prev => prev.filter(item => item.id !== id));
       setRemoving(prev => {
         const next = new Set(prev);
@@ -268,6 +278,7 @@ export default function PosPage() {
   // ─── Payment confirmation ─────────────────────────────────────────────────
 
   const handlePayment = () => {
+    if (saleMutation.isPending) return;
     if (Number(amountGiven) < total) return;
     if (stockWarnings.length > 0) {
       toast({
@@ -630,7 +641,7 @@ export default function PosPage() {
                             backgroundClip: "text",
                           }}
                         >
-                          {product.selling_price.toLocaleString("fr-FR")}
+                          {(Number(product.selling_price) || 0).toLocaleString("fr-FR")}
                         </span>
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                           FCFA

@@ -43,29 +43,65 @@ class StockViewSet(viewsets.ReadOnlyModelViewSet):
                 {'detail': 'Au moins un seuil (min_threshold ou max_threshold) est requis.'},
                 status=400,
             )
-        if min_threshold is not None:
-            stock.min_threshold = int(min_threshold)
-        if max_threshold is not None:
-            stock.max_threshold = int(max_threshold)
-        stock.save(update_fields=[
+
+        # BUG-4 FIX: valider que les seuils sont positifs et cohérents entre eux
+        errors = {}
+        try:
+            new_min = int(min_threshold) if min_threshold is not None else stock.min_threshold
+            if new_min < 0:
+                errors['min_threshold'] = 'Le seuil minimum ne peut pas être négatif.'
+        except (ValueError, TypeError):
+            errors['min_threshold'] = 'Valeur entière requise.'
+            new_min = stock.min_threshold
+
+        try:
+            new_max = int(max_threshold) if max_threshold is not None else stock.max_threshold
+            if new_max < 0:
+                errors['max_threshold'] = 'Le seuil maximum ne peut pas être négatif.'
+        except (ValueError, TypeError):
+            errors['max_threshold'] = 'Valeur entière requise.'
+            new_max = stock.max_threshold
+
+        if not errors and new_min >= new_max:
+            errors['min_threshold'] = 'Le seuil minimum doit être inférieur au seuil maximum.'
+
+        if errors:
+            return Response(errors, status=400)
+
+        stock.min_threshold = new_min
+        stock.max_threshold = new_max
+        fields_to_save = [
             f for f in ('min_threshold', 'max_threshold')
             if request.data.get(f) is not None
-        ])
+        ]
+        stock.save(update_fields=fields_to_save)
         return Response(StockSerializer(stock).data)
 
     @action(detail=True, methods=['post'], url_path='adjust')
     def adjust(self, request, pk=None):
         """Applique une entrée, sortie ou correction sur un stock."""
-        stock = self.get_object()
-        serializer = StockAdjustmentSerializer(data=request.data, context={'stock': stock})
+        # Validation initiale sans contexte stock (vérifs de base uniquement)
+        serializer = StockAdjustmentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        qty_before = stock.quantity
 
         with transaction.atomic():
+            # BUG-1 FIX: select_for_update() verrouille la ligne jusqu'à la fin
+            # de la transaction — empêche toute race condition sur les sorties
+            # simultanées qui pourraient rendre le stock négatif.
+            stock = Stock.objects.select_for_update().get(pk=pk)
+            qty_before = stock.quantity
+
             if data['movement_type'] == 'entry':
                 stock.quantity += data['quantity']
             elif data['movement_type'] == 'exit':
+                # BUG-1 FIX: la vérification stock suffisant est ici, DANS la
+                # transaction avec le verrou, pas dans le serializer.
+                if data['quantity'] > stock.quantity:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError(
+                        {'quantity': 'Stock insuffisant pour cette sortie.'}
+                    )
                 stock.quantity -= data['quantity']
             else:  # adjustment
                 stock.quantity = data['quantity']

@@ -29,10 +29,10 @@ const productSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   selling_price: z
     .number({ invalid_type_error: "Le prix doit être un nombre" })
-    .min(0, "Le prix ne peut pas être négatif"),
+    .min(1, "Le prix de vente doit être supérieur à 0"),
   purchase_price: z
     .number({ invalid_type_error: "Le prix d'achat doit être un nombre" })
-    .min(0, "Le prix ne peut pas être négatif"),
+    .min(0, "Le prix d'achat ne peut pas être négatif"),
   category: z
     .number({ invalid_type_error: "La catégorie est requise" })
     .int()
@@ -377,7 +377,27 @@ export default function ProductFormPage() {
 
   // ── Image helpers ──────────────────────────────────────────────────────────
 
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 Mo
+
+  function validateImageFile(file: File): boolean {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error("Type de fichier non supporté", {
+        description: "Formats acceptés : JPG, PNG, WebP, GIF.",
+      });
+      return false;
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error("Fichier trop volumineux", {
+        description: "La taille maximale autorisée est de 5 Mo.",
+      });
+      return false;
+    }
+    return true;
+  }
+
   function readImageFile(file: File) {
+    if (!validateImageFile(file)) return;
     setImageFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -388,6 +408,8 @@ export default function ProductFormPage() {
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    // Reset input so the same file can be re-selected after clearing
+    e.target.value = "";
     if (file) readImageFile(file);
   }
 
@@ -395,7 +417,7 @@ export default function ProductFormPage() {
     e.preventDefault();
     setIsDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) readImageFile(file);
+    if (file) readImageFile(file);
   }
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {

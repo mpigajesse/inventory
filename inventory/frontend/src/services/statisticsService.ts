@@ -87,7 +87,7 @@ export const statisticsService = {
   getOverview: (period: StatPeriod = 'week') =>
     api.get<OverviewStats>('/statistics/overview/', { params: { period } }).then(r => r.data),
 
-  getSales: (params?: { granularity?: Granularity; start?: string; end?: string }) =>
+  getSales: (params?: { granularity?: Granularity; start?: string; end?: string; period?: StatPeriod }) =>
     api.get<SalesStats>('/statistics/sales/', { params }).then(r => r.data),
 
   getProducts: (params?: { period?: string; limit?: number }) =>

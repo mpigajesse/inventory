@@ -4,6 +4,19 @@ from .models import ActivityLog
 
 
 class ActivityLogSerializer(serializers.ModelSerializer):
+    """Serializer for ActivityLog.
+
+    Performance notes
+    -----------------
+    * ``get_sale_amount`` and ``get_items_count`` used to issue one SQL query
+      per log entry (N+1).  They now read from a ``_sale_cache`` dict that the
+      view layer is expected to inject via ``context['sale_cache']``.  When the
+      cache is absent the fields return ``None`` rather than hitting the DB.
+    * ``get_user_role`` requires the queryset to be fetched with
+      ``select_related('user__profile')`` (done in the viewset's
+      ``get_queryset``).
+    """
+
     user_name = serializers.SerializerMethodField()
     sale_amount = serializers.SerializerMethodField()
     items_count = serializers.SerializerMethodField()
@@ -28,30 +41,45 @@ class ActivityLogSerializer(serializers.ModelSerializer):
             'items_count',
         ]
 
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    def _sale_cache(self) -> dict:
+        """Return the pre-fetched Sale cache injected by the view, or {}."""
+        return self.context.get('sale_cache', {})
+
+    # ------------------------------------------------------------------
+    # Field methods
+    # ------------------------------------------------------------------
+
     def get_user_name(self, obj: ActivityLog) -> str | None:
         if obj.user:
             return obj.user.get_full_name() or obj.user.username
         return None
 
     def get_sale_amount(self, obj: ActivityLog):
+        """Read total_amount from the pre-fetched sale cache — zero SQL."""
         if obj.target_model == 'Sale' and obj.target_id:
-            try:
-                from sales.models import Sale
-                return Sale.objects.get(pk=obj.target_id).total_amount
-            except Exception:
-                return None
+            sale = self._sale_cache().get(obj.target_id)
+            return sale.total_amount if sale is not None else None
         return None
 
     def get_items_count(self, obj: ActivityLog):
+        """Read items count from the pre-fetched sale cache — zero SQL."""
         if obj.target_model == 'Sale' and obj.target_id:
+            sale = self._sale_cache().get(obj.target_id)
+            if sale is None:
+                return None
+            # items is a prefetch_related set; use len() to avoid an extra query
             try:
-                from sales.models import Sale
-                return Sale.objects.get(pk=obj.target_id).items.count()
+                return len(sale.items.all())
             except Exception:
                 return None
         return None
 
     def get_user_role(self, obj: ActivityLog):
+        # Requires select_related('user__profile') in the queryset.
         if obj.user:
             profile = getattr(obj.user, 'profile', None)
             return profile.role if profile else None

@@ -41,6 +41,10 @@ export function useVendeurMonitor(): UseVendeurMonitorReturn {
   const [selectedVendeurId, setSelectedVendeurId] = useState<number | null>(null);
   const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(new Set());
   const [recentLogs, setRecentLogs] = useState<ActivityLog[]>([]);
+  // newLogTimestamps maps each highlighted log ID to the time it was received.
+  // This lets us expire IDs individually instead of clearing the entire Set at once,
+  // which previously caused IDs from earlier polls to linger until the last timer fired.
+  const newLogTimestampsRef = useRef<Map<number, number>>(new Map());
   const [newLogIds, setNewLogIds] = useState<Set<number>>(new Set());
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -88,18 +92,25 @@ export function useVendeurMonitor(): UseVendeurMonitorReturn {
         return [...brandNew, ...prev].slice(0, MAX_RECENT_LOGS);
       });
 
-      // Highlight new IDs for 8 seconds.
-      setNewLogIds((prev) => {
-        const merged = new Set([...prev, ...incomingIds]);
-        return merged;
-      });
+      // Record when each incoming ID was received so we can expire them individually.
+      const now = Date.now();
+      incomingIds.forEach((id) => newLogTimestampsRef.current.set(id, now));
 
-      // Clear previous timer and set a fresh one.
+      setNewLogIds((prev) => new Set([...prev, ...incomingIds]));
+
+      // Schedule a sweep that removes only the IDs whose 8-second window has elapsed.
+      // We cancel any pending sweep first so we don't stack timers.
       if (highlightTimerRef.current !== null) {
         clearTimeout(highlightTimerRef.current);
       }
       highlightTimerRef.current = setTimeout(() => {
-        setNewLogIds(new Set());
+        const cutoff = Date.now() - NEW_LOG_HIGHLIGHT_MS;
+        newLogTimestampsRef.current.forEach((ts, id) => {
+          if (ts <= cutoff) {
+            newLogTimestampsRef.current.delete(id);
+          }
+        });
+        setNewLogIds(new Set(newLogTimestampsRef.current.keys()));
         highlightTimerRef.current = null;
       }, NEW_LOG_HIGHLIGHT_MS);
     }
@@ -132,12 +143,14 @@ export function useVendeurMonitor(): UseVendeurMonitorReturn {
     queryClient.invalidateQueries({ queryKey: ['vendeur-alerts'] });
   }, [queryClient]);
 
-  // ─── Cleanup highlight timer on unmount ───────────────────────────────────
+  // ─── Cleanup on unmount ───────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (highlightTimerRef.current !== null) {
         clearTimeout(highlightTimerRef.current);
       }
+      // Release the timestamps map so GC can collect it.
+      newLogTimestampsRef.current.clear();
     };
   }, []);
 

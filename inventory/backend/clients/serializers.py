@@ -17,8 +17,14 @@ class ClientSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def get_total_purchases(self, obj: Client) -> int:
-        # Delegate to the model property — single source of truth, avoids duplicate query.
+        # Use annotated value when available (list), fall back to model property (detail).
+        annotated = getattr(obj, '_total_purchases', None)
+        if annotated is not None:
+            return annotated
         return obj.total_purchases
 
     def get_purchases_count(self, obj: Client) -> int:
+        annotated = getattr(obj, '_purchases_count', None)
+        if annotated is not None:
+            return annotated
         return obj.sales.count()

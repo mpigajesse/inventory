@@ -7,13 +7,14 @@ import type { ActivityLog } from '@/services/activityService';
 const MAX_TOASTS_PER_CYCLE = 3;
 
 function isVendeurAction(log: ActivityLog): boolean {
-  return log.user_role === 'vendeur' || log.user_role === null || log.user_role === undefined;
+  // N'inclure que les actions des vendeurs — exclure les actions système sans rôle
+  return log.user_role === 'vendeur';
 }
 
 function showToastForLog(log: ActivityLog): void {
   const userName = log.user_name ?? 'Utilisateur inconnu';
 
-  if (log.action === 'sale' || log.target_model === 'Sale') {
+  if (log.action === 'sale' || log.target_model?.toLowerCase() === 'sale') {
     toast.success('💰 Nouvelle vente', {
       description: `${userName} — ${log.description}`,
     });
@@ -36,7 +37,7 @@ function showToastForLog(log: ActivityLog): void {
 }
 
 function isKeyAction(log: ActivityLog): boolean {
-  if (log.action === 'sale' || log.target_model === 'Sale') return true;
+  if (log.action === 'sale' || log.target_model?.toLowerCase() === 'sale') return true;
   if (log.action === 'login') return true;
   if (log.action === 'create' && log.target_model === 'Client') return true;
   return false;
@@ -50,6 +51,8 @@ export function AdminActivityToast() {
     queryKey: ['admin-realtime-toast'],
     queryFn: () => activityService.getRealtime(latestIdRef.current || undefined),
     refetchInterval: 15_000,
+    // Ne pas continuer à poller si l'onglet est en arrière-plan
+    refetchIntervalInBackground: false,
   });
 
   useEffect(() => {

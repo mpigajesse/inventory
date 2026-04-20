@@ -99,10 +99,28 @@ def notify_new_client(client: 'Client') -> None:
         logger.exception("Échec de notify_new_client (client_id=%s)", getattr(client, 'pk', None))
 
 
+_STOCK_ALERT_COOLDOWN_HOURS = 1
+
+
+def _recent_stock_alert_exists(product: 'Product', notification_type: str) -> bool:
+    """Retourne True si une alerte identique a déjà été créée dans la dernière heure."""
+    from datetime import timedelta
+    from django.utils import timezone
+    cutoff = timezone.now() - timedelta(hours=_STOCK_ALERT_COOLDOWN_HOURS)
+    return Notification.objects.filter(
+        notification_type=notification_type,
+        related_product=product,
+        created_at__gte=cutoff,
+    ).exists()
+
+
 def check_stock_alerts(stock: 'Stock') -> None:
     """
     Vérifie le stock après modification et crée une notification si le seuil
     bas ou critique est atteint. Ne lève jamais d'exception.
+
+    Un cooldown d'1 heure évite les notifications dupliquées lors de mouvements
+    successifs alors que le stock reste sous le seuil.
     """
     try:
         quantity = stock.quantity
@@ -110,17 +128,22 @@ def check_stock_alerts(stock: 'Stock') -> None:
         product = stock.product
 
         if quantity == 0:
+            notif_type = 'stock_critical'
+            if _recent_stock_alert_exists(product, notif_type):
+                return
             notify_admins(
-                'stock_critical',
+                notif_type,
                 f"RUPTURE — {product.name}",
                 f"Le produit {product.name} est en rupture de stock (0 unités).",
                 related_product=product,
             )
         elif quantity <= min_threshold:
             critical_threshold = max(1, min_threshold // 2)
-            level = 'stock_critical' if quantity <= critical_threshold else 'stock_low'
+            notif_type = 'stock_critical' if quantity <= critical_threshold else 'stock_low'
+            if _recent_stock_alert_exists(product, notif_type):
+                return
             notify_admins(
-                level,
+                notif_type,
                 f"Stock bas — {product.name} ({quantity} unités)",
                 (
                     f"Le stock de {product.name} est bas : {quantity} unité(s) restante(s) "

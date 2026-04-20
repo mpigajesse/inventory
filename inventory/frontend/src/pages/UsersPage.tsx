@@ -779,7 +779,7 @@ interface PermissionsModalProps {
 }
 
 function PermissionsModal({ user, onSave, onCancel, isSaving }: PermissionsModalProps) {
-  const initial = (user.permissions ?? []) as Permission[];
+  const initial = (user.profile.permissions ?? []) as Permission[];
   const [selected, setSelected] = useState<Set<Permission>>(new Set(initial));
 
   function toggle(p: Permission) {
@@ -1320,7 +1320,7 @@ export default function UsersPage() {
                             </span>
                           ) : (
                             <span className="text-xs text-muted-foreground">
-                              {(user.permissions?.length ?? 0)} permission{(user.permissions?.length ?? 0) > 1 ? "s" : ""}
+                              {(user.profile.permissions?.length ?? 0)} permission{(user.profile.permissions?.length ?? 0) > 1 ? "s" : ""}
                             </span>
                           )}
                         </td>
@@ -1374,6 +1374,7 @@ export default function UsersPage() {
                                   <ShieldCheck className="w-3.5 h-3.5" />
                                 </button>
                               )}
+                              {String(user.id) !== currentUser?.id && (
                               <button
                                 className={[
                                   "inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2",
@@ -1405,6 +1406,7 @@ export default function UsersPage() {
                                   <UserCheck className="w-3.5 h-3.5" />
                                 )}
                               </button>
+                              )}
                               {String(user.id) !== currentUser?.id && (
                                 <button
                                   className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
@@ -1518,6 +1520,7 @@ export default function UsersPage() {
                           <ShieldCheck className="w-4 h-4" />
                         </button>
                       )}
+                      {String(user.id) !== currentUser?.id && (
                       <button
                         className={[
                           "inline-flex items-center justify-center w-9 h-9 rounded-xl transition-colors",
@@ -1537,6 +1540,7 @@ export default function UsersPage() {
                           <UserCheck className="w-4 h-4" />
                         )}
                       </button>
+                      )}
                       {String(user.id) !== currentUser?.id && (
                         <button
                           className="inline-flex items-center justify-center w-9 h-9 rounded-xl text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors"

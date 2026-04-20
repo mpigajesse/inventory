@@ -75,9 +75,11 @@ function resolveType(notification_type: string): NotifDisplay {
     : 'system';
 }
 
-function relativeTime(isoString: string): string {
+function relativeTime(isoString: string | null | undefined): string {
+  if (!isoString) return "Date inconnue";
   const now = new Date();
   const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "Date inconnue";
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   const diffH = Math.floor(diffMin / 60);
@@ -174,7 +176,7 @@ export default function NotificationsPage() {
   ).length;
   const todayStr = new Date().toISOString().slice(0, 10);
   const salesTodayCount = notifications.filter(
-    (n) => n.notification_type === "new_sale" && n.created_at.startsWith(todayStr)
+    (n) => n.notification_type === "new_sale" && n.created_at?.startsWith(todayStr)
   ).length;
 
   const tabCounts: Record<TabKey, number> = {
@@ -537,7 +539,7 @@ export default function NotificationsPage() {
                         opacity: 0,
                         animation: "slideInLeft 0.3s ease forwards",
                         animationDelay: `${index * 50}ms`,
-                        background: !notif.is_read ? `hsl(22 72% 48% / 0.04)` : "white",
+                        background: !notif.is_read ? `hsl(22 72% 48% / 0.04)` : "hsl(var(--card))",
                         borderLeft: `3px solid ${!notif.is_read ? typeColor : "transparent"}`,
                         borderRadius: "16px",
                         margin: "6px 10px",
@@ -558,7 +560,7 @@ export default function NotificationsPage() {
                         e.currentTarget.style.boxShadow = "0 2px 10px hsl(22 30% 15% / 0.08)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = !notif.is_read ? "hsl(22 72% 48% / 0.04)" : "white";
+                        e.currentTarget.style.background = !notif.is_read ? "hsl(22 72% 48% / 0.04)" : "hsl(var(--card))";
                         e.currentTarget.style.boxShadow = "none";
                       }}
                     >

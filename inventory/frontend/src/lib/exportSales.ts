@@ -207,6 +207,10 @@ function buildSalesSheet(
 // ─── Export ventes de la semaine ─────────────────────────────────────────────
 
 export async function exportWeeklySales(data: Sale[]): Promise<void> {
+  if (!data || data.length === 0) {
+    throw new Error("Aucune vente à exporter pour cette période.");
+  }
+
   const [{ default: ExcelJS }, { saveAs }] = await Promise.all([
     import("exceljs"),
     import("file-saver"),
@@ -238,6 +242,10 @@ export async function exportWeeklySales(data: Sale[]): Promise<void> {
 // ─── Export principal ─────────────────────────────────────────────────────────
 
 export async function exportSalesToExcel(data: Sale[]): Promise<void> {
+  if (!data || data.length === 0) {
+    throw new Error("Aucune vente à exporter.");
+  }
+
   const [{ default: ExcelJS }, { saveAs }] = await Promise.all([
     import("exceljs"),
     import("file-saver"),

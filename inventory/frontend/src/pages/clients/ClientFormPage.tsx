@@ -1,6 +1,5 @@
 import { useOutletContext, useNavigate, useParams, Link } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, UserPlus, Loader2, AlertTriangle, AlertCircle } from "lucide-react";
 import { useState, useRef } from "react";
@@ -8,6 +7,8 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { clientService } from "@/services/clientService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -17,10 +18,20 @@ const TERRACOTTA_LIGHT = "hsl(36 88% 52%)";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
+// Regex téléphone : accepte formats gabonais et internationaux E.164
+// Ex : +241 07 12 34 56 | +24107123456 | 07 12 34 56 | 0712345678
+const PHONE_REGEX = /^(\+?\d[\d\s\-().]{6,19}\d)$/;
+
 const clientSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  phone: z.string().min(8, "Numéro de téléphone invalide"),
-  email: z.string().email("Email invalide").or(z.literal("")),
+  phone: z
+    .string()
+    .min(8, "Numéro de téléphone invalide")
+    .regex(PHONE_REGEX, "Format invalide — ex : +241 07 12 34 56"),
+  email: z
+    .string()
+    .email("Format email invalide — ex : jean@email.com")
+    .or(z.literal("")),
   address: z.string().optional(),
   credit_balance: z.coerce.number().min(0, "Le crédit ne peut pas être négatif").optional(),
   notes: z.string().optional(),
@@ -116,13 +127,14 @@ export default function ClientFormPage() {
     ? MOCK_CLIENTS.find((c) => c.id === Number(id)) ?? null
     : null;
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    reset,
+    formState: { errors, isSubmitting },
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: client
@@ -147,9 +159,22 @@ export default function ClientFormPage() {
   const creditBalanceValue = watch("credit_balance") ?? 0;
   const hasCredit = Number(creditBalanceValue) > 0;
 
-  function onSubmit(values: ClientFormValues) {
-    setIsSubmitting(true);
-    setTimeout(() => {
+  const saveMutation = useMutation({
+    mutationFn: (values: ClientFormValues) => {
+      const payload = {
+        name: values.name,
+        phone: values.phone,
+        email: values.email || "",
+        address: values.address ?? "",
+        credit_balance: values.credit_balance ?? 0,
+        note: values.notes ?? "",
+      };
+      return isEdit && client
+        ? clientService.update(client.id, payload)
+        : clientService.create(payload);
+    },
+    onSuccess: (_, values) => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
       if (isEdit) {
         toast.success("Client modifié", {
           description: `${values.name} a été mis à jour avec succès.`,
@@ -158,9 +183,32 @@ export default function ClientFormPage() {
         toast.success("Client enregistré", {
           description: `${values.name} a été ajouté avec succès.`,
         });
+        // Réinitialiser le formulaire après une création réussie
+        reset();
       }
       navigate("/clients");
-    }, 600);
+    },
+    onError: (error: unknown) => {
+      let message = "Une erreur est survenue. Réessayez.";
+      if (error !== null && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { data?: { detail?: string; non_field_errors?: string[] } }; message?: string };
+        const data = axiosError.response?.data;
+        message =
+          data?.detail ??
+          data?.non_field_errors?.[0] ??
+          axiosError.message ??
+          message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      toast.error(isEdit ? "Erreur de modification" : "Erreur de création", {
+        description: message,
+      });
+    },
+  });
+
+  function onSubmit(values: ClientFormValues) {
+    saveMutation.mutate(values);
   }
 
   const pageTitle = isEdit ? "Modifier le client" : "Nouveau client";
@@ -393,7 +441,7 @@ export default function ClientFormPage() {
               type="button"
               className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-sm font-semibold border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50"
               onClick={() => navigate("/clients")}
-              disabled={isSubmitting}
+              disabled={saveMutation.isPending}
             >
               <ArrowLeft className="w-4 h-4" />
               Annuler
@@ -401,7 +449,7 @@ export default function ClientFormPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={saveMutation.isPending}
               className="inline-flex items-center gap-2 px-6 text-sm font-semibold text-white disabled:opacity-60 hover:brightness-110 active:scale-95"
               style={{
                 height: "52px",
@@ -411,7 +459,7 @@ export default function ClientFormPage() {
                 transition: "transform 0.15s ease, box-shadow 0.2s ease, filter 0.15s ease",
               }}
             >
-              {isSubmitting ? (
+              {saveMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Save className="w-4 h-4" />

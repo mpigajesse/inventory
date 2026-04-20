@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -10,9 +11,16 @@ from .models import Notification
 from .serializers import NotificationSerializer
 
 
+class NotificationPagination(PageNumberPagination):
+    page_size = 30
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class NotificationViewSet(ModelViewSet):
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = NotificationPagination
     # DELETE autorisé : l'utilisateur peut supprimer ses propres notifications lues.
     http_method_names = ['get', 'post', 'delete', 'head', 'options']
 

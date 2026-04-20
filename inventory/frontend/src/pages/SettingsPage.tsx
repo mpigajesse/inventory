@@ -258,7 +258,9 @@ export default function SettingsPage() {
         ticket_footer: r.data.ticket_footer ?? DEFAULT_POS_SETTINGS.ticket_footer,
       });
     }).catch(() => {}); // silently skip if backend not yet ready
-  }, []);
+    // reset est stable (référence constante de react-hook-form), pas de boucle infinie
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reset]);
 
   const saveMutation = useMutation({
     mutationFn: (data: PosSettingsFormValues) =>
@@ -469,7 +471,7 @@ export default function SettingsPage() {
           <div
             className="sticky bottom-0 -mx-4 sm:mx-0 border-t sm:border sm:rounded-2xl px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3"
             style={{
-              background: "rgba(255,255,255,0.9)",
+              background: "hsl(var(--card) / 0.92)",
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
               borderTop: "1px solid hsl(var(--border) / 0.5)",

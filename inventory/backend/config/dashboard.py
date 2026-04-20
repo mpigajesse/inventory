@@ -1,4 +1,4 @@
-from django.db.models import Sum, Count, F
+from django.db.models import Count, F, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from datetime import timedelta
@@ -21,10 +21,14 @@ class DashboardStatsView(APIView):
         month_ago = today - timedelta(days=30)
 
         today_sales = Sale.objects.filter(created_at__date=today)
-        today_revenue = today_sales.aggregate(total=Sum('total_amount'))['total'] or 0
+        today_agg = today_sales.aggregate(total=Sum('total_amount'), cnt=Count('id'))
+        today_revenue = today_agg['total'] or 0
+        today_count = today_agg['cnt'] or 0
 
         month_sales = Sale.objects.filter(created_at__date__gte=month_ago)
-        month_revenue = month_sales.aggregate(total=Sum('total_amount'))['total'] or 0
+        month_agg = month_sales.aggregate(total=Sum('total_amount'), cnt=Count('id'))
+        month_revenue = month_agg['total'] or 0
+        month_count = month_agg['cnt'] or 0
 
         low_stock = Stock.objects.filter(
             quantity__lte=F('min_threshold'),
@@ -67,11 +71,11 @@ class DashboardStatsView(APIView):
         return Response({
             'today': {
                 'revenue': today_revenue,
-                'sales_count': today_sales.count(),
+                'sales_count': today_count,
             },
             'month': {
                 'revenue': month_revenue,
-                'sales_count': month_sales.count(),
+                'sales_count': month_count,
             },
             'stock': {
                 'low_count': low_stock,

@@ -8,6 +8,7 @@ import { VendeurLayout } from "@/components/layout/VendeurLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RoleGuard } from "@/components/auth/RoleGuard";
+import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import { lazy, Suspense } from "react";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -57,6 +58,7 @@ const App = () => (
       <Toaster />
       <Sonner richColors position="top-right" />
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ChunkErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Navigate to="/auth/login" replace />} />
@@ -194,22 +196,78 @@ const App = () => (
               <Route path="/vendeur" element={<Navigate to="/vendeur/dashboard" replace />} />
               <Route path="/vendeur/dashboard" element={<VendeurDashboardPage />} />
               <Route path="/vendeur/pos"       element={<VendeurPosPage />} />
-              <Route path="/vendeur/invoices"  element={<InvoicesPage />} />
+              {/* Routes conditionnelles selon les permissions du vendeur */}
+              <Route path="/vendeur/invoices"  element={
+                <RoleGuard allowedRoles={["admin", "vendeur"]} redirectTo="/vendeur/dashboard">
+                  <InvoicesPage />
+                </RoleGuard>
+              } />
               <Route path="/vendeur/clients"              element={<ClientsPage />} />
               <Route path="/vendeur/clients/new"          element={<ClientFormPage />} />
               <Route path="/vendeur/clients/:id/edit"     element={<ClientFormPage />} />
-              <Route path="/vendeur/products"             element={<ProductsPage />} />
-              <Route path="/vendeur/products/new"         element={<ProductFormPage />} />
-              <Route path="/vendeur/products/:id/edit"    element={<ProductFormPage />} />
-              <Route path="/vendeur/stock"                element={<StockPage />} />
-              <Route path="/vendeur/suppliers"            element={<SuppliersPage />} />
-              <Route path="/vendeur/suppliers/new"        element={<SupplierFormPage />} />
-              <Route path="/vendeur/suppliers/:id/edit"   element={<SupplierFormPage />} />
-              <Route path="/vendeur/reports"              element={<ReportsPage />} />
-              <Route path="/vendeur/barcodes"             element={<BarcodesPage />} />
-              <Route path="/vendeur/users"                element={<UsersPage />} />
-              <Route path="/vendeur/users/:id"            element={<UserDetailPage />} />
-              <Route path="/vendeur/settings"  element={<SettingsPage />} />
+              {/* Produits, stock, fournisseurs : admin uniquement */}
+              <Route path="/vendeur/products"             element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <ProductsPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/products/new"         element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <ProductFormPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/products/:id/edit"    element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <ProductFormPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/stock"                element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <StockPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/suppliers"            element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <SuppliersPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/suppliers/new"        element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <SupplierFormPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/suppliers/:id/edit"   element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <SupplierFormPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/reports"              element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <ReportsPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/barcodes"             element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <BarcodesPage />
+                </RoleGuard>
+              } />
+              {/* Gestion des utilisateurs : admin uniquement */}
+              <Route path="/vendeur/users"                element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <UsersPage />
+                </RoleGuard>
+              } />
+              <Route path="/vendeur/users/:id"            element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <UserDetailPage />
+                </RoleGuard>
+              } />
+              {/* Paramètres : admin uniquement */}
+              <Route path="/vendeur/settings"  element={
+                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                  <SettingsPage />
+                </RoleGuard>
+              } />
               <Route path="/vendeur/profile"   element={<ProfilePage />} />
             </Route>
 
@@ -252,6 +310,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        </ChunkErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

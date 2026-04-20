@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { activityService } from '@/services/activityService';
 import type { VendeurActivitySummary } from '@/services/activityService';
@@ -25,13 +25,19 @@ export function useVendeurActivity(initialPeriod: ActivityPeriod = 'today'): Use
 
   const summaryQuery = useQuery({
     queryKey: ['vendeur-summary', period],
-    queryFn: async () => {
-      const data = await activityService.getVendeurSummary(period);
-      setLastUpdated(new Date());
-      return data;
-    },
+    // queryFn ne doit pas appeler setLastUpdated directement — le composant peut être
+    // démonté quand la réponse arrive, ce qui cause une mise à jour sur un composant démonté.
+    queryFn: () => activityService.getVendeurSummary(period),
     refetchInterval: 30_000,
+    staleTime: 30_000,
   });
+
+  // Mettre à jour lastUpdated uniquement quand les données changent et que le composant est monté
+  useEffect(() => {
+    if (summaryQuery.dataUpdatedAt > 0) {
+      setLastUpdated(new Date(summaryQuery.dataUpdatedAt));
+    }
+  }, [summaryQuery.dataUpdatedAt]);
 
   const logsQuery = useQuery({
     queryKey: ['activity-logs-live', period],

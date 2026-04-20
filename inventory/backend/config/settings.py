@@ -20,13 +20,30 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError('SECRET_KEY environment variable is required')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') + [
-    '.trycloudflare.com',
-    '.workers.dev',
-    '.ngrok-free.app',
-    '.ngrok-free.dev',
-    '.vercel.app',
+
+# Base allowed hosts from the environment variable (required in production).
+_base_hosts = [
+    h.strip()
+    for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if h.strip()
 ]
+
+# Tunnel / preview wildcards are only added in DEBUG mode so that
+# development tunnels (ngrok, Cloudflare, Vercel preview) are never
+# permitted in a production deployment.
+_tunnel_hosts = (
+    [
+        '.trycloudflare.com',
+        '.workers.dev',
+        '.ngrok-free.app',
+        '.ngrok-free.dev',
+        '.vercel.app',
+    ]
+    if DEBUG
+    else []
+)
+
+ALLOWED_HOSTS = _base_hosts + _tunnel_hosts
 
 # Application definition
 INSTALLED_APPS = [
@@ -140,6 +157,14 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '1000/day',
+        'password_change': '5/hour',  # Throttle dédié pour change-password
+        'login': '10/minute',          # Throttle dédié pour le login
+    },
 }
 
 # ─── Simple JWT ───────────────────────────────────────────────────────────────
@@ -148,6 +173,8 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,  # Met à jour User.last_login à chaque token obtenu
+    'ALGORITHM': 'HS256',       # Spécifié explicitement pour éviter les surprises de mise à jour
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
@@ -163,11 +190,17 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
 ] + [o.strip() for o in _env_cors.split(',') if o.strip()]
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r'^https://.*\.ngrok-free\.app$',
-    r'^https://.*\.ngrok-free\.dev$',
-    r'^https://.*\.vercel\.app$',
-]
+# En développement, on autorise les tunnels ngrok et Vercel preview.
+# En production (DEBUG=False), ces wildcards sont désactivées pour éviter
+# qu'un sous-domaine tiers puisse faire des requêtes cross-origin avec credentials.
+if DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r'^https://.*\.ngrok-free\.app$',
+        r'^https://.*\.ngrok-free\.dev$',
+        r'^https://.*\.vercel\.app$',
+    ]
+else:
+    CORS_ALLOWED_ORIGIN_REGEXES = []
 
 CORS_ALLOW_CREDENTIALS = True
 

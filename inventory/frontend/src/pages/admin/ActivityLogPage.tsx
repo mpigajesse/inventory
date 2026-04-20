@@ -52,6 +52,9 @@ function resolveActionType(action: string, targetModel: string): ActionType {
   return "système";
 }
 
+// Fuseau horaire de Libreville (Gabon) — UTC+1, pas de DST
+const LIBREVILLE_TZ = "Africa/Libreville";
+
 function formatDate(isoDate: string): string {
   const d = new Date(isoDate);
   if (isNaN(d.getTime())) return isoDate;
@@ -61,6 +64,7 @@ function formatDate(isoDate: string): string {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: LIBREVILLE_TZ,
   });
 }
 
@@ -79,6 +83,7 @@ function formatRelative(isoDate: string): string {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: LIBREVILLE_TZ,
   });
 }
 
@@ -89,7 +94,7 @@ function toLogEntry(log: ActivityLog): LogEntry {
     date: formatDate(log.created_at),
     dateIso: log.created_at,
     dateSort: new Date(log.created_at).getTime(),
-    user: log.user_name ?? "—",
+    user: log.user_name ?? "Utilisateur inconnu",
     userId: String(log.user ?? ""),
     actionType,
     action: log.action,
@@ -793,11 +798,15 @@ export default function ActivityLogPage() {
                             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                             style={{ background: ACTION_CONFIG[entry.actionType].avatarGradient }}
                           >
-                            {(entry.user?.[0] || 'S').toUpperCase()}
+                            {(entry.user && entry.user !== "Utilisateur inconnu" ? entry.user[0] : '?').toUpperCase()}
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-foreground">
+                            <p
+                              className="text-sm text-foreground overflow-hidden"
+                              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+                              title={entry.detail || entry.action}
+                            >
                               <span className="font-semibold">{entry.user}</span>
                               {' — '}{entry.detail || entry.action}
                             </p>

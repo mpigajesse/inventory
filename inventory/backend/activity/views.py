@@ -27,7 +27,8 @@ class ActivityLogViewSet(ReadOnlyModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        qs = ActivityLog.objects.select_related('user').order_by('-created_at')
+        # select_related('user__profile') avoids N+1 on get_user_role
+        qs = ActivityLog.objects.select_related('user__profile').order_by('-created_at')
         date_filter = self.request.query_params.get('date')
         if date_filter:
             now = timezone.now()
@@ -48,6 +49,35 @@ class ActivityLogViewSet(ReadOnlyModelViewSet):
         if user_id:
             qs = qs.filter(user__id=user_id)
         return qs
+
+    def get_serializer_context(self):
+        """Inject a pre-fetched Sale cache to avoid N+1 in the serializer.
+
+        For the current page of ActivityLog rows that reference a Sale, we
+        fetch all matching Sale objects in a single query and pass them as
+        ``sale_cache`` in the serializer context.
+        """
+        context = super().get_serializer_context()
+        # Only build the cache when we are about to serialise a list/page.
+        queryset = self.get_queryset()
+        # Collect distinct Sale IDs referenced by logs on this page.
+        sale_ids = list(
+            queryset
+            .filter(target_model='Sale', target_id__isnull=False)
+            .values_list('target_id', flat=True)
+            .distinct()
+        )
+        if sale_ids:
+            from sales.models import Sale
+            sales = (
+                Sale.objects
+                .filter(pk__in=sale_ids)
+                .prefetch_related('items')
+            )
+            context['sale_cache'] = {s.pk: s for s in sales}
+        else:
+            context['sale_cache'] = {}
+        return context
 
     def _require_admin(self, request: Request) -> None:
         profile = getattr(request.user, 'profile', None)
@@ -184,8 +214,13 @@ class ActivityRealtimeView(APIView):
         new_logs = list(new_logs_qs)
         serialized_logs = ActivityLogSerializer(new_logs, many=True).data
 
-        latest = ActivityLog.objects.order_by('-id').values_list('id', flat=True).first()
-        latest_id = latest if latest is not None else 0
+        # Derive latest_id from the already-fetched logs to avoid an extra query.
+        # Fall back to a DB query only when no logs were returned at all.
+        if new_logs:
+            latest_id = new_logs[0].id  # queryset is ordered by -created_at
+        else:
+            latest = ActivityLog.objects.order_by('-id').values_list('id', flat=True).first()
+            latest_id = latest if latest is not None else 0
 
         cutoff = timezone.now() - timedelta(minutes=5)
         online_profiles = (

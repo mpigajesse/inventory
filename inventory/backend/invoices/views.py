@@ -1,4 +1,5 @@
 from rest_framework import viewsets, filters
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from users.permissions import IsVendeurOrAdmin
 from activity.utils import log_activity
@@ -19,8 +20,9 @@ class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-issued_at']
 
     def retrieve(self, request, *args, **kwargs):
-        response = super().retrieve(request, *args, **kwargs)
+        # Fetch the object once; pass it to the log to avoid a second DB hit.
         instance = self.get_object()
+        serializer = self.get_serializer(instance)
         try:
             log_activity(
                 user=request.user,
@@ -35,4 +37,4 @@ class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
             )
         except Exception:
             pass
-        return response
+        return Response(serializer.data)

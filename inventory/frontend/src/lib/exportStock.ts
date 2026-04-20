@@ -9,13 +9,24 @@ export interface StockItem {
   min: number;
   max: number;
   price?: number;
+  stockValue?: number;
+  status?: "normal" | "bas" | "critique";
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Résout le niveau de stock.
+ * Priorité : champ `status` du backend (source de vérité).
+ * Fallback : recalcul local uniquement si `status` est absent.
+ */
 function getStockLevel(item: StockItem): "Critique" | "Bas" | "Normal" {
-  if (item.stock <= item.min * 0.5) return "Critique";
-  if (item.stock <= item.min) return "Bas";
+  if (item.status === "critique") return "Critique";
+  if (item.status === "bas") return "Bas";
+  if (item.status === "normal") return "Normal";
+  // Fallback si status non fourni
+  if (item.stock <= 0) return "Critique";
+  if (item.min > 0 && item.stock <= item.min) return "Bas";
   return "Normal";
 }
 
@@ -116,7 +127,12 @@ function buildSheet(
   titleCell.alignment = { horizontal: "center", vertical: "middle" };
 
   // ── Ligne 2 : Métadonnées ────────────────────────────────────────────────────
-  const totalValue = data.reduce((s, i) => s + i.stock * (i.price ?? 0), 0);
+  // Priorité : valeur précalculée par le backend (stock_value).
+  // Fallback : recalcul local si stockValue absent.
+  const totalValue = data.reduce((s, i) => {
+    const v = i.stockValue ?? (i.stock * (i.price ?? 0));
+    return s + (Number.isFinite(v) ? v : 0);
+  }, 0);
   const metaRow = ws.addRow([
     `Généré le : ${todayLabel()}`, "", "",
     `Total produits : ${data.length}`, "", "",
@@ -152,16 +168,18 @@ function buildSheet(
     const price = item.price ?? 0;
     const rowBg = idx % 2 === 0 ? COLORS.rowWhite : COLORS.rowAlt;
 
+    // Valeur de la ligne : priorité backend, fallback calcul local
+    const lineValue = item.stockValue ?? (price > 0 ? item.stock * price : 0);
     const dataRow = ws.addRow([
       idx + 1,
-      item.name,
-      item.category,
+      item.name ?? "—",
+      item.category ?? "—",
       item.stock,
       item.min,
       item.max,
       level,
       price > 0 ? price : "",
-      price > 0 ? item.stock * price : "",
+      lineValue > 0 ? lineValue : "",
     ]);
     dataRow.height = 18;
 
@@ -185,7 +203,7 @@ function buildSheet(
   });
 
   // ── Ligne totaux ─────────────────────────────────────────────────────────────
-  const totalStock = data.reduce((s, i) => s + i.stock, 0);
+  const totalStock = data.reduce((s, i) => s + (Number.isFinite(i.stock) ? i.stock : 0), 0);
   const totalsRow = ws.addRow(["", "TOTAL", "", totalStock, "", "", "", "", totalValue > 0 ? totalValue : ""]);
   totalsRow.height = 22;
   totalsRow.eachCell({ includeEmpty: true }, (cell, colIdx) => {
@@ -200,11 +218,15 @@ function buildSheet(
 // ─── Export principal ─────────────────────────────────────────────────────────
 
 export async function exportStockToExcel(data: StockItem[]): Promise<void> {
-  // Lazy-load ExcelJS and file-saver to keep the main bundle small
-  const [ExcelJS, { saveAs }] = await Promise.all([
+  // Lazy-load ExcelJS and file-saver to keep the main bundle small.
+  // file-saver peut exposer saveAs directement ou via .default selon bundler/version.
+  const [ExcelJS, fileSaverMod] = await Promise.all([
     import("exceljs") as Promise<ExcelJSModule>,
     import("file-saver"),
   ]);
+  const saveAs: (blob: Blob, name: string) => void =
+    (fileSaverMod as unknown as { saveAs: (b: Blob, n: string) => void }).saveAs ??
+    (fileSaverMod as unknown as { default: { saveAs: (b: Blob, n: string) => void } }).default?.saveAs;
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "NAOSERVICES INVENTORY";

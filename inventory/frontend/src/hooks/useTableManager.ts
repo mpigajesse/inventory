@@ -25,7 +25,11 @@ export interface UseTableManagerOptions<TRow> {
 }
 
 export interface UseTableManagerResult<TRow> {
-  // Données à différents stades du pipeline
+  /**
+   * `filtered` contient les données après filtrage (recherche) ET tri.
+   * C'est l'ensemble complet avant pagination — utile pour les exports ou
+   * comptages sur la sélection courante.
+   */
   filtered: TRow[];
   paginated: TRow[];
   // Recherche

@@ -19,6 +19,8 @@ class NotificationSerializer(serializers.ModelSerializer):
             'product_name',
             'created_at',
         ]
+        read_only_fields = ['recipient', 'notification_type', 'title', 'message',
+                            'related_product', 'created_at']
 
     def get_product_name(self, obj: Notification) -> str | None:
         if obj.related_product:

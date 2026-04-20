@@ -100,8 +100,11 @@ function getInitials(name: string | undefined): string {
 
 // ─── Notification helpers ─────────────────────────────────────────────────────
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+function timeAgo(dateStr: string | null | undefined): string {
+  if (!dateStr) return "Date inconnue";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "Date inconnue";
+  const diff = Date.now() - date.getTime();
   if (diff < 60_000) return "À l'instant";
   if (diff < 3_600_000) return `il y a ${Math.floor(diff / 60_000)} min`;
   if (diff < 86_400_000) return `il y a ${Math.floor(diff / 3_600_000)}h`;
@@ -115,21 +118,17 @@ type NotifIconEntry = {
 
 function resolveNotifStyle(type: string): NotifIconEntry {
   switch (type) {
-    case "sale":
+    // Types réels renvoyés par le backend
+    case "new_sale":
       return { Icon: ShoppingCart, colorClass: "bg-success/10 text-success" };
-    case "low_stock":
+    case "stock_low":
       return { Icon: AlertTriangle, colorClass: "bg-amber-500/10 text-amber-600" };
-    case "stock_critique":
+    case "stock_critical":
       return { Icon: AlertOctagon, colorClass: "bg-destructive/10 text-destructive" };
     case "new_client":
-    case "user":
       return { Icon: UserPlus, colorClass: "bg-primary/10 text-primary" };
-    case "invoice":
-      return { Icon: FileText, colorClass: "bg-primary/10 text-primary" };
-    case "stock":
+    case "system":
       return { Icon: Package, colorClass: "bg-amber-500/10 text-amber-600" };
-    case "utilisateur":
-      return { Icon: UserCog, colorClass: "text-purple-500 bg-purple-500/10" };
     default:
       return { Icon: Settings, colorClass: "bg-muted text-muted-foreground" };
   }

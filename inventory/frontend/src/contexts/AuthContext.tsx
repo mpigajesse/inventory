@@ -49,15 +49,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // On mount: restore session from stored access_token
   useEffect(() => {
+    // Guard against calling setState after the component has unmounted
+    // (can happen in React Strict Mode double-invocation or fast navigation).
+    let isMounted = true;
+
     if (!authService.isAuthenticated()) {
       setIsLoading(false);
-      return;
+      return () => { isMounted = false; };
     }
 
     authService
       .getMe()
       .then((apiUser) => {
-        setCurrentUser(mapApiUserToUser(apiUser));
+        if (isMounted) setCurrentUser(mapApiUserToUser(apiUser));
       })
       .catch(() => {
         // Token is invalid or expired — clear storage
@@ -65,8 +69,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.removeItem('refresh_token');
       })
       .finally(() => {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       });
+
+    return () => { isMounted = false; };
   }, []);
 
   async function login(username: string, password: string): Promise<void> {

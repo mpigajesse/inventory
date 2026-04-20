@@ -309,7 +309,9 @@ class ProductsView(APIView):
         ]
 
         # --- by category ---
-        category_sales_qs = (
+        # Evaluate the queryset once into a list to avoid re-hitting the DB
+        # for the total_revenue sum and the by_category comprehension.
+        category_sales_rows = list(
             SaleItem.objects
             .filter(sale__created_at__gte=since)
             .values('product__category__name')
@@ -319,7 +321,7 @@ class ProductsView(APIView):
             )
             .order_by('-revenue')
         )
-        total_revenue = sum(row['revenue'] for row in category_sales_qs) or 1
+        total_revenue = sum(row['revenue'] for row in category_sales_rows) or 1
         by_category = [
             {
                 'category': row['product__category__name'] or 'Sans catégorie',
@@ -327,7 +329,7 @@ class ProductsView(APIView):
                 'units_sold': row['units_sold'],
                 'pct_of_total': round(row['revenue'] / total_revenue * 100, 1),
             }
-            for row in category_sales_qs
+            for row in category_sales_rows
         ]
 
         # --- counts ---
@@ -541,65 +543,97 @@ class StockView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        from django.db.models import Case, IntegerField, When
+
         # Annotate each stock row with its value (quantity * selling_price)
-        stocks = (
+        # and a status label computed in SQL to avoid loading all rows into
+        # Python memory.
+        stocks_qs = (
             Stock.objects
             .select_related('product')
             .annotate(
                 line_value=ExpressionWrapper(
                     F('quantity') * F('product__selling_price'),
                     output_field=DecimalField(),
-                )
+                ),
+                # 0 = critical, 1 = low, 2 = normal — used for sorting alerts
+                status_rank=Case(
+                    When(quantity__lte=F('min_threshold') * 0.5, then=0),
+                    When(quantity__lte=F('min_threshold'), then=1),
+                    default=2,
+                    output_field=IntegerField(),
+                ),
             )
         )
 
-        total_value = stocks.aggregate(tv=Sum('line_value'))['tv'] or 0
-        total_products = stocks.count()
+        # Aggregate totals in a single SQL query
+        agg = stocks_qs.aggregate(
+            tv=Sum('line_value'),
+            total=Count('id'),
+            critical_count=Count('id', filter=Q(quantity__lte=F('min_threshold') * 0.5)),
+            low_count=Count(
+                'id',
+                filter=Q(quantity__lte=F('min_threshold'), quantity__gt=F('min_threshold') * 0.5),
+            ),
+        )
+        total_value = agg['tv'] or 0
+        total_products = agg['total']
+        normal_count = total_products - (agg['critical_count'] or 0) - (agg['low_count'] or 0)
 
-        # Status breakdown — mirrors the Stock.status property logic:
-        #   critical : quantity <= min_threshold * 0.5
-        #   low      : quantity <= min_threshold  (and > min_threshold * 0.5)
-        #   normal   : quantity > min_threshold
-        breakdown = {'normal': {'count': 0, 'value': 0},
-                     'low':    {'count': 0, 'value': 0},
-                     'critical': {'count': 0, 'value': 0}}
-        alerts = []
+        # Value breakdown requires a second pass; use conditional Sum in SQL.
+        value_agg = stocks_qs.aggregate(
+            critical_value=Sum(
+                'line_value',
+                filter=Q(quantity__lte=F('min_threshold') * 0.5),
+            ),
+            low_value=Sum(
+                'line_value',
+                filter=Q(quantity__lte=F('min_threshold'), quantity__gt=F('min_threshold') * 0.5),
+            ),
+            normal_value=Sum(
+                'line_value',
+                filter=Q(quantity__gt=F('min_threshold')),
+            ),
+        )
 
-        for s in stocks:
-            lv = int(s.line_value or 0)
-            if s.quantity <= s.min_threshold * 0.5:
-                status = 'critical'
-            elif s.quantity <= s.min_threshold:
-                status = 'low'
-            else:
-                status = 'normal'
+        breakdown = {
+            'normal':   {'count': normal_count,              'value': int(value_agg['normal_value'] or 0)},
+            'low':      {'count': agg['low_count'] or 0,     'value': int(value_agg['low_value'] or 0)},
+            'critical': {'count': agg['critical_count'] or 0,'value': int(value_agg['critical_value'] or 0)},
+        }
 
-            breakdown[status]['count'] += 1
-            breakdown[status]['value'] += lv
+        # Alerts: only rows with status critical or low, sorted in SQL
+        alert_rows = (
+            stocks_qs
+            .filter(quantity__lte=F('min_threshold'))
+            .order_by('status_rank', 'quantity')
+            .values('product_id', 'product__name', 'quantity', 'min_threshold', 'status_rank')
+        )
+        alerts = [
+            {
+                'product_id': r['product_id'],
+                'product_name': r['product__name'],
+                'quantity': r['quantity'],
+                'min_threshold': r['min_threshold'],
+                'status': 'critical' if r['status_rank'] == 0 else 'low',
+            }
+            for r in alert_rows
+        ]
 
-            if status in ('critical', 'low'):
-                alerts.append({
-                    'product_id': s.product_id,
-                    'product_name': s.product.name,
-                    'quantity': s.quantity,
-                    'min_threshold': s.min_threshold,
-                    'status': status,
-                })
-
-        alerts.sort(key=lambda a: (0 if a['status'] == 'critical' else 1, a['quantity']))
-
-        top_value_products = sorted(
-            [
-                {
-                    'product_name': s.product.name,
-                    'quantity': s.quantity,
-                    'value': int(s.line_value or 0),
-                }
-                for s in stocks
-            ],
-            key=lambda x: x['value'],
-            reverse=True,
-        )[:10]
+        # Top-10 products by stock value — sorted in SQL
+        top_value_products = list(
+            stocks_qs
+            .order_by('-line_value')
+            .values('product__name', 'quantity', 'line_value')[:10]
+        )
+        top_value_products = [
+            {
+                'product_name': r['product__name'],
+                'quantity': r['quantity'],
+                'value': int(r['line_value'] or 0),
+            }
+            for r in top_value_products
+        ]
 
         return Response({
             'total_value': int(total_value),

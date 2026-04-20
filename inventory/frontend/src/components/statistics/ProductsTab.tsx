@@ -321,7 +321,9 @@ export function ProductsTab({ period }: ProductsTabProps) {
                     {cat.category}
                   </span>
                   <span style={{ fontSize: "11px", color: "hsl(var(--muted-foreground))", fontFamily: "monospace", flexShrink: 0 }}>
-                    {totalRevenue > 0 ? ((cat.revenue / totalRevenue) * 100).toFixed(1) : cat.pct_of_total.toFixed(1)}%
+                    {totalRevenue > 0
+                      ? ((cat.revenue / totalRevenue) * 100).toFixed(1)
+                      : (cat.pct_of_total ?? 0).toFixed(1)}%
                   </span>
                   <span
                     style={{

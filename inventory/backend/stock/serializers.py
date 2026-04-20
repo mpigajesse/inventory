@@ -35,12 +35,13 @@ class StockAdjustmentSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'quantity': 'La quantité doit être supérieure à zéro.'}
             )
-        stock = self.context.get('stock')
-        if movement_type == 'exit' and stock:
-            if qty > stock.quantity:
-                raise serializers.ValidationError(
-                    {'quantity': 'Stock insuffisant pour cette sortie.'}
-                )
+        # BUG-3 FIX: l'ajustement doit être >= 0 (PositiveIntegerField en DB)
+        if movement_type == 'adjustment' and qty < 0:
+            raise serializers.ValidationError(
+                {'quantity': "L'ajustement ne peut pas résulter en un stock négatif."}
+            )
+        # NOTE: la vérification exit vs stock.quantity est faite dans la vue
+        # après select_for_update() pour éviter la race condition (BUG-1).
         return data
 
 
@@ -55,4 +56,8 @@ class StockMovementSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'product', 'product_name', 'movement_type', 'quantity',
             'quantity_before', 'quantity_after', 'note', 'performed_by_name', 'created_at',
+        ]
+        # BUG-7 FIX: ces champs sont calculés par la vue, pas écrits par le client
+        read_only_fields = [
+            'product', 'quantity_before', 'quantity_after', 'performed_by_name', 'created_at',
         ]

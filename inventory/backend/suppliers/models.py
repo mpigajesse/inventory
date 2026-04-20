@@ -1,11 +1,17 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
+from django.db import models
+
+_phone_validator = RegexValidator(
+    regex=r'^\+?[\d\s\-().]{6,20}$',
+    message="Numéro de téléphone invalide. Exemples : +241 07 40 13 02, 074013 02.",
+)
 
 
 class Supplier(models.Model):
     name = models.CharField(max_length=200)
     contact_name = models.CharField(max_length=200, blank=True)
-    phone = models.CharField(max_length=20, blank=True)
+    phone = models.CharField(max_length=20, blank=True, validators=[_phone_validator])
     email = models.EmailField(blank=True)
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
@@ -34,7 +40,7 @@ class PurchaseOrder(models.Model):
 
     supplier = models.ForeignKey(
         Supplier,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='orders',
     )
     status = models.CharField(
@@ -71,7 +77,7 @@ class PurchaseOrderItem(models.Model):
     )
     product = models.ForeignKey(
         'products.Product',
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
     )
     quantity = models.PositiveIntegerField()
     unit_price = models.PositiveIntegerField(help_text='Prix unitaire en FCFA')

@@ -15,15 +15,27 @@ import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supplierService } from "@/services/supplierService";
+import { toast } from "sonner";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
+// Regex téléphone : accepte formats gabonais et internationaux E.164
+const PHONE_REGEX = /^(\+?\d[\d\s\-().]{6,19}\d)$/;
+
 const supplierSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   contact: z.string().min(2, "Le nom du contact est requis"),
-  phone: z.string().min(8, "Numéro de téléphone invalide"),
-  email: z.string().email("Email invalide").or(z.literal("")),
+  phone: z
+    .string()
+    .min(8, "Numéro de téléphone invalide")
+    .regex(PHONE_REGEX, "Format invalide — ex : +241 07 12 34 56"),
+  email: z
+    .string()
+    .email("Format email invalide — ex : contact@fournisseur.ga")
+    .or(z.literal("")),
   address: z.string().optional(),
   lastOrder: z.string().optional(),
   status: z.enum(["actif", "inactif"], { required_error: "Sélectionnez un statut" }),
@@ -316,15 +328,16 @@ export default function SupplierFormPage() {
     ? MOCK_SUPPLIERS.find((s) => s.id === Number(id)) ?? null
     : null;
 
+  const queryClient = useQueryClient();
   const [productTags, setProductTags] = useState<string[]>(
     supplier?.products ?? []
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierSchema),
@@ -349,13 +362,57 @@ export default function SupplierFormPage() {
         },
   });
 
-  function onSubmit(values: SupplierFormValues) {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      void values;
-      void productTags;
+  const saveMutation = useMutation({
+    mutationFn: (values: SupplierFormValues) => {
+      const payload = {
+        name: values.name,
+        contact_name: values.contact,
+        phone: values.phone,
+        email: values.email || "",
+        address: values.address ?? "",
+        is_active: values.status === "actif",
+      };
+      return isEdit && supplier
+        ? supplierService.update(supplier.id, payload)
+        : supplierService.create(payload);
+    },
+    onSuccess: (_, values) => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      if (isEdit) {
+        toast.success("Fournisseur modifié", {
+          description: `${values.name} a été mis à jour avec succès.`,
+        });
+      } else {
+        toast.success("Fournisseur enregistré", {
+          description: `${values.name} a été ajouté avec succès.`,
+        });
+        // Réinitialiser le formulaire après une création réussie
+        reset();
+        setProductTags([]);
+      }
       navigate("/suppliers");
-    }, 600);
+    },
+    onError: (error: unknown) => {
+      let message = "Une erreur est survenue. Réessayez.";
+      if (error !== null && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { data?: { detail?: string; non_field_errors?: string[] } }; message?: string };
+        const data = axiosError.response?.data;
+        message =
+          data?.detail ??
+          data?.non_field_errors?.[0] ??
+          axiosError.message ??
+          message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      toast.error(isEdit ? "Erreur de modification" : "Erreur de création", {
+        description: message,
+      });
+    },
+  });
+
+  function onSubmit(values: SupplierFormValues) {
+    saveMutation.mutate(values);
   }
 
   const pageTitle = isEdit ? "Modifier le fournisseur" : "Nouveau fournisseur";
@@ -648,7 +705,7 @@ export default function SupplierFormPage() {
                 btn.style.color = "";
               }}
               onClick={() => navigate("/suppliers")}
-              disabled={isSubmitting}
+              disabled={saveMutation.isPending}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Annuler
@@ -663,9 +720,9 @@ export default function SupplierFormPage() {
                 boxShadow: "0 4px 16px hsl(22 72% 48% / 0.38), 0 1px 3px hsl(22 72% 48% / 0.2)",
                 transition: "transform 0.15s ease, box-shadow 0.2s ease",
               }}
-              disabled={isSubmitting}
+              disabled={saveMutation.isPending}
             >
-              {isSubmitting ? (
+              {saveMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <Save className="w-4 h-4 mr-2" />

@@ -96,7 +96,25 @@ class ProductViewSet(viewsets.ModelViewSet):
         product = self.get_object()
         if 'image' not in request.FILES:
             return Response({'error': 'Aucune image fournie.'}, status=400)
-        product.image = request.FILES['image']
+
+        # BUG-5 FIX: validation du type MIME côté backend avant envoi à Cloudinary
+        ALLOWED_CONTENT_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+        uploaded_file = request.FILES['image']
+        if uploaded_file.content_type not in ALLOWED_CONTENT_TYPES:
+            return Response(
+                {
+                    'error': (
+                        f"Type de fichier non autorisé : {uploaded_file.content_type}. "
+                        "Formats acceptés : JPEG, PNG, WebP, GIF."
+                    )
+                },
+                status=400,
+            )
+        # Limite taille : 5 Mo
+        if uploaded_file.size > 5 * 1024 * 1024:
+            return Response({'error': 'L\'image ne doit pas dépasser 5 Mo.'}, status=400)
+
+        product.image = uploaded_file
         product.save(update_fields=['image'])
         if log_activity:
             try:
@@ -114,9 +132,12 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='barcode/(?P<code>[^/.]+)')
     def by_barcode(self, request, code=None):
+        # BUG-6 FIX: recherche insensible à la casse pour les références
+        # alphanumériques saisies manuellement (les EAN-13 sont numériques,
+        # mais les codes personnalisés peuvent varier en casse).
         try:
             product = Product.objects.select_related('category', 'stock').get(
-                barcode=code, is_active=True
+                barcode__iexact=code, is_active=True
             )
             return Response(ProductListSerializer(product).data)
         except Product.DoesNotExist:

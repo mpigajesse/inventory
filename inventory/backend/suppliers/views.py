@@ -1,5 +1,7 @@
+from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
+from rest_framework.pagination import PageNumberPagination
 from users.permissions import IsAdminRole
 from activity.utils import log_activity
 
@@ -7,10 +9,25 @@ from .models import PurchaseOrder, Supplier
 from .serializers import PurchaseOrderSerializer, SupplierSerializer
 
 
+class SupplierPagination(PageNumberPagination):
+    page_size = 25
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class PurchaseOrderPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class SupplierViewSet(viewsets.ModelViewSet):
-    queryset = Supplier.objects.filter(is_active=True)
+    queryset = Supplier.objects.filter(is_active=True).annotate(
+        _orders_count=models.Count('orders', distinct=True),
+    )
     serializer_class = SupplierSerializer
     permission_classes = [IsAdminRole]
+    pagination_class = SupplierPagination
     # DjangoFilterBackend added so filterset_fields is honoured.
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['city', 'country', 'is_active']
@@ -65,6 +82,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     )
     serializer_class = PurchaseOrderSerializer
     permission_classes = [IsAdminRole]
+    pagination_class = PurchaseOrderPagination
     # SearchFilter added so search_fields works; DjangoFilterBackend kept for filterset_fields.
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['supplier', 'status']

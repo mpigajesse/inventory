@@ -61,6 +61,7 @@ const productIconMap: Record<string, LucideIcon> = {
 // ─── Selector ─────────────────────────────────────────────────────────────────
 
 export function getProductIcon(name: string, category: string): LucideIcon {
+  if (!name) return categoryIcons[category] ?? Box;
   const nameLower = name.toLowerCase();
   for (const [keyword, icon] of Object.entries(productIconMap)) {
     if (nameLower.includes(keyword)) return icon;

@@ -38,7 +38,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { exportClients } from "@/lib/exportClients";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { clientService } from "@/services/clientService";
@@ -60,14 +60,19 @@ function formatFcfa(amount: number): string {
   return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA";
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR");
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("fr-FR");
 }
 
 function initials(name: string): string {
+  if (!name || name.trim() === "") return "?";
   return name
-    .split(" ")
-    .map((n) => n[0])
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0] ?? "")
+    .filter(Boolean)
     .join("")
     .slice(0, 2)
     .toUpperCase();
@@ -197,13 +202,20 @@ export default function ClientsPage() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [historyClient, setHistoryClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
 
+  // Debounce : évite une requête API à chaque frappe
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   // ── Fetch clients ────────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
-    queryKey: ["clients", search],
-    queryFn: () => clientService.getAll(search ? { search } : undefined),
+    queryKey: ["clients", debouncedSearch],
+    queryFn: () => clientService.getAll(debouncedSearch ? { search: debouncedSearch } : undefined),
   });
 
   const clients: Client[] = data?.results ?? [];
@@ -221,8 +233,22 @@ export default function ClientsPage() {
       setDeletingClient(null);
     },
     onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Impossible d'archiver ce client. Réessayez.";
+      // Extraire le message Django depuis la réponse Axios (ex: 409 avec des factures)
+      let message = "Impossible d'archiver ce client. Réessayez.";
+      if (
+        error !== null &&
+        typeof error === "object" &&
+        "response" in error
+      ) {
+        const axiosError = error as { response?: { data?: { detail?: string; message?: string } }; message?: string };
+        message =
+          axiosError.response?.data?.detail ??
+          axiosError.response?.data?.message ??
+          axiosError.message ??
+          message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
       toast.error("Erreur lors de l'archivage", { description: message });
     },
   });

@@ -31,19 +31,30 @@ import type { AppLayoutContext } from "@/components/layout/AppLayout";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatFcfa(amount: number): string {
-  return amount.toLocaleString("fr-FR") + " FCFA";
+function formatFcfa(amount: number | null | undefined): string {
+  if (amount == null || !isFinite(amount)) return "— FCFA";
+  try {
+    return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(amount) + " FCFA";
+  } catch {
+    return amount.toString() + " FCFA";
+  }
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
   const d = new Date(iso);
-  return d.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  if (isNaN(d.getTime())) return "—";
+  try {
+    return d.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
 }
 
 function formatLongDate(d: Date): string {
@@ -602,15 +613,16 @@ export default function DashboardPage() {
   });
 
   // Derive sparkline from sales_by_day (last 7 entries, or fewer)
-  const daySpark = (stats?.sales_by_day ?? []).slice(-7).map((d) => d.total);
+  const daySpark = (stats?.sales_by_day ?? []).slice(-7).map((d) => d.total ?? 0);
   const daySparkFilled = daySpark.length > 0 ? daySpark : [0];
 
-  // KPI values from API
-  const todayRevenue = stats?.today.revenue ?? 0;
+  // KPI values from API — guard against null/NaN from API
+  const todayRevenue = stats?.today.revenue != null && isFinite(stats.today.revenue) ? stats.today.revenue : 0;
   const todayCount = stats?.today.sales_count ?? 0;
-  const monthRevenue = stats?.month.revenue ?? 0;
+  const monthRevenue = stats?.month.revenue != null && isFinite(stats.month.revenue) ? stats.month.revenue : 0;
   const monthCount = stats?.month.sales_count ?? 0;
-  const avgCartToday = todayCount > 0 ? Math.round(todayRevenue / todayCount) : 0;
+  const avgCartRaw = todayCount > 0 ? todayRevenue / todayCount : 0;
+  const avgCartToday = isFinite(avgCartRaw) ? Math.round(avgCartRaw) : 0;
   const lowCount = stats?.stock.low_count ?? 0;
   const totalClients = stats?.clients.total ?? 0;
 
@@ -871,11 +883,11 @@ export default function DashboardPage() {
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                               {formatDate(sale.created_at)} ·{" "}
-                              {sale.items.length} article
-                              {sale.items.length !== 1 ? "s" : ""}
+                              {(sale.items ?? []).length} article
+                              {(sale.items ?? []).length !== 1 ? "s" : ""}
                             </p>
                             <p className="text-sm font-bold mt-1 tabular-nums">
-                              {formatFcfa(sale.total_amount)}
+                              {formatFcfa(sale.total_amount ?? 0)}
                             </p>
                           </div>
                         </div>
@@ -915,10 +927,10 @@ export default function DashboardPage() {
                               {formatDate(sale.created_at)}
                             </td>
                             <td className="tabular-nums">
-                              {sale.items.length}
+                              {(sale.items ?? []).length}
                             </td>
                             <td className="font-semibold tabular-nums text-right">
-                              {formatFcfa(sale.total_amount)}
+                              {formatFcfa(sale.total_amount ?? 0)}
                             </td>
                             <td>
                               <StatusBadge label="Terminée" variant="success" />
@@ -1118,7 +1130,7 @@ export default function DashboardPage() {
                                 />
                               </div>
                               <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                                {formatFcfa(p.revenue)}
+                                {formatFcfa(p.revenue ?? 0)}
                               </p>
                             </div>
                           </div>

@@ -31,13 +31,20 @@ type StatusFilter = "all" | "paid" | "partial" | "unpaid" | "cancelled";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatFCFA(amount: number | string): string {
-  return Number(amount).toLocaleString("fr-FR") + " FCFA";
+function formatFCFA(amount: number | string | null | undefined): string {
+  const n = Number(amount);
+  if (isNaN(n)) return "0 FCFA";
+  return n.toLocaleString("fr-FR") + " FCFA";
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  const d = new Date(iso);
+  // Dates ISO de type "YYYY-MM-DD" (sans heure) : parser manuellement pour
+  // éviter le décalage UTC→local (Gabon = UTC+1).
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
+  const d = dateOnly
+    ? new Date(`${iso}T00:00:00`)
+    : new Date(iso);
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("fr-FR");
 }
@@ -326,7 +333,13 @@ function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
 
 // ─── PDF download ─────────────────────────────────────────────────────────────
 
+// Verrou global pour éviter le déclenchement simultané de plusieurs exports PDF
+let _pdfDownloading = false;
+
 async function downloadInvoicePDF(invoice: Invoice): Promise<void> {
+  if (_pdfDownloading) return;
+  _pdfDownloading = true;
+  try {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -335,16 +348,19 @@ async function downloadInvoicePDF(invoice: Invoice): Promise<void> {
   const marginR = 15;
   const contentW = pageW - marginL - marginR;
 
-  const totalAmount = Number(invoice.total_amount);
-  const amountPaid = Number(invoice.amount_paid);
-  const balanceDue = Number(invoice.balance_due);
+  const totalAmount = isNaN(Number(invoice.total_amount)) ? 0 : Number(invoice.total_amount);
+  const amountPaid = isNaN(Number(invoice.amount_paid)) ? 0 : Number(invoice.amount_paid);
+  const balanceDue = isNaN(Number(invoice.balance_due)) ? 0 : Number(invoice.balance_due);
   const changeGiven = amountPaid - totalAmount;
 
-  const fmt = (n: number | string) =>
-    Number(n).toLocaleString("fr-FR") + " FCFA";
-  const fmtDate = (iso: string) => {
+  const fmt = (n: number | string | null | undefined) => {
+    const v = Number(n);
+    return (isNaN(v) ? 0 : v).toLocaleString("fr-FR") + " FCFA";
+  };
+  const fmtDate = (iso: string | null | undefined) => {
     if (!iso) return "—";
-    const d = new Date(iso);
+    const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
+    const d = dateOnly ? new Date(`${iso}T00:00:00`) : new Date(iso);
     if (isNaN(d.getTime())) return iso;
     return d.toLocaleDateString("fr-FR");
   };
@@ -374,7 +390,7 @@ async function downloadInvoicePDF(invoice: Invoice): Promise<void> {
   doc.setFont("courier", "bold");
   doc.setFontSize(14);
   doc.setTextColor(20, 20, 20);
-  doc.text(invoice.invoice_number, pageW - marginR, 21, { align: "right" });
+  doc.text(invoice.invoice_number ?? "—", pageW - marginR, 21, { align: "right" });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
@@ -545,7 +561,13 @@ async function downloadInvoicePDF(invoice: Invoice): Promise<void> {
   );
 
   const dateSlug = fmtDate(invoice.issued_at).replace(/\//g, "-");
-  doc.save(`facture-${invoice.invoice_number}-${dateSlug}.pdf`);
+  const safeNumber = (invoice.invoice_number ?? "sans-numero").replace(/[^a-zA-Z0-9-_]/g, "_");
+  doc.save(`facture-${safeNumber}-${dateSlug}.pdf`);
+  } catch (err) {
+    console.error("[PDF] Erreur lors de la génération :", err);
+  } finally {
+    _pdfDownloading = false;
+  }
 }
 
 // ─── Invoice detail (modal content) ──────────────────────────────────────────
@@ -564,7 +586,7 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    documentTitle: `Facture ${invoice.invoice_number}`,
+    documentTitle: `Facture ${invoice.invoice_number ?? ""}`.trim(),
     pageStyle: `
       @page { size: A4; margin: 15mm; }
       @media print {
@@ -791,7 +813,7 @@ function InlinePrintButton({ invoice, className, iconSize = "w-3.5 h-3.5" }: Inl
   const printRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    documentTitle: `Facture ${invoice.invoice_number}`,
+    documentTitle: `Facture ${invoice.invoice_number ?? ""}`.trim(),
     pageStyle: `
       @page { size: A4; margin: 15mm; }
       @media print {
@@ -860,9 +882,14 @@ export default function InvoicesPage() {
   const typedPaginated = paginated as unknown as Invoice[];
 
   // Count badges for filter tabs
+  // Quand un filtre de statut est actif, `data.results` ne contient que ce statut,
+  // donc les compteurs des autres onglets seraient faux (0). On n'affiche le compteur
+  // que pour l'onglet "all" (où tous les statuts sont présents).
   const allInvoices = data?.results ?? [];
   const countByStatus = (status: Invoice["status"]) =>
-    allInvoices.filter((inv) => inv.status === status).length;
+    statusFilter === "all"
+      ? allInvoices.filter((inv) => inv.status === status).length
+      : null;
 
   // Total général (sur l'ensemble filtré actuel)
   const grandTotal = invoices.reduce(
@@ -964,7 +991,7 @@ export default function InvoicesPage() {
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.value}
-                onClick={() => setStatusFilter(f.value)}
+                onClick={() => { setStatusFilter(f.value); setPage(1); }}
                 className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
                 style={
                   statusFilter === f.value
@@ -979,11 +1006,14 @@ export default function InvoicesPage() {
                 }
               >
                 {f.label}
-                {f.value !== "all" && !isLoading && (
-                  <span className="ml-1.5 text-[11px] font-mono" style={{ opacity: statusFilter === f.value ? 0.8 : 0.6 }}>
-                    {countByStatus(f.value as Invoice["status"])}
-                  </span>
-                )}
+                {f.value !== "all" && !isLoading && (() => {
+                  const count = countByStatus(f.value as Invoice["status"]);
+                  return count !== null ? (
+                    <span className="ml-1.5 text-[11px] font-mono" style={{ opacity: statusFilter === f.value ? 0.8 : 0.6 }}>
+                      {count}
+                    </span>
+                  ) : null;
+                })()}
               </button>
             ))}
           </div>

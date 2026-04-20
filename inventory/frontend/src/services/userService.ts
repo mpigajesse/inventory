@@ -3,6 +3,19 @@ import type { AuthUser } from './authService';
 import type { Permission } from '@/hooks/usePermissions';
 import type { ActivityLog } from './activityService';
 
+const ALLOWED_PERMISSIONS: ReadonlySet<Permission> = new Set([
+  'manage_users',
+  'manage_products',
+  'manage_stock',
+  'manage_suppliers',
+  'manage_clients',
+  'view_reports',
+  'view_barcodes',
+  'view_invoices',
+  'make_sales',
+  'manage_settings',
+]);
+
 export interface UserListItem {
   id: number;
   username: string;
@@ -80,8 +93,10 @@ export const userService = {
       })
       .then((r) => r.data),
 
-  setPermissions: (id: number, permissions: Permission[]): Promise<void> =>
-    api.patch(`/users/${id}/set-permissions/`, { permissions }).then(() => undefined),
+  setPermissions: (id: number, permissions: Permission[]): Promise<void> => {
+    const sanitized = permissions.filter((p) => ALLOWED_PERMISSIONS.has(p));
+    return api.patch(`/users/${id}/set-permissions/`, { permissions: sanitized }).then(() => undefined);
+  },
 
   getById: (id: number) =>
     api.get<UserDetailItem>(`/users/${id}/`).then((r) => r.data),

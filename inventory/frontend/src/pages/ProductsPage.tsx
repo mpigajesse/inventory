@@ -54,7 +54,8 @@ import type { AppLayoutContext } from "@/components/layout/AppLayout";
 type ModalState =
   | { type: "none" }
   | { type: "view"; product: Product }
-  | { type: "delete"; product: Product };
+  | { type: "delete"; product: Product }
+  | { type: "delete-selection"; ids: number[] };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -74,14 +75,8 @@ function stockStatusLabel(status: Product["stock_status"]): string {
 
 function StockOverlayBadge({ product }: { product: Product }) {
   const isOut = product.stock_quantity <= 0;
-  const isLow =
-    !isOut && product.stock_quantity <= (product as Product & { min_threshold?: number }).min_threshold!;
-
-  const bg = isOut
-    ? "hsl(4 72% 52% / 0.92)"
-    : isLow
-      ? "hsl(36 88% 52% / 0.92)"
-      : "hsl(152 38% 38% / 0.92)";
+  const minThreshold = (product as Product & { min_threshold?: number }).min_threshold ?? 0;
+  const isLow = !isOut && minThreshold > 0 && product.stock_quantity <= minThreshold;
 
   const label = isOut
     ? "Rupture"
@@ -245,16 +240,25 @@ export default function ProductsPage() {
 
   function handleDeleteSelection() {
     const ids = Array.from(selectedIds) as number[];
+    if (ids.length === 0) return;
+    setModal({ type: "delete-selection", ids });
+  }
+
+  function confirmDeleteSelection() {
+    if (modal.type !== "delete-selection") return;
+    const ids = modal.ids;
     Promise.all(ids.map((id) => productService.delete(id)))
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["products"] });
         toast.success(`${ids.length} produit(s) supprimé(s)`);
         clearSelection();
+        setModal({ type: "none" });
       })
       .catch(() => {
         toast.error("Erreur lors de la suppression", {
           description: "Certains produits n'ont pas pu être supprimés.",
         });
+        setModal({ type: "none" });
       });
   }
 
@@ -671,14 +675,14 @@ export default function ProductsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">{product.name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {product.category_name}
+                      {product.category_name ?? "—"}
                     </p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <span
                         className="text-sm font-bold tabular-nums"
                         style={{ color: "hsl(22 72% 48%)" }}
                       >
-                        {product.selling_price.toLocaleString("fr-FR")} FCFA
+                        {(product.selling_price ?? 0).toLocaleString("fr-FR")} FCFA
                       </span>
                       <span className="text-xs text-muted-foreground">
                         · Stock : {product.stock_quantity}
@@ -876,13 +880,13 @@ export default function ProductsPage() {
                           </Button>
                         )}
                       </td>
-                      <td className="text-sm">{product.category_name}</td>
+                      <td className="text-sm">{product.category_name ?? "—"}</td>
                       <td>
                         <span
                           className="font-bold text-sm tabular-nums"
                           style={{ color: "hsl(22 72% 48%)" }}
                         >
-                          {product.selling_price.toLocaleString("fr-FR")} FCFA
+                          {(product.selling_price ?? 0).toLocaleString("fr-FR")} FCFA
                         </span>
                       </td>
                       <td className="text-sm tabular-nums">
@@ -995,7 +999,7 @@ export default function ProductsPage() {
                   <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">
                     Catégorie
                   </p>
-                  <p className="font-semibold">{modal.product.category_name}</p>
+                  <p className="font-semibold">{modal.product.category_name ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">
@@ -1005,7 +1009,7 @@ export default function ProductsPage() {
                     className="font-bold tabular-nums"
                     style={{ color: "hsl(22 72% 48%)" }}
                   >
-                    {modal.product.selling_price.toLocaleString("fr-FR")} FCFA
+                    {(modal.product.selling_price ?? 0).toLocaleString("fr-FR")} FCFA
                   </p>
                 </div>
                 <div>
@@ -1013,7 +1017,7 @@ export default function ProductsPage() {
                     Prix d&apos;achat
                   </p>
                   <p className="font-semibold tabular-nums">
-                    {modal.product.purchase_price.toLocaleString("fr-FR")} FCFA
+                    {(modal.product.purchase_price ?? 0).toLocaleString("fr-FR")} FCFA
                   </p>
                 </div>
                 <div>
@@ -1093,6 +1097,36 @@ export default function ProductsPage() {
                 {deleteMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* ── AlertDialog : Confirmer suppression en masse ─────────────────────── */}
+      {modal.type === "delete-selection" && (
+        <AlertDialog
+          open
+          onOpenChange={(open) => !open && setModal({ type: "none" })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Supprimer {modal.ids.length} produit{modal.ids.length > 1 ? "s" : ""} ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Vous êtes sur le point de supprimer{" "}
+                <strong>{modal.ids.length} produit{modal.ids.length > 1 ? "s" : ""}</strong>.
+                Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={confirmDeleteSelection}
+              >
                 Supprimer
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -1243,7 +1277,7 @@ function ProductCard({
           {product.name}
         </p>
         <p className="text-xs text-muted-foreground mb-2.5 truncate">
-          {product.category_name}
+          {product.category_name ?? "—"}
         </p>
 
         <div className="flex items-center justify-between gap-2">
@@ -1257,7 +1291,7 @@ function ProductCard({
               backgroundClip: "text",
             }}
           >
-            {product.selling_price.toLocaleString("fr-FR")} FCFA
+            {(product.selling_price ?? 0).toLocaleString("fr-FR")} FCFA
           </span>
           {product.barcode && (
             <span className="text-[10px] font-mono text-muted-foreground/45 truncate">

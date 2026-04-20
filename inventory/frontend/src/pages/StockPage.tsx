@@ -135,14 +135,14 @@ function toDisplayItem(api: ApiStockItem): StockItem {
   return {
     id: api.product,
     stockId: api.id,
-    name: api.product_name,
-    category: api.category_name,
+    name: api.product_name ?? "—",
+    category: api.category_name ?? "—",
     imageUrl: api.product_image_url ?? null,
-    stock: api.quantity,
-    min: api.min_threshold,
-    max: api.max_threshold,
-    price: api.selling_price,
-    stockValue: api.stock_value,
+    stock: Number(api.quantity) || 0,
+    min: Number(api.min_threshold) || 0,
+    max: Number(api.max_threshold) || 0,
+    price: Number(api.selling_price) || 0,
+    stockValue: Number(api.stock_value) || 0,
     status: api.status,
   };
 }
@@ -606,7 +606,7 @@ function HealthBanner({
               className="font-semibold"
               style={{ fontFamily: "'Fraunces', serif", color: COLOR.copper }}
             >
-              {totalValue.toLocaleString("fr-FR")} FCFA
+              {(Number.isFinite(totalValue) ? totalValue : 0).toLocaleString("fr-FR")} FCFA
             </span>
           </p>
         </div>
@@ -875,7 +875,7 @@ export default function StockPage() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["stock"],
-    queryFn: () => stockService.getAll(),
+    queryFn: ({ signal }) => stockService.getAll(undefined, signal),
   });
 
   const stockItems: StockItem[] = (data?.results ?? []).map(toDisplayItem);
@@ -1047,6 +1047,8 @@ export default function StockPage() {
       min: item.min,
       max: item.max,
       price: item.price,
+      stockValue: item.stockValue,
+      status: item.status,
     }));
     exportStockToExcel(exportItems).catch(() => {
       toast.error("Erreur", {
@@ -1127,7 +1129,7 @@ export default function StockPage() {
           <div className="mb-4">
             <LevelFilterPills
               filter={levelFilter}
-              onChange={(v) => { setLevelFilter(v); clearSelection(); }}
+              onChange={(v) => { setLevelFilter(v); clearSelection(); setPage(1); }}
               total={stockItems.length}
               normalCount={normalCount}
               lowCount={lowCount}
@@ -1201,6 +1203,7 @@ export default function StockPage() {
           onFilterChange={(val) => {
             setCategoryFilter(val);
             clearSelection();
+            setPage(1);
           }}
           showExport
           onExport={handleExport}

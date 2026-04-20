@@ -15,8 +15,10 @@ function filenameDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function formatDateFr(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR");
+function formatDateFr(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("fr-FR");
 }
 
 // ─── Couleurs ─────────────────────────────────────────────────────────────────

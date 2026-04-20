@@ -1,4 +1,5 @@
 
+import type ExcelJS from "exceljs";
 import type { Invoice } from "@/services/invoiceService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

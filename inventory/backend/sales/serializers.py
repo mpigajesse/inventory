@@ -6,7 +6,9 @@ from products.models import Product
 class SaleItemInputSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
     quantity = serializers.IntegerField(min_value=1)
-    unit_price = serializers.IntegerField(min_value=0)
+    # unit_price is accepted from the client for display purposes only;
+    # the authoritative price is always snapshotted from product.selling_price in the view.
+    unit_price = serializers.IntegerField(min_value=1, required=False, default=0)
 
 
 class SaleCreateSerializer(serializers.Serializer):
@@ -36,13 +38,15 @@ class SaleCreateSerializer(serializers.Serializer):
         return items
 
     def validate(self, data):
-        total = sum(i['quantity'] * i['unit_price'] for i in data['items'])
-        if data['amount_paid'] < total:
+        # total_amount and change_given are computed in the view after snapshotting
+        # server-side prices. Here we only perform structural validation.
+        # For non-credit payments, amount_paid > 0 must be provided up-front;
+        # the view will re-validate amount_paid >= total after computing the real total.
+        payment_method = data.get('payment_method', 'cash')
+        if payment_method != 'credit' and data['amount_paid'] == 0:
             raise serializers.ValidationError(
-                {'amount_paid': 'Montant reçu insuffisant.'}
+                {'amount_paid': 'Le montant reçu est obligatoire pour ce mode de paiement.'}
             )
-        data['total_amount'] = total
-        data['change_given'] = data['amount_paid'] - total
         return data
 
 

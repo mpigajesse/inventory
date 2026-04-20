@@ -324,7 +324,7 @@ function buildTopProductsSheet(
   headerRow.eachCell((cell) => applyHeaderStyle(cell));
 
   const top10 = stats.top_products.slice(0, 10);
-  const maxRevenue = top10.length > 0 ? Math.max(...top10.map((p) => p.revenue)) : 1;
+  const maxRevenue = top10.length > 0 ? (Math.max(...top10.map((p) => p.revenue)) || 1) : 1;
 
   top10.forEach((product, idx) => {
     const rowBg = idx % 2 === 0 ? COLORS.rowWhite : COLORS.rowAlt;

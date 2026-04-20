@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
@@ -18,8 +19,17 @@ from .serializers import (
 )
 
 
+class PasswordChangeThrottle(UserRateThrottle):
+    scope = 'password_change'
+
+
+class LoginRateThrottle(UserRateThrottle):
+    scope = 'login'
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [LoginRateThrottle]
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
@@ -199,6 +209,7 @@ class MeView(generics.RetrieveUpdateAPIView):
 class ChangePasswordView(generics.UpdateAPIView):
     serializer_class = ChangePasswordSerializer
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [PasswordChangeThrottle]
 
     def update(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

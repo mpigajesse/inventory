@@ -36,6 +36,14 @@ class ActivityLog(models.Model):
         verbose_name = "Journal d'activité"
         verbose_name_plural = "Journal d'activités"
         ordering = ['-created_at']
+        indexes = [
+            # Accélère le filtrage par date (views.py date_filter, VendeurSummaryView)
+            models.Index(fields=['-created_at'], name='activity_log_created_at_idx'),
+            # Accélère le filtrage par utilisateur + date (VendeurSummaryView)
+            models.Index(fields=['user', '-created_at'], name='activity_log_user_created_idx'),
+            # Accélère le filtrage par target_model + target_id (serializer sale_cache)
+            models.Index(fields=['target_model', 'target_id'], name='activity_log_target_idx'),
+        ]
 
     def __str__(self) -> str:
         return f'{self.get_action_display()} par {self.user} — {self.created_at:%d/%m/%Y %H:%M}'

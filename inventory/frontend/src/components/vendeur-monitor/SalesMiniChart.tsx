@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useId } from 'react';
 
 interface SalesMiniChartProps {
   data: number[];
@@ -69,10 +69,11 @@ export function SalesMiniChart({
   filled = true,
   showDots = false,
 }: SalesMiniChartProps): React.ReactElement | null {
-  const gradientId = useMemo(
-    () => `sparkline-gradient-${Math.random().toString(36).slice(2, 9)}`,
-    []
-  );
+  // useId produces a stable, unique ID per component instance (React 18).
+  // Math.random() in useMemo was stable per instance but could theoretically
+  // collide when two charts mount simultaneously on the same frame.
+  const reactId = useId();
+  const gradientId = `sparkline-gradient-${reactId.replace(/:/g, '')}`;
 
   if (!data || data.length === 0) {
     return null;

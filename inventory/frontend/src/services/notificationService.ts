@@ -16,7 +16,7 @@ export interface Notification {
   is_read: boolean;
   related_product: number | null;
   product_name: string | null;
-  created_at: string;
+  created_at: string | null;
 }
 
 export interface UnreadCountResponse {

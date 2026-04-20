@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { HeroBg }            from "./login/HeroBg";
@@ -21,6 +21,7 @@ export default function LoginPage() {
 
   const { login }   = useAuth();
   const navigate    = useNavigate();
+  const location    = useLocation();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +29,9 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(username, password);
-      navigate("/dashboard");
+      // Redirect to the page the user originally requested, or fall back to /dashboard
+      const from = (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";
+      navigate(from, { replace: true });
     } catch {
       setError("Identifiants incorrects. Veuillez réessayer.");
     } finally {

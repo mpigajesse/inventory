@@ -22,7 +22,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'description', 'product_count', 'created_at']
+        # BUG-8 FIX: is_active et updated_at exposés pour que l'UI puisse
+        # afficher/filtrer les catégories désactivées.
+        fields = ['id', 'name', 'description', 'is_active', 'product_count', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
 
     def get_product_count(self, obj):
         return obj.products.filter(is_active=True).count()
@@ -70,10 +73,17 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         return obj.image.url if obj.image else None
 
     def create(self, validated_data):
+        from django.db import IntegrityError
         validated_data['created_by'] = self.context['request'].user
         if not validated_data.get('barcode'):
             validated_data['barcode'] = _generate_unique_ean13()
-        product = super().create(validated_data)
+        # BUG-9 FIX: en cas de collision EAN-13 sous charge (race condition entre
+        # deux créations simultanées), on régénère et réessaie une seule fois.
+        try:
+            product = super().create(validated_data)
+        except IntegrityError:
+            validated_data['barcode'] = _generate_unique_ean13()
+            product = super().create(validated_data)
         # Auto-create stock entry
         from stock.models import Stock
         Stock.objects.get_or_create(product=product)

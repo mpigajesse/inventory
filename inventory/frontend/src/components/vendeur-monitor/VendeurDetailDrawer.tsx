@@ -75,27 +75,33 @@ export function VendeurDetailDrawer({ vendeurId, vendeurName, onClose }: Vendeur
   const isOpen = vendeurId !== null;
 
   // Fetch vendeur summary (sales_count_today, revenue_today, last_seen)
+  // queryKey uses 'vendeur-detail-summary' to avoid collision with the monitor's
+  // ['vendeur-summary', period] key which is invalidated by the global refetch.
   const { data: summary } = useQuery<VendeurSummary>({
-    queryKey: ['vendeur-summary', vendeurId],
+    queryKey: ['vendeur-detail-summary', vendeurId],
     queryFn: async () => {
+      // Guard: vendeurId is guaranteed non-null here because enabled ensures it,
+      // but we cast explicitly to satisfy TypeScript and avoid /users/null/ calls.
+      if (vendeurId === null) throw new Error('vendeurId is null');
       const { data } = await api.get(`/users/${vendeurId}/summary/`);
       return data;
     },
-    enabled: isOpen,
+    enabled: isOpen && vendeurId !== null,
     staleTime: 30_000,
   });
 
   // Fetch today's activity timeline
   const { data: activityData, isLoading: activityLoading } = useQuery<ActivityResponse>({
-    queryKey: ['vendeur-detail', vendeurId],
+    queryKey: ['vendeur-detail-activity', vendeurId],
     queryFn: async () => {
+      if (vendeurId === null) throw new Error('vendeurId is null');
       const today = new Date().toISOString().slice(0, 10);
       const { data } = await api.get('/activity/', {
         params: { user_id: vendeurId, date: today, page_size: 10 },
       });
       return data;
     },
-    enabled: isOpen,
+    enabled: isOpen && vendeurId !== null,
     staleTime: 30_000,
   });
 

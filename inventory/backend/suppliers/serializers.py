@@ -25,6 +25,9 @@ class SupplierSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at']
 
     def get_orders_count(self, obj: Supplier) -> int:
+        annotated = getattr(obj, '_orders_count', None)
+        if annotated is not None:
+            return annotated
         return obj.orders.count()
 
 

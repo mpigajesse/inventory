@@ -184,6 +184,7 @@ export default function VendeurPosPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [amountGiven, setAmountGiven] = useState("");
   const [saleComplete, setSaleComplete] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
   const [ticketCounter, setTicketCounter] = useState(1);
   const [currentTicket, setCurrentTicket] = useState({
@@ -204,10 +205,15 @@ export default function VendeurPosPage() {
 
   const searchRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
-  const change = Math.max(0, Number(amountGiven) - total);
+  const change = Math.max(0, Math.round(Number(amountGiven) - total));
   const isAmountSufficient = Number(amountGiven) >= total && amountGiven !== "";
 
   // Trigger product grid stagger entrance on mount
@@ -251,10 +257,11 @@ export default function VendeurPosPage() {
       return [...prev, { ...product, qty: 1 }];
     });
     setFlashItem(product.id);
-    setTimeout(() => setFlashItem(null), 600);
+    setTimeout(() => { if (mountedRef.current) setFlashItem(null); }, 600);
     // Mark as newly added for entrance animation; clear after 300ms
     setNewlyAdded((prev) => new Set(prev).add(product.id));
     setTimeout(() => {
+      if (!mountedRef.current) return;
       setNewlyAdded((prev) => {
         const next = new Set(prev);
         next.delete(product.id);
@@ -314,7 +321,7 @@ export default function VendeurPosPage() {
       window.removeEventListener("keydown", handleKeyDown);
       clearTimeout(timeout);
     };
-  }, [showPayment, saleComplete, addToCart, catalog]);
+  }, [showPayment, saleComplete, addToCart]);
 
   const updateQty = (id: number, delta: number) => {
     setCart((prev) =>
@@ -330,6 +337,7 @@ export default function VendeurPosPage() {
     // Trigger exit animation first, then remove after 200ms
     setRemovingItems((prev) => new Set(prev).add(id));
     setTimeout(() => {
+      if (!mountedRef.current) return;
       setCart((prev) => prev.filter((item) => item.id !== id));
       setRemovingItems((prev) => {
         const next = new Set(prev);
@@ -340,20 +348,21 @@ export default function VendeurPosPage() {
   };
 
   const handlePayment = () => {
-    if (Number(amountGiven) >= total) {
-      const { date, time } = formatDateTime();
-      const ticketNumber = formatTicketNumber(ticketCounter);
-      setCurrentTicket({ number: ticketNumber, date, time });
-      setTicketCounter((prev) => prev + 1);
-      setSaleComplete(true);
-      toast.success(
-        `Vente enregistrée — ${total.toLocaleString("fr-FR")} FCFA`,
-        {
-          description: `${cart.length} article(s) · Monnaie : ${change.toLocaleString("fr-FR")} FCFA`,
-          duration: 4000,
-        },
-      );
-    }
+    if (isSubmitting || !isAmountSufficient) return;
+    setIsSubmitting(true);
+    const { date, time } = formatDateTime();
+    const ticketNumber = formatTicketNumber(ticketCounter);
+    setCurrentTicket({ number: ticketNumber, date, time });
+    setTicketCounter((prev) => prev + 1);
+    setSaleComplete(true);
+    setIsSubmitting(false);
+    toast.success(
+      `Vente enregistrée — ${total.toLocaleString("fr-FR")} FCFA`,
+      {
+        description: `${cart.length} article(s) · Monnaie : ${change.toLocaleString("fr-FR")} FCFA`,
+        duration: 4000,
+      },
+    );
   };
 
   function resetSale() {
@@ -361,6 +370,7 @@ export default function VendeurPosPage() {
     setShowPayment(false);
     setAmountGiven("");
     setSaleComplete(false);
+    setIsSubmitting(false);
     setSearch("");
     setMobileTab("catalog");
   }
@@ -1188,12 +1198,12 @@ export default function VendeurPosPage() {
                     </Button>
                     <button
                       onClick={handlePayment}
-                      disabled={!isAmountSufficient}
+                      disabled={!isAmountSufficient || isSubmitting}
                       className={cn(
                         "flex-[2] font-bold text-base text-white flex items-center justify-center gap-2",
                         "transition-all active:scale-[0.98]",
                         "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none",
-                        isAmountSufficient && "animate-glow-pulse",
+                        isAmountSufficient && !isSubmitting && "animate-glow-pulse",
                       )}
                       style={
                         isAmountSufficient
