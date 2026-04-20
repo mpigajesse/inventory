@@ -125,29 +125,7 @@ export function VendeurCard({ vendeur, isTop, isNew = false, onClick }: VendeurC
           userSelect: 'none',
         }}
       >
-        {/* Top-right badge */}
-        {isTop && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: 14,
-              background: 'linear-gradient(135deg, hsl(43 74% 49%), hsl(36 88% 62%))',
-              color: '#fff',
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.04em',
-              padding: '3px 9px',
-              borderRadius: 20,
-              textTransform: 'uppercase',
-              boxShadow: '0 2px 6px hsl(43 74% 49% / 0.4)',
-            }}
-          >
-            Top vendeur
-          </div>
-        )}
-
-        {/* Header row: avatar + name/role + online badge */}
+        {/* Header row: avatar + name/role + badges column */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
           {/* Avatar */}
           <div
@@ -196,30 +174,51 @@ export function VendeurCard({ vendeur, isTop, isNew = false, onClick }: VendeurC
             </div>
           </div>
 
-          {/* Online badge (inlined) */}
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-            <span
-              style={{
-                display: 'inline-block',
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                backgroundColor: statusCfg.color,
-                animation: statusCfg.animation,
-                flexShrink: 0,
-              }}
-            />
-            <span
-              style={{
-                fontSize: 11,
-                lineHeight: 1,
-                color: statusCfg.color,
-                fontWeight: 500,
-              }}
-            >
-              {statusCfg.label}
+          {/* Right badges column: top badge + online status */}
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            {isTop && (
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, hsl(43 74% 49%), hsl(36 88% 62%))',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  padding: '3px 9px',
+                  borderRadius: 20,
+                  textTransform: 'uppercase',
+                  boxShadow: '0 2px 6px hsl(43 74% 49% / 0.4)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Top vendeur
+              </span>
+            )}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  backgroundColor: statusCfg.color,
+                  animation: statusCfg.animation,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 11,
+                  lineHeight: 1,
+                  color: statusCfg.color,
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {statusCfg.label}
+              </span>
             </span>
-          </span>
+          </div>
         </div>
 
         {/* Big number: sales count */}

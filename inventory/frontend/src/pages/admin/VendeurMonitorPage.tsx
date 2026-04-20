@@ -120,12 +120,21 @@ export default function VendeurMonitorPage() {
           .vm-layout {
             flex-direction: column;
           }
+          .vm-left {
+            width: 100%;
+          }
           .vm-center {
             width: 100%;
           }
           .vm-right {
             width: 100%;
             position: static;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .vm-cards-grid {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
@@ -208,6 +217,7 @@ export default function VendeurMonitorPage() {
               </div>
             ) : (
               <div
+                className="vm-cards-grid"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',

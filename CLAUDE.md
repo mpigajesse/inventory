@@ -16,7 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 inventory/
 ├── frontend/   ← React 18 + Vite (interface utilisateur)
-└── backend/    ← Django REST API (Supabase PostgreSQL)
+├── backend/    ← Django REST API (Supabase PostgreSQL)
+└── tunnel/     ← Cloudflare Workers + cloudflared (accès distant)
 ```
 
 ## Commands Frontend
@@ -42,7 +43,7 @@ npx vitest run src/path/to/file.test.ts
 - **Vite** + **React 18** + **TypeScript** (`strict: false`, `noImplicitAny: false`)
 - **shadcn/ui** (composants Radix UI) dans `src/components/ui/`
 - **Tailwind CSS** — tous les tokens de design sont des CSS custom properties dans `src/index.css`
-- **TanStack Query** — installé, non encore utilisé (prévu pour les appels API futurs)
+- **Zustand** — état global léger (`src/stores/notificationStore.ts`)
 - **react-router-dom v6** — routing avec lazy loading
 - **react-hook-form** + **zod** — formulaires
 - **Vitest** + **Testing Library** — tests (environnement jsdom)
@@ -59,10 +60,11 @@ D:\Inventory\env\Scripts\python manage.py check
 
 ## État actuel (V1 en cours)
 
-**Frontend** : prototype UI avec données mock — connecté à `src/services/` prêt pour le vrai backend.
-**Backend** : Django REST API complet (9 apps, tous les models + serializers + views), migrations prêtes, en attente de `migrate` sur Supabase.
+**Frontend** : connecté au backend réel via `src/services/` (axios, JWT).
+**Backend** : Django REST API complet (9 apps), migrations appliquées sur Supabase.
+**Accès distant** : Cloudflare Workers stables + tunnels cloudflared éphémères (voir `tunnel/`).
 
-Ce qui est construit :
+APIs disponibles :
 - Authentification JWT (login/logout/me/change-password)
 - Dashboard KPIs (`/api/dashboard/`)
 - Produits + Catégories (CRUD + recherche barcode)
@@ -70,44 +72,84 @@ Ce qui est construit :
 - **POS/Caisse** — vente atomique avec décrémentation stock automatique
 - Factures (auto-générées à chaque vente)
 - Clients, Fournisseurs, Commandes fournisseurs
-- Utilisateurs (rôles admin/vendeur, UserProfile)
+- Utilisateurs (rôles admin/vendeur, UserProfile avec `genre` M/F)
 - Notifications, Journal d'activité
 
 ## Priorités de développement V1 (dans l'ordre du cahier des charges)
 
-1. **Scanner + vente** — POS déjà fonctionnel en UI, à connecter au vrai stock
+1. **Scanner + vente** — POS fonctionnel en UI, à connecter au vrai stock
 2. **Mise à jour automatique du stock** — décrémenter stock après chaque vente
 3. **Facturation** — génération PDF + impression (numéro, date, articles, total, monnaie rendue)
-4. **Gestion des produits avec images** — upload photo via appareil photo ou fichier
-5. **Accès à distance** — nécessite un backend + auth réelle
+4. **Gestion des produits avec images** — upload via Cloudinary
+5. **Accès à distance** — tunnel Cloudflare opérationnel
 
-## Architecture
+## Architecture Frontend
 
 ### Routing (`src/App.tsx`)
 
 Toutes les pages sont lazy-loadées via `React.lazy`. Deux groupes :
 - **Public** : `/auth/login`, `/auth/register`
-- **Protégé** (dans `AppLayout`) : `/dashboard`, `/products`, `/stock`, `/pos`, `/invoices`, `/clients`, `/users`, `/reports`, `/settings`
+- **Admin** (dans `AppLayout`) : `/dashboard`, `/products`, `/stock`, `/pos`, `/invoices`, `/clients`, `/users`, `/reports`, `/settings`, `/admin/*`
+- **Vendeur** (dans `VendeurLayout`) : `/vendeur/dashboard`, `/vendeur/pos`
 
-### Layout (`src/components/layout/`)
+### Dual Layout selon le rôle
+
+Il existe deux layouts distincts selon le rôle de l'utilisateur connecté :
+
+| Layout | Composants | Routes |
+|--------|-----------|--------|
+| `AppLayout` | `AppSidebar` + `Topbar` | Toutes les routes admin |
+| `VendeurLayout` | `VendeurSidebar` + `AdminActivityToast` | Routes `/vendeur/*` |
+
+`AppLayout` et `VendeurLayout` lisent `currentUser.role` depuis `AuthContext` pour décider quel layout afficher. Le nom de caisse affiché dans la sidebar est dynamique : **CAISSE PRINCIPALE** pour l'admin, **CAISSE 01/02/…** pour les vendeur·ses (basé sur l'ID utilisateur).
+
+### Client HTTP (`src/lib/api.ts`)
+
+Toute communication avec le backend passe par l'instance axios centralisée `api` :
+- Attache automatiquement le JWT depuis `localStorage` à chaque requête
+- Gère le refresh automatique sur 401 (appel `/auth/token/refresh/`, retry de la requête originale)
+- Redirige vers `/auth/login` si le refresh échoue
+
+**Ne jamais créer une nouvelle instance axios.** Utiliser toujours `api` de `@/lib/api`.
+
+### Services (`src/services/`)
+
+Un service par domaine métier, chacun utilise `api` de `@/lib/api` :
+`authService`, `productService`, `stockService`, `salesService`, `invoiceService`, `clientService`, `supplierService`, `dashboardService`, `notificationService`, `userService`, `activityService`, `statisticsService`
+
+### Gestion des droits (`src/hooks/usePermissions.ts`)
+
+Le hook `usePermissions()` expose `can(permission)` :
+- **admin** : toutes les permissions automatiquement
+- **vendeur** : permissions granulaires stockées dans `currentUser.permissions` (provenant du profil backend)
+
+Permissions disponibles : `manage_users`, `manage_products`, `manage_stock`, `view_reports`, `manage_settings`, `manage_suppliers`, `view_barcodes`, `make_sales`, `view_invoices`, `manage_clients`
+
+### Contextes
+
+- `AuthContext` — utilisateur courant, login/logout, isLoading. Le `User` front inclut `genre: 'M' | 'F' | null` pour l'écriture inclusive dans les labels de rôle.
+- `ThemeContext` — thème clair/sombre
+- `SidebarContext` — état collapsed de la sidebar
+
+### État global (`src/stores/`)
+
+- `notificationStore` (Zustand) — compteur de notifications non lues partagé entre `Topbar` et `NotificationsPage`
+
+### Layout et CSS
 
 - `AppLayout` — flex wrapper : sidebar fixe (240px, collapsible 60px) + zone principale
 - `AppSidebar` — sidebar sombre avec état collapsed, active-link highlight via CSS vars
 - `Topbar` — header par page avec `title` + `subtitle` optionnel
 
-### Composants UI custom (`src/components/ui/`)
-
-Deux composants spécifiques à l'app au-delà de la librairie shadcn :
-- `StatCard` — carte KPI avec label, valeur, tendance, icône Lucide optionnelle
-- `StatusBadge` — pill `success | warning | danger | info | default`
-
-### CSS custom classes (`src/index.css`)
-
-Classes utilitaires définies dans `@layer components` :
+Classes utilitaires dans `@layer components` (`src/index.css`) :
 - `.page-container` — padding + max-width 1600px centré
 - `.stat-card` — carte KPI avec border + hover shadow
 - `.data-table` — tableau avec header grisé, hover sur lignes
 - `.animate-slide-in` — animation d'entrée de page
+
+Composants UI custom au-delà de shadcn :
+- `StatCard` — carte KPI avec label, valeur, tendance, icône Lucide optionnelle
+- `StatusBadge` — pill `success | warning | danger | info | default`
 
 ### Tokens de design
 
@@ -121,12 +163,32 @@ Le POS intercepte les événements `keydown` globaux pour les scanners USB (qui 
 
 `@/` est résolu vers `src/` dans tout le projet.
 
-## Rôles utilisateurs (définis dans le cahier des charges)
+## Architecture Backend
 
-| Rôle | Accès |
-|------|-------|
-| `admin` | Accès complet (produits, stock, utilisateurs, rapports, paramètres) |
-| `vendeur` | POS, factures, clients uniquement |
+9 apps Django dans `inventory/backend/` :
+`products`, `stock`, `sales`, `invoices`, `clients`, `suppliers`, `users`, `notifications`, `activity`
+
+Config centralisée dans `config/` : `settings.py`, `urls.py`, `dashboard.py`.
+
+Dépendances clés : `djangorestframework`, `simplejwt`, `cloudinary`, `django-cors-headers`, `psycopg2-binary` (Supabase).
+
+## Tunnel / Accès distant (`inventory/tunnel/`)
+
+Architecture à deux niveaux :
+1. **Cloudflare Workers stables** (URLs permanentes) — proxifient vers des tunnels éphémères
+2. **Tunnels cloudflared éphémères** (`*.trycloudflare.com`) — exposent les serveurs locaux
+
+Lancer les tunnels : `tunnel/Launch-Tunnels.ps1` (PowerShell).
+Les URLs actives des tunnels éphémères sont dans `tunnel/current-urls.txt`.
+
+## Rôles utilisateurs
+
+| Rôle | Accès | Label sidebar |
+|------|-------|--------------|
+| `admin` | Accès complet | CAISSE PRINCIPALE |
+| `vendeur` | POS, factures, clients + permissions granulaires | CAISSE 01/02/… |
+
+Le champ `genre` (`M`/`F`/`null`) sur le profil utilisateur permet l'écriture inclusive dans les labels (Vendeur / Vendeuse / Vendeur·se si non précisé).
 
 ## Modules V2 (ne pas implémenter en V1)
 

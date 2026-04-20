@@ -98,19 +98,52 @@ export function StatsKPI({
   const periodLabel = PERIOD_LABELS[period];
 
   return (
+    <>
+      <style>{`
+        .stats-kpi-root {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          box-sizing: border-box;
+        }
+        .stats-kpi-right {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          flex-shrink: 0;
+        }
+        .stats-kpi-divider {
+          width: 1px;
+          height: 40px;
+          background-color: hsl(30, 40%, 88%);
+          flex-shrink: 0;
+        }
+        @media (max-width: 600px) {
+          .stats-kpi-root {
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
+          .stats-kpi-right {
+            flex-shrink: 1 !important;
+            flex-wrap: wrap !important;
+            justify-content: space-around !important;
+            gap: 10px !important;
+          }
+          .stats-kpi-divider {
+            display: none !important;
+          }
+        }
+      `}</style>
     <div
+      className="stats-kpi-root"
       style={{
-        width: '100%',
         backgroundColor: '#ffffff',
         borderRadius: 16,
         padding: '16px 20px',
         border: '1px solid hsl(30, 55%, 88%)',
         boxShadow: '0 2px 8px rgba(180, 120, 60, 0.08)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 16,
-        boxSizing: 'border-box',
       }}
     >
       {/* Left section */}
@@ -199,14 +232,7 @@ export function StatsKPI({
       </div>
 
       {/* Right section */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          flexShrink: 0,
-        }}
-      >
+      <div className="stats-kpi-right">
         {/* Vendeurs actifs */}
         <div style={{ textAlign: 'center' }}>
           <div
@@ -256,7 +282,7 @@ export function StatsKPI({
         </div>
 
         {/* Divider */}
-        <div style={{ width: 1, height: 40, backgroundColor: 'hsl(30, 40%, 88%)' }} />
+        <div className="stats-kpi-divider" />
 
         {/* Ventes */}
         <div style={{ textAlign: 'center' }}>
@@ -285,7 +311,7 @@ export function StatsKPI({
         </div>
 
         {/* Divider */}
-        <div style={{ width: 1, height: 40, backgroundColor: 'hsl(30, 40%, 88%)' }} />
+        <div className="stats-kpi-divider" />
 
         {/* Revenus */}
         <div style={{ textAlign: 'center' }}>
@@ -315,7 +341,7 @@ export function StatsKPI({
         </div>
 
         {/* Divider */}
-        <div style={{ width: 1, height: 40, backgroundColor: 'hsl(30, 40%, 88%)' }} />
+        <div className="stats-kpi-divider" />
 
         {/* Refresh button */}
         <button
@@ -354,6 +380,7 @@ export function StatsKPI({
         </button>
       </div>
     </div>
+    </>
   );
 }
 
