@@ -118,7 +118,7 @@ function CategoryFormModal({ open, category, onClose, onSaved }: CategoryFormMod
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Modifier la catégorie" : "Nouvelle catégorie"}
@@ -286,10 +286,10 @@ function CategoryCard({ category, colorIndex, canManage, onEdit, onDelete }: Cat
         {category.product_count ?? 0} produit{(category.product_count ?? 0) !== 1 ? 's' : ''}
       </p>
 
-      {/* Actions hover — révélées au hover */}
+      {/* Actions — révélées au hover sur desktop, toujours visibles sur touch */}
       {canManage && (
         <div
-          className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-3 right-3 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
           style={{
             borderRadius: '8px',
             padding: '2px',
@@ -591,7 +591,7 @@ export default function CategoriesPage() {
 
         {/* ── Category grid ─────────────────────────────────────────────────── */}
         {!isLoading && filtered.length > 0 && (
-          <div key={search} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div key={search} className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {filtered.map((category, idx) => (
               <div
                 key={category.id}

@@ -65,8 +65,10 @@ export function StatusBadge({
       style={{
         background: styles.bg,
         color: styles.text,
+        // Minimum 12px (0.75rem) — lisible sur mobile sans loupe
+        // size="sm" : 12px au lieu de 11px pour respecter la lisibilité mobile
         padding: size === "sm" ? "0.125rem 0.5rem" : "0.25rem 0.75rem",
-        fontSize: size === "sm" ? "0.6875rem" : "0.75rem",
+        fontSize: size === "sm" ? "0.75rem" : "0.8125rem",
         letterSpacing: "0.01em",
       }}
     >

@@ -86,12 +86,12 @@ interface GranularitySelectorProps {
 
 function GranularitySelector({ value, onChange }: GranularitySelectorProps) {
   return (
-    <div className="flex items-center gap-1 p-1 bg-secondary/60 border border-border" style={{ borderRadius: "100px" }}>
+    <div className="flex items-center gap-0.5 p-1 bg-secondary/60 border border-border overflow-x-auto scrollbar-none" style={{ borderRadius: "100px", scrollbarWidth: "none", msOverflowStyle: "none" }}>
       {GRANULARITY_OPTIONS.map(({ value: g, label, icon: Icon }) => (
         <button
           key={g}
           onClick={() => onChange(g)}
-          className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold")}
+          className={cn("inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold shrink-0")}
           style={{
             borderRadius: "100px",
             transition: "background 0.25s cubic-bezier(0.16,1,0.3,1), color 0.2s ease, box-shadow 0.25s ease",
@@ -119,7 +119,7 @@ function GranularitySelector({ value, onChange }: GranularitySelectorProps) {
             }
           }}
         >
-          <Icon className="w-3 h-3" />
+          <Icon className="w-3 h-3 hidden sm:block" />
           {label}
         </button>
       ))}
@@ -310,7 +310,7 @@ export function SalesChart({ period }: SalesChartProps) {
         style={{ boxShadow: "0 2px 12px hsl(22 72% 48% / 0.05)" }}
       >
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -326,7 +326,9 @@ export function SalesChart({ period }: SalesChartProps) {
               <p className="text-xs text-muted-foreground">Évolution sur la période</p>
             </div>
           </div>
-          <GranularitySelector value={granularity} onChange={setGranularity} />
+          <div className="self-start sm:self-auto">
+            <GranularitySelector value={granularity} onChange={setGranularity} />
+          </div>
         </div>
 
         {/* Chart */}
@@ -338,8 +340,8 @@ export function SalesChart({ period }: SalesChartProps) {
             <p className="text-sm">Aucune donnée sur cette période</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={256}>
-            <AreaChart data={formatted} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+          <ResponsiveContainer width="100%" height={220} minHeight={180}>
+            <AreaChart data={formatted} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
               <defs>
                 <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(22, 72%, 48%)" stopOpacity={0.35} />
@@ -353,17 +355,17 @@ export function SalesChart({ period }: SalesChartProps) {
               />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 11, fill: "hsl(25 12% 48%)", fontWeight: 500 }}
+                tick={{ fontSize: 10, fill: "hsl(25 12% 48%)", fontWeight: 500 }}
                 axisLine={false}
                 tickLine={false}
                 interval="preserveStartEnd"
               />
               <YAxis
                 tickFormatter={formatFcfa}
-                tick={{ fontSize: 11, fill: "hsl(25 12% 48%)", fontWeight: 500 }}
+                tick={{ fontSize: 10, fill: "hsl(25 12% 48%)", fontWeight: 500 }}
                 axisLine={false}
                 tickLine={false}
-                width={44}
+                width={38}
               />
               <Tooltip
                 content={<CustomTooltip granularity={granularity} />}
@@ -421,8 +423,8 @@ export function SalesChart({ period }: SalesChartProps) {
             <p className="text-sm">Aucune donnée sur cette période</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={256}>
-            <BarChart data={formatted} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+          <ResponsiveContainer width="100%" height={220} minHeight={180}>
+            <BarChart data={formatted} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="hsl(28 18% 88% / 0.7)"
@@ -430,17 +432,17 @@ export function SalesChart({ period }: SalesChartProps) {
               />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 11, fill: "hsl(25 12% 48%)", fontWeight: 500 }}
+                tick={{ fontSize: 10, fill: "hsl(25 12% 48%)", fontWeight: 500 }}
                 axisLine={false}
                 tickLine={false}
                 interval="preserveStartEnd"
               />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 11, fill: "hsl(25 12% 48%)", fontWeight: 500 }}
+                tick={{ fontSize: 10, fill: "hsl(25 12% 48%)", fontWeight: 500 }}
                 axisLine={false}
                 tickLine={false}
-                width={36}
+                width={30}
               />
               <Tooltip
                 content={<CustomTooltip granularity={granularity} />}

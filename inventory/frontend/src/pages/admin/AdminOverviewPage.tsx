@@ -120,7 +120,8 @@ function PeriodTabs({ value, onChange }: { value: Period; onChange: (p: Period) 
   return (
     <div
       style={{
-        display: "inline-flex",
+        display: "flex",
+        flexWrap: "wrap",
         background: "hsl(var(--muted))",
         borderRadius: "10px",
         padding: "3px",
@@ -132,7 +133,7 @@ function PeriodTabs({ value, onChange }: { value: Period; onChange: (p: Period) 
           key={p}
           onClick={() => onChange(p)}
           style={{
-            padding: "5px 14px",
+            padding: "5px 12px",
             borderRadius: "8px",
             fontSize: "12px",
             fontWeight: value === p ? 600 : 400,
@@ -144,6 +145,8 @@ function PeriodTabs({ value, onChange }: { value: Period; onChange: (p: Period) 
             cursor: "pointer",
             transition: "all 0.18s ease",
             whiteSpace: "nowrap",
+            flex: "1 1 auto",
+            textAlign: "center",
           }}
         >
           {PERIOD_LABELS[p]}
@@ -559,7 +562,7 @@ export default function AdminOverviewPage() {
             gap: 16,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: "1 1 auto" }}>
             {/* Accent bar */}
             <div
               ref={accentBarRef}
@@ -574,7 +577,7 @@ export default function AdminOverviewPage() {
                 flexShrink: 0,
               }}
             />
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <h1
                   style={{
@@ -597,15 +600,17 @@ export default function AdminOverviewPage() {
           </div>
 
           {/* Period selector */}
-          <PeriodTabs value={period} onChange={setPeriod} />
+          <div style={{ flexShrink: 0, width: "100%", maxWidth: 320 }}>
+            <PeriodTabs value={period} onChange={setPeriod} />
+          </div>
         </div>
 
         {/* ── 1b. KPI — produits sans code-barres ─────────────────────── */}
         <div
           onClick={() => navigate("/barcodes")}
           style={{
-            display: "inline-flex",
-            alignSelf: "flex-start",
+            display: "flex",
+            alignSelf: "stretch",
             alignItems: "center",
             gap: 14,
             background: "hsl(var(--card))",
@@ -694,7 +699,7 @@ export default function AdminOverviewPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fill, minmax(min(240px, 100%), 1fr))",
                 gap: 16,
               }}
             >
@@ -718,7 +723,7 @@ export default function AdminOverviewPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fill, minmax(min(240px, 100%), 1fr))",
                 gap: 16,
               }}
             >
@@ -730,22 +735,7 @@ export default function AdminOverviewPage() {
         </section>
 
         {/* ── 3 + 4. Activity feed + Leaderboard side by side ──────────── */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)",
-            gap: 20,
-            alignItems: "start",
-          }}
-          className="admin-split-grid"
-        >
-          <style>{`
-            @media (max-width: 768px) {
-              .admin-split-grid {
-                grid-template-columns: 1fr !important;
-              }
-            }
-          `}</style>
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-5 items-start">
 
           {/* ── Activity feed ─────────────────────────────── */}
           <section>

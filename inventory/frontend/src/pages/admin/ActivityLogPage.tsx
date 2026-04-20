@@ -390,6 +390,7 @@ export default function ActivityLogPage() {
                 borderRadius: 100,
                 padding: "4px 12px",
                 whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               <span
@@ -457,14 +458,14 @@ export default function ActivityLogPage() {
             })}
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
             {/* Filtre type */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-muted-foreground">Type d'action</label>
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer min-w-[140px] transition-colors hover:border-primary/40"
+                className="h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer w-full sm:min-w-[140px] sm:w-auto transition-colors hover:border-primary/40"
               >
                 <option value="">Tous les types</option>
                 {ACTION_TYPE_OPTIONS.map((opt) => (
@@ -475,7 +476,7 @@ export default function ActivityLogPage() {
 
             {/* ── Vendeur filter pills ── */}
             {userOptions.length > 0 && (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 min-w-0">
                 <label className="text-xs font-medium text-muted-foreground">Vendeur·se</label>
                 <div className="flex flex-wrap gap-1.5 items-center">
                   <button
@@ -534,7 +535,7 @@ export default function ActivityLogPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher dans les actions..."
-              className="h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-ring min-w-[200px] transition-colors hover:border-primary/40"
+              className="h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-ring w-full sm:min-w-[200px] sm:w-auto transition-colors hover:border-primary/40"
             />
           }
         />

@@ -226,7 +226,7 @@ export default function ClientFormPage() {
       <div className="page-container animate-slide-in">
 
         {/* ── Breadcrumb + titre ───────────────────────────────────────── */}
-        <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground overflow-hidden">
           <Link
             to="/clients"
             className="inline-flex items-center gap-1.5 hover:text-foreground transition-all px-2.5 py-1.5"
@@ -245,22 +245,22 @@ export default function ClientFormPage() {
             Clients
           </Link>
           <span>/</span>
-          <span className="text-foreground font-medium">{pageTitle}</span>
+          <span className="text-foreground font-medium truncate">{pageTitle}</span>
         </div>
 
         {/* ── Hero header ──────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-start gap-3 mb-8">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
             style={{
               background: `linear-gradient(135deg, hsl(22 72% 48% / 0.12), hsl(36 88% 52% / 0.12))`,
               border: `1.5px solid hsl(22 72% 48% / 0.2)`,
             }}
           >
-            <UserPlus className="w-5 h-5" style={{ color: TERRACOTTA }} />
+            <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: TERRACOTTA }} />
           </div>
-          <div>
-            <h1 className="text-xl font-extrabold text-foreground leading-tight" style={{ letterSpacing: "-0.02em" }}>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-extrabold text-foreground leading-tight" style={{ letterSpacing: "-0.02em" }}>
               {pageTitle}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -281,7 +281,7 @@ export default function ClientFormPage() {
                 background: "hsl(var(--card))",
                 border: "1.5px solid hsl(var(--border))",
                 borderRadius: "20px",
-                padding: "24px",
+                padding: "clamp(16px, 4vw, 24px)",
                 boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
                 animation: "slideInUp 0.35s ease forwards",
                 animationDelay: "0ms",
@@ -308,6 +308,7 @@ export default function ClientFormPage() {
                 required
                 placeholder="+241 07 XX XX XX"
                 type="tel"
+                autoComplete="tel"
                 error={errors.phone?.message}
                 {...register("phone")}
               />
@@ -316,6 +317,7 @@ export default function ClientFormPage() {
                 label="Adresse email"
                 placeholder="exemple@email.com"
                 type="email"
+                autoComplete="email"
                 error={errors.email?.message}
                 hint="Optionnel — utilisé pour les factures par email"
                 {...register("email")}
@@ -329,7 +331,7 @@ export default function ClientFormPage() {
                 background: "hsl(var(--card))",
                 border: "1.5px solid hsl(var(--border))",
                 borderRadius: "20px",
-                padding: "24px",
+                padding: "clamp(16px, 4vw, 24px)",
                 boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
                 animation: "slideInUp 0.35s ease forwards",
                 animationDelay: "80ms",
@@ -436,10 +438,10 @@ export default function ClientFormPage() {
           </div>
 
           {/* ── Actions ──────────────────────────────────────────────── */}
-          <div className="flex items-center gap-3 justify-end pt-6 border-t border-border mt-6">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3 sm:justify-end pt-6 border-t border-border mt-6">
             <button
               type="button"
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl text-sm font-semibold border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 h-11 sm:h-10 px-4 rounded-xl text-sm font-semibold border border-border bg-card hover:bg-muted transition-colors disabled:opacity-50"
               onClick={() => navigate("/clients")}
               disabled={saveMutation.isPending}
             >
@@ -450,7 +452,7 @@ export default function ClientFormPage() {
             <button
               type="submit"
               disabled={saveMutation.isPending}
-              className="inline-flex items-center gap-2 px-6 text-sm font-semibold text-white disabled:opacity-60 hover:brightness-110 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 text-sm font-semibold text-white disabled:opacity-60 hover:brightness-110 active:scale-95"
               style={{
                 height: "52px",
                 borderRadius: "14px",

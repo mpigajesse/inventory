@@ -133,6 +133,12 @@ export function VendeurDetailDrawer({ vendeurId, vendeurName, onClose }: Vendeur
           from { transform: translateX(100%); }
           to   { transform: translateX(0); }
         }
+        @media (max-width: 479px) {
+          .drawer-header { padding: 14px 14px 12px !important; }
+          .drawer-stats  { padding: 12px 14px !important; }
+          .drawer-body   { padding: 12px 14px !important; }
+          .drawer-footer { padding: 10px 14px !important; }
+        }
       `}</style>
 
       {/* Scrim */}
@@ -176,6 +182,7 @@ export function VendeurDetailDrawer({ vendeurId, vendeurName, onClose }: Vendeur
           <>
             {/* ── Header ─────────────────────────────────────────────────── */}
             <div
+              className="drawer-header"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -302,6 +309,7 @@ export function VendeurDetailDrawer({ vendeurId, vendeurName, onClose }: Vendeur
 
             {/* ── Quick stats ─────────────────────────────────────────────── */}
             <div
+              className="drawer-stats"
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
@@ -385,7 +393,7 @@ export function VendeurDetailDrawer({ vendeurId, vendeurName, onClose }: Vendeur
             </div>
 
             {/* ── Activity timeline ────────────────────────────────────────── */}
-            <div style={{ flex: 1, padding: '16px 20px' }}>
+            <div className="drawer-body" style={{ flex: 1, padding: '16px 20px' }}>
               <div
                 style={{
                   fontSize: 12,
@@ -517,6 +525,7 @@ export function VendeurDetailDrawer({ vendeurId, vendeurName, onClose }: Vendeur
 
             {/* ── Footer: link to full profile ─────────────────────────────── */}
             <div
+              className="drawer-footer"
               style={{
                 padding: '14px 20px',
                 borderTop: '1px solid hsl(var(--border, 220 13% 91%))',

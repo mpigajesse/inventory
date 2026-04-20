@@ -9,7 +9,13 @@ const Progress = React.forwardRef<
 >(({ className, value, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
-    className={cn("relative h-4 w-full overflow-hidden rounded-full bg-secondary", className)}
+    className={cn(
+      // h-4 (16px) is clearly visible on all mobile screens including low-DPI 320px devices.
+      // A progress bar is not interactive so no touch-target fix is needed here.
+      // The existing h-4 w-full is correct and sufficient for mobile visibility.
+      "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
+      className,
+    )}
     {...props}
   >
     <ProgressPrimitive.Indicator

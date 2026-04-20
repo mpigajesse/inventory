@@ -29,7 +29,7 @@ function VendeurLayoutInner() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen w-screen max-w-full overflow-hidden">
       <VendeurSidebar
         collapsed={collapsed}
         onCollapsedChange={setCollapsed}
@@ -41,7 +41,7 @@ function VendeurLayoutInner() {
         On desktop (md+): push content right with a spacer div matching sidebar width.
         On mobile: sidebar overlays content — no spacer, content uses full width.
       */}
-      <div className="flex-1 flex h-screen overflow-hidden">
+      <div className="flex-1 flex h-screen min-w-0 max-w-full overflow-hidden">
         {/* Spacer — only rendered on md+ to reserve sidebar space */}
         <div
           className={[
@@ -49,15 +49,21 @@ function VendeurLayoutInner() {
             collapsed ? "w-[60px]" : "w-[240px]",
           ].join(" ")}
         />
-        <main className="flex flex-col flex-1 h-screen overflow-y-auto min-w-0">
-          <Outlet
-            context={
-              {
-                onMenuClick: () => setMobileOpen(true),
-                onSearchClick: () => {},
-              } satisfies AppLayoutContext
-            }
-          />
+        <main
+          className="flex flex-col flex-1 h-screen min-w-0 max-w-full overflow-x-hidden overflow-y-auto"
+          style={{ scrollBehavior: "smooth" }}
+        >
+          {/* pb-16 md:pb-0 : espace pour la bottom nav mobile (64px = h-16) */}
+          <div className="flex flex-col flex-1 pb-16 md:pb-0">
+            <Outlet
+              context={
+                {
+                  onMenuClick: () => setMobileOpen(true),
+                  onSearchClick: () => {},
+                } satisfies AppLayoutContext
+              }
+            />
+          </div>
         </main>
       </div>
     </div>

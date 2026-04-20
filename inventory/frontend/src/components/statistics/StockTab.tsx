@@ -56,10 +56,10 @@ function ProgressBar({ label, count, total, color, gradientEnd, barVisible, dela
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px" }}>
-        <span style={{ color: "hsl(var(--muted-foreground))" }}>{label}</span>
-        <span style={{ fontWeight: "600", fontVariantNumeric: "tabular-nums", color }}>
-          {count} produit{count > 1 ? "s" : ""} — {pct}%
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "12px" }}>
+        <span style={{ color: "hsl(var(--muted-foreground))", flexShrink: 0 }}>{label}</span>
+        <span style={{ fontWeight: "600", fontVariantNumeric: "tabular-nums", color, fontSize: "11px", textAlign: "right" }}>
+          {count} prod. — {pct}%
         </span>
       </div>
       <div
@@ -327,26 +327,66 @@ export function StockTab() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "320px" }}>
               <thead>
                 <tr style={{ background: "hsl(var(--muted) / 0.5)", borderBottom: "1px solid hsl(var(--border))" }}>
-                  {["Produit", "Qté actuelle", "Seuil min", "Statut"].map((col, i) => (
-                    <th
-                      key={col}
-                      style={{
-                        padding: "10px 16px",
-                        textAlign: i === 0 ? "left" : i === 3 ? "center" : "right",
-                        fontSize: "11px",
-                        fontWeight: "700",
-                        fontFamily: "var(--font-heading)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                        color: "hsl(var(--muted-foreground))",
-                      }}
-                    >
-                      {col}
-                    </th>
-                  ))}
+                  <th
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "left",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Produit
+                  </th>
+                  <th
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "right",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Qté
+                  </th>
+                  <th
+                    className="hidden sm:table-cell"
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "right",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Seuil min
+                  </th>
+                  <th
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "center",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Statut
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -371,16 +411,16 @@ export function StockTab() {
                         (e.currentTarget as HTMLTableRowElement).style.background = "transparent";
                       }}
                     >
-                      <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: "500", color: "hsl(var(--foreground))" }}>
+                      <td style={{ padding: "10px 16px", fontSize: "13px", fontWeight: "500", color: "hsl(var(--foreground))", maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {alert.product_name}
                       </td>
-                      <td style={{ padding: "12px 16px", textAlign: "right", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", fontSize: "13px" }}>
+                      <td style={{ padding: "10px 16px", textAlign: "right", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", fontSize: "13px" }}>
                         {alert.quantity}
                       </td>
-                      <td style={{ padding: "12px 16px", textAlign: "right", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", fontSize: "13px", color: "hsl(var(--muted-foreground))" }}>
+                      <td className="hidden sm:table-cell" style={{ padding: "10px 16px", textAlign: "right", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", fontSize: "13px", color: "hsl(var(--muted-foreground))" }}>
                         {alert.min_threshold}
                       </td>
-                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                      <td style={{ padding: "10px 16px", textAlign: "center" }}>
                         <StatusBadge
                           label={isCritical ? "Critique" : "Bas"}
                           variant={isCritical ? "danger" : "warning"}
@@ -439,7 +479,7 @@ export function StockTab() {
             <BarChart
               layout="vertical"
               data={topValueProducts}
-              margin={{ top: 0, right: 20, bottom: 0, left: 0 }}
+              margin={{ top: 0, right: 8, bottom: 0, left: 0 }}
             >
               <defs>
                 <linearGradient id="gradStockBar" x1="0" y1="0" x2="1" y2="0">
@@ -451,15 +491,15 @@ export function StockTab() {
               <XAxis
                 type="number"
                 tickFormatter={(v: number) => formatFcfa(v)}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 type="category"
                 dataKey="product_name"
-                width={150}
-                tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                width={110}
+                tick={{ fontSize: 10, fill: "hsl(var(--foreground))" }}
                 axisLine={false}
                 tickLine={false}
               />

@@ -272,14 +272,14 @@ export function PaymentTab({ period }: PaymentTabProps) {
               <p className="text-sm">Aucune donnée disponible</p>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
                   data={pieData}
                   cx="50%"
-                  cy="45%"
-                  innerRadius={60}
-                  outerRadius={100}
+                  cy="43%"
+                  innerRadius={50}
+                  outerRadius={85}
                   paddingAngle={3}
                   dataKey="total"
                   nameKey="label"

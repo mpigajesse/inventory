@@ -278,7 +278,7 @@ export function ClientsTab({ period }: ClientsTabProps) {
             <BarChart
               layout="vertical"
               data={topClients}
-              margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+              margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
             >
               <defs>
                 <linearGradient id="gradClientBar" x1="0" y1="0" x2="1" y2="0">
@@ -294,15 +294,15 @@ export function ClientsTab({ period }: ClientsTabProps) {
               <XAxis
                 type="number"
                 tickFormatter={formatFcfa}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 type="category"
                 dataKey="client_name"
-                width={120}
-                tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                width={90}
+                tick={{ fontSize: 10, fill: "hsl(var(--foreground))" }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -349,10 +349,10 @@ export function ClientsTab({ period }: ClientsTabProps) {
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={240}>
             <AreaChart
               data={byPeriod}
-              margin={{ top: 5, right: 16, left: 0, bottom: 0 }}
+              margin={{ top: 5, right: 4, left: -8, bottom: 0 }}
             >
               <defs>
                 <linearGradient id="gradNewClients" x1="0" y1="0" x2="0" y2="1">
@@ -371,19 +371,22 @@ export function ClientsTab({ period }: ClientsTabProps) {
               />
               <XAxis
                 dataKey="period"
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 axisLine={false}
                 tickLine={false}
+                interval="preserveStartEnd"
               />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 axisLine={false}
                 tickLine={false}
+                width={28}
               />
               <Tooltip content={<CustomLineTooltip />} />
               <Legend
-                wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }}
+                wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }}
+                iconSize={8}
               />
               <Area
                 type="monotone"

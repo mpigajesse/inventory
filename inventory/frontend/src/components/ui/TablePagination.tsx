@@ -76,15 +76,15 @@ export function TablePagination({
         {" "}résultat{totalItems > 1 ? "s" : ""}
       </p>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {/* Sélecteur taille de page */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Par page :</span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap hidden min-[380px]:inline">Par page :</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className={cn(
-              "h-8 rounded-md border border-input bg-background px-2 text-xs",
+              "h-11 rounded-md border border-input bg-background px-2 text-sm",
               "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
               "cursor-pointer"
             )}
@@ -99,14 +99,14 @@ export function TablePagination({
 
         {/* Navigation numérotée */}
         {totalPages > 1 && (
-          <nav className="flex items-center gap-0.5" aria-label="Navigation de pages">
+          <nav className="flex items-center gap-0.5 flex-wrap" aria-label="Navigation de pages">
             <button
               type="button"
               onClick={() => onPageChange(page - 1)}
               disabled={page === 1}
               aria-label="Page précédente"
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+                "flex h-11 w-11 items-center justify-center rounded-md transition-colors",
                 page === 1
                   ? "text-muted-foreground/40 cursor-not-allowed"
                   : "hover:bg-secondary text-muted-foreground hover:text-foreground"
@@ -120,7 +120,7 @@ export function TablePagination({
                 return (
                   <span
                     key={`ellipsis-${idx}`}
-                    className="flex h-8 w-8 items-center justify-center text-muted-foreground text-xs"
+                    className="flex h-11 w-11 items-center justify-center text-muted-foreground text-xs"
                     aria-hidden
                   >
                     …
@@ -135,7 +135,7 @@ export function TablePagination({
                   aria-label={`Page ${p}`}
                   aria-current={p === page ? "page" : undefined}
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-md text-xs font-medium transition-colors",
+                    "flex h-9 w-9 items-center justify-center rounded-md text-xs font-medium transition-colors",
                     p === page
                       ? "bg-primary text-primary-foreground"
                       : "hover:bg-secondary text-muted-foreground hover:text-foreground"
@@ -152,7 +152,7 @@ export function TablePagination({
               disabled={page === totalPages}
               aria-label="Page suivante"
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+                "flex h-11 w-11 items-center justify-center rounded-md transition-colors",
                 page === totalPages
                   ? "text-muted-foreground/40 cursor-not-allowed"
                   : "hover:bg-secondary text-muted-foreground hover:text-foreground"

@@ -41,7 +41,7 @@ export function ScanIndicator({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors duration-300",
+        "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors duration-300 min-w-0",
         flashing
           ? "bg-green-500/15 text-green-300"
           : "text-[hsl(var(--sidebar-fg))]",

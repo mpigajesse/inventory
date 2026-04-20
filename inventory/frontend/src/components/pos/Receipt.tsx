@@ -44,6 +44,9 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         fontSize: "11.5px",
         lineHeight: "1.55",
         width: "100%",
+        maxWidth: "100%",
+        boxSizing: "border-box" as const,
+        overflowX: "hidden",
         color: "#111",
         background: "#fff",
         letterSpacing: "0.01em",
@@ -63,7 +66,7 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         <div style={{ fontSize: "10px", opacity: 0.55 }}>Libreville, Gabon  |  +241 07 40 13 02</div>
       </div>
 
-      <div style={{ textAlign: "center", letterSpacing: "0.05em", fontSize: "11px", margin: "4px 0" }}>
+      <div style={{ textAlign: "center", letterSpacing: "0.05em", fontSize: "11px", margin: "4px 0", overflow: "hidden" }}>
         {"═".repeat(38)}
       </div>
 
@@ -76,7 +79,7 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         <span>Heure : {time}</span>
       </div>
 
-      <div style={{ textAlign: "center", fontSize: "11px", margin: "4px 0" }}>
+      <div style={{ textAlign: "center", fontSize: "11px", margin: "4px 0", overflow: "hidden" }}>
         {"─".repeat(38)}
       </div>
 
@@ -87,7 +90,7 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         <span style={{ flex: "0 0 auto", width: `${COL_PU}ch`, textAlign: "right" }}>P.U.</span>
         <span style={{ flex: "1", textAlign: "right" }}>TOTAL</span>
       </div>
-      <div style={{ fontSize: "11px", margin: "1px 0 4px" }}>{"─".repeat(38)}</div>
+      <div style={{ fontSize: "11px", margin: "1px 0 4px", overflow: "hidden" }}>{"─".repeat(38)}</div>
 
       {/* ── ARTICLES LINES ─────────────────────────────── */}
       {items.map(item => {
@@ -110,7 +113,7 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
               </div>
             )}
             {item.barcode && (
-              <div style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: "8px", color: "#666", paddingLeft: "2px", letterSpacing: "0.04em" }}>
+              <div style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: "10px", color: "#666", paddingLeft: "2px", letterSpacing: "0.04em" }}>
                 {item.barcode}
               </div>
             )}
@@ -118,7 +121,7 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         );
       })}
 
-      <div style={{ fontSize: "11px", margin: "4px 0" }}>{"─".repeat(38)}</div>
+      <div style={{ fontSize: "11px", margin: "4px 0", overflow: "hidden" }}>{"─".repeat(38)}</div>
 
       {/* ── SOUS-TOTAL ─────────────────────────────────── */}
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "2px" }}>
@@ -126,7 +129,7 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         <span>{fmtPrice(subtotal)} FCFA</span>
       </div>
 
-      <div style={{ fontSize: "11px", margin: "4px 0" }}>{"═".repeat(38)}</div>
+      <div style={{ fontSize: "11px", margin: "4px 0", overflow: "hidden" }}>{"═".repeat(38)}</div>
 
       {/* ── TOTAL ──────────────────────────────────────── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "4px 0 6px" }}>
@@ -136,7 +139,7 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         </span>
       </div>
 
-      <div style={{ fontSize: "11px", margin: "2px 0 6px" }}>{"─".repeat(38)}</div>
+      <div style={{ fontSize: "11px", margin: "2px 0 6px", overflow: "hidden" }}>{"─".repeat(38)}</div>
 
       {/* ── PAIEMENT ───────────────────────────────────── */}
       <div style={{ margin: "4px 0 2px" }}>
@@ -151,7 +154,7 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
       </div>
 
       {/* ── FOOTER ─────────────────────────────────────── */}
-      <div style={{ textAlign: "center", fontSize: "11px", margin: "8px 0 4px" }}>{"═".repeat(38)}</div>
+      <div style={{ textAlign: "center", fontSize: "11px", margin: "8px 0 4px", overflow: "hidden" }}>{"═".repeat(38)}</div>
       <div style={{ textAlign: "center", marginTop: "6px" }}>
         <div style={{ fontSize: "12px", fontWeight: "700", letterSpacing: "0.08em", marginBottom: "2px" }}>
           Merci de votre visite !
@@ -159,12 +162,12 @@ export function Receipt({ items, total, amountGiven, change, ticketNumber, date,
         <div style={{ fontSize: "10px", opacity: 0.65, letterSpacing: "0.04em", marginBottom: "4px" }}>
           Conservez ce ticket comme preuve d&apos;achat
         </div>
-        <div style={{ fontSize: "9px", opacity: 0.45, marginBottom: "3px" }}>Imprimé le {printedAt}</div>
-        <div style={{ fontSize: "9px", opacity: 0.4, letterSpacing: "0.06em" }}>
+        <div style={{ fontSize: "11px", opacity: 0.45, marginBottom: "3px" }}>Imprimé le {printedAt}</div>
+        <div style={{ fontSize: "11px", opacity: 0.4, letterSpacing: "0.06em" }}>
           © NAOSERVICES · MPJ HIGH-TECH
         </div>
       </div>
-      <div style={{ textAlign: "center", fontSize: "11px", margin: "4px 0" }}>{"─".repeat(38)}</div>
+      <div style={{ textAlign: "center", fontSize: "11px", margin: "4px 0", overflow: "hidden" }}>{"─".repeat(38)}</div>
     </div>
   );
 }

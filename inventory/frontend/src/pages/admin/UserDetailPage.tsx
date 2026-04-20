@@ -386,7 +386,7 @@ function EditUserForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="detail-first-name" className={FIELD_LABEL_CLASSES}>
             Prénom <span className="text-destructive">*</span>
@@ -419,7 +419,7 @@ function EditUserForm({
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className={FIELD_LABEL_CLASSES}>
             Rôle <span className="text-destructive">*</span>
@@ -699,7 +699,7 @@ export default function UserDetailPage() {
             }}
           />
 
-          <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
+          <div className="relative flex flex-col sm:flex-row sm:items-start gap-5">
             {/* Grand avatar */}
             <div
               className="flex items-center justify-center text-white text-2xl font-extrabold flex-shrink-0"
@@ -758,7 +758,7 @@ export default function UserDetailPage() {
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <div className="flex items-center gap-2 sm:shrink-0 flex-wrap">
               <button
                 type="button"
                 onClick={() => setEditOpen(true)}
@@ -820,8 +820,8 @@ export default function UserDetailPage() {
 
         {/* ── Main grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column (2/3) */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Left column (2/3) — on mobile, shown after the right column via order */}
+          <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
 
             {/* Informations personnelles */}
             <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 540ms, transform 0.4s ease-out 540ms" }}>
@@ -1151,8 +1151,8 @@ export default function UserDetailPage() {
             </div>
           </div>
 
-          {/* Right column (1/3): Quick actions */}
-          <div className="space-y-4">
+          {/* Right column (1/3): Quick actions — shown first on mobile */}
+          <div className="space-y-4 order-1 lg:order-2">
 
             {/* Quick actions card */}
             <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(10px)", transition: "opacity 0.4s ease-out 540ms, transform 0.4s ease-out 540ms" }}>
@@ -1317,8 +1317,8 @@ export default function UserDetailPage() {
           if (!updateMutation.isPending && !open) setEditOpen(false);
         }}
       >
-        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] rounded-2xl">
-          <DialogHeader className="pb-3 border-b border-border/60">
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] rounded-2xl max-h-[90dvh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-3 border-b border-border/60 shrink-0">
             <div className="flex items-center gap-3">
               <span
                 className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
@@ -1332,7 +1332,7 @@ export default function UserDetailPage() {
               </div>
             </div>
           </DialogHeader>
-          <div className="pt-2">
+          <div className="pt-2 overflow-y-auto flex-1 min-h-0">
             <EditUserForm
               defaultValues={editDefaultValues}
               onSubmit={handleEdit}

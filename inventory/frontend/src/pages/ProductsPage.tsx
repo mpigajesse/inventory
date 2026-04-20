@@ -585,7 +585,7 @@ export default function ProductsPage() {
               </div>
             )}
             {!isLoading && typedPaginated.length > 0 && (
-              <div key={animKey} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div key={animKey} className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 {typedPaginated.map((product, index) => (
                   <ProductCard
                     key={product.id}
@@ -602,8 +602,8 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {/* ── Vue liste mobile (md:hidden) ───────────────────────────────────── */}
-        <div className={cn("space-y-2", viewMode === "grid" ? "hidden" : "md:hidden")}>
+        {/* ── Vue liste mobile — visible en mode liste sur <md, cachée sinon ── */}
+        <div className={cn("space-y-2", viewMode !== "list" ? "hidden" : "block md:hidden")}>
           {isLoading && (
             <div className="flex items-center justify-center py-10">
               <Loader2
@@ -732,11 +732,11 @@ export default function ProductsPage() {
             ))}
         </div>
 
-        {/* ── Table premium desktop (hidden md:block) ────────────────────────── */}
+        {/* ── Table premium desktop — visible en mode liste sur md+ ────────────── */}
         <div
           className={cn(
             "rounded-2xl border overflow-hidden",
-            viewMode === "grid" ? "hidden" : "hidden md:block"
+            viewMode !== "list" ? "hidden" : "hidden md:block"
           )}
           style={{
             background: "hsl(var(--card))",
@@ -963,7 +963,7 @@ export default function ProductsPage() {
           open
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto px-4 sm:px-6">
             <DialogHeader>
               <DialogTitle>Détails du produit</DialogTitle>
             </DialogHeader>
@@ -988,7 +988,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Infos */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
                   <p className="text-muted-foreground text-xs uppercase tracking-wide mb-0.5">
                     Nom
@@ -1210,9 +1210,9 @@ function ProductCard({
           <StockOverlayBadge product={product} />
         </div>
 
-        {/* Quick actions overlay */}
+        {/* Quick actions overlay — desktop hover uniquement */}
         <div
-          className="absolute inset-0 flex items-end justify-center gap-2 pb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          className="absolute inset-0 hidden sm:flex items-end justify-center gap-2 pb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
           style={{
             background:
               "linear-gradient(to top, hsl(22 25% 10% / 0.55) 0%, transparent 55%)",
@@ -1297,6 +1297,41 @@ function ProductCard({
             <span className="text-[10px] font-mono text-muted-foreground/45 truncate">
               {product.barcode}
             </span>
+          )}
+        </div>
+
+        {/* Actions mobile — toujours visibles sur touch (cachées sur sm+ car l'overlay gère) */}
+        <div
+          className="flex items-center gap-1 mt-3 pt-3 sm:hidden"
+          style={{ borderTop: "1px solid hsl(var(--border))" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium text-muted-foreground transition-colors"
+            style={{ background: "hsl(var(--muted)/0.6)" }}
+            onClick={(e) => { e.stopPropagation(); onView(); }}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            Voir
+          </button>
+          {canManage && (
+            <>
+              <button
+                className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium text-muted-foreground transition-colors"
+                style={{ background: "hsl(var(--muted)/0.6)" }}
+                onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Modifier
+              </button>
+              <button
+                className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-destructive transition-colors"
+                style={{ background: "hsl(var(--destructive)/0.08)" }}
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
           )}
         </div>
       </div>

@@ -79,14 +79,14 @@ function CashierRow({ stat, isTop, revenuePct, rank, rowVisible, rowDelay, barVi
       }}
     >
       {/* Rang */}
-      <td style={{ padding: "12px 16px", width: "52px" }}>
+      <td style={{ padding: "10px 12px", width: "44px" }}>
         <span
           style={{
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "28px",
-            height: "28px",
+            width: "26px",
+            height: "26px",
             borderRadius: "50%",
             fontSize: "11px",
             fontWeight: "700",
@@ -104,12 +104,12 @@ function CashierRow({ stat, isTop, revenuePct, rank, rowVisible, rowDelay, barVi
       </td>
 
       {/* Nom + badge Top */}
-      <td style={{ padding: "12px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <td style={{ padding: "10px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div
             style={{
-              width: "32px",
-              height: "32px",
+              width: "28px",
+              height: "28px",
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
@@ -123,18 +123,19 @@ function CashierRow({ stat, isTop, revenuePct, rank, rowVisible, rowDelay, barVi
                 : "0 2px 8px hsl(22 72% 48% / 0.25)",
             }}
           >
-            <Users style={{ width: "14px", height: "14px", color: "white" }} />
+            <Users style={{ width: "13px", height: "13px", color: "white" }} />
           </div>
           <div style={{ minWidth: 0 }}>
             <p
               style={{
-                fontSize: "13px",
+                fontSize: "12px",
                 fontWeight: "600",
                 fontFamily: "var(--font-heading)",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
                 color: "hsl(var(--foreground))",
+                maxWidth: "120px",
               }}
             >
               {stat.cashier_name}
@@ -151,32 +152,32 @@ function CashierRow({ stat, isTop, revenuePct, rank, rowVisible, rowDelay, barVi
                   background: "hsl(42 88% 52% / 0.1)",
                   border: "1px solid hsl(42 88% 52% / 0.2)",
                   borderRadius: "999px",
-                  padding: "2px 8px",
+                  padding: "2px 6px",
                   marginTop: "2px",
                 }}
               >
-                <Trophy style={{ width: "10px", height: "10px" }} />
-                Top caissier
+                <Trophy style={{ width: "9px", height: "9px" }} />
+                <span>Top</span>
               </span>
             )}
           </div>
         </div>
       </td>
 
-      {/* Ventes */}
-      <td style={{ padding: "12px 16px", textAlign: "right", fontSize: "13px" }}>
+      {/* Ventes — masqué sur très petit mobile */}
+      <td className="hidden sm:table-cell" style={{ padding: "10px 12px", textAlign: "right", fontSize: "12px" }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "500", color: "hsl(var(--foreground))" }}>
-          <ShoppingCart style={{ width: "13px", height: "13px", color: "hsl(var(--muted-foreground))" }} />
+          <ShoppingCart style={{ width: "12px", height: "12px", color: "hsl(var(--muted-foreground))" }} />
           {stat.total_sales}
         </span>
       </td>
 
       {/* Revenus + barre gradient */}
-      <td style={{ padding: "12px 16px", minWidth: "200px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <td style={{ padding: "10px 12px", minWidth: "140px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
           <span
             style={{
-              fontSize: "13px",
+              fontSize: "12px",
               fontWeight: "700",
               fontFamily: "Fraunces, Georgia, serif",
               color: "hsl(22 72% 48%)",
@@ -189,7 +190,7 @@ function CashierRow({ stat, isTop, revenuePct, rank, rowVisible, rowDelay, barVi
           </span>
           <div
             style={{
-              height: "6px",
+              height: "5px",
               borderRadius: "100px",
               background: "hsl(var(--muted))",
               overflow: "hidden",
@@ -213,12 +214,13 @@ function CashierRow({ stat, isTop, revenuePct, rank, rowVisible, rowDelay, barVi
         </div>
       </td>
 
-      {/* Panier moyen */}
+      {/* Panier moyen — masqué sur mobile */}
       <td
+        className="hidden md:table-cell"
         style={{
-          padding: "12px 16px",
+          padding: "10px 12px",
           textAlign: "right",
-          fontSize: "13px",
+          fontSize: "12px",
           fontWeight: "500",
           color: "hsl(var(--muted-foreground))",
         }}
@@ -226,12 +228,13 @@ function CashierRow({ stat, isTop, revenuePct, rank, rowVisible, rowDelay, barVi
         {formatFcfa(stat.avg_basket)}
       </td>
 
-      {/* Articles / vente */}
+      {/* Articles / vente — masqué sur mobile */}
       <td
+        className="hidden lg:table-cell"
         style={{
-          padding: "12px 16px",
+          padding: "10px 12px",
           textAlign: "right",
-          fontSize: "13px",
+          fontSize: "12px",
           color: "hsl(var(--muted-foreground))",
         }}
       >
@@ -350,7 +353,7 @@ export function CashiersTab({ period }: CashiersTabProps) {
                 >
                   <th
                     style={{
-                      padding: "10px 16px",
+                      padding: "10px 12px",
                       textAlign: "left",
                       fontSize: "11px",
                       fontWeight: "700",
@@ -358,14 +361,14 @@ export function CashiersTab({ period }: CashiersTabProps) {
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
                       color: "hsl(var(--muted-foreground))",
-                      width: "52px",
+                      width: "44px",
                     }}
                   >
                     #
                   </th>
                   <th
                     style={{
-                      padding: "10px 16px",
+                      padding: "10px 12px",
                       textAlign: "left",
                       fontSize: "11px",
                       fontWeight: "700",
@@ -378,8 +381,9 @@ export function CashiersTab({ period }: CashiersTabProps) {
                     Caissier
                   </th>
                   <th
+                    className="hidden sm:table-cell"
                     style={{
-                      padding: "10px 16px",
+                      padding: "10px 12px",
                       textAlign: "right",
                       fontSize: "11px",
                       fontWeight: "700",
@@ -393,7 +397,7 @@ export function CashiersTab({ period }: CashiersTabProps) {
                   </th>
                   <th
                     style={{
-                      padding: "10px 16px",
+                      padding: "10px 12px",
                       textAlign: "left",
                       fontSize: "11px",
                       fontWeight: "700",
@@ -401,14 +405,15 @@ export function CashiersTab({ period }: CashiersTabProps) {
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
                       color: "hsl(var(--muted-foreground))",
-                      minWidth: "200px",
+                      minWidth: "140px",
                     }}
                   >
                     Revenus
                   </th>
                   <th
+                    className="hidden md:table-cell"
                     style={{
-                      padding: "10px 16px",
+                      padding: "10px 12px",
                       textAlign: "right",
                       fontSize: "11px",
                       fontWeight: "700",
@@ -418,11 +423,12 @@ export function CashiersTab({ period }: CashiersTabProps) {
                       color: "hsl(var(--muted-foreground))",
                     }}
                   >
-                    Panier moyen
+                    Panier moy.
                   </th>
                   <th
+                    className="hidden lg:table-cell"
                     style={{
-                      padding: "10px 16px",
+                      padding: "10px 12px",
                       textAlign: "right",
                       fontSize: "11px",
                       fontWeight: "700",
@@ -432,7 +438,7 @@ export function CashiersTab({ period }: CashiersTabProps) {
                       color: "hsl(var(--muted-foreground))",
                     }}
                   >
-                    Art. / vente
+                    Art./vente
                   </th>
                 </tr>
               </thead>

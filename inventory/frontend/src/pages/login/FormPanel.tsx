@@ -41,9 +41,10 @@ export function FormPanel({
         flexDirection: "column",
         justifyContent: "center",
         background: "hsl(30 20% 97%)",
-        padding: "clamp(1.5rem, 5vw, 3rem) clamp(1rem, 4vw, 2.5rem)",
+        padding: "clamp(1rem, 5vw, 3rem) clamp(0.75rem, 4vw, 2.5rem)",
         minHeight: "100dvh",
         overflowY: "auto",
+        boxSizing: "border-box",
       }}
     >
       {/* Inner content — max-width 420px, centred */}
@@ -99,12 +100,13 @@ export function FormPanel({
           style={{
             background: "white",
             borderRadius: "24px",
-            padding: "clamp(1.5rem, 4vw, 2.5rem)",
+            padding: "clamp(1.25rem, 4vw, 2.5rem)",
             boxShadow:
               "0 4px 24px hsl(20 15% 15% / 0.08), 0 1px 4px hsl(20 15% 15% / 0.04)",
             display: "flex",
             flexDirection: "column",
             gap: "28px",
+            boxSizing: "border-box" as const,
           }}
         >
           <FormHeader />

@@ -135,6 +135,18 @@ export function AppSidebar({
     return () => cancelAnimationFrame(id);
   }, []);
 
+  // collapsed only applies on desktop (md+); mobile drawer is always expanded
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  const effectiveCollapsed = isDesktop && collapsed;
+
   const handleNavClick = (): void => {
     onMobileOpenChange(false);
   };
@@ -179,10 +191,10 @@ export function AppSidebar({
 
       <aside
         className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 flex flex-col",
+          "fixed left-0 top-0 bottom-0 z-40 flex flex-col overflow-hidden",
           "md:translate-x-0",
           collapsed ? "md:w-[64px]" : "md:w-[256px]",
-          "w-[256px]",
+          "w-[280px] max-w-[85vw]",
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
         style={{
@@ -219,12 +231,15 @@ export function AppSidebar({
               <Store className="w-[18px] h-[18px] text-white" strokeWidth={2.25} />
             </span>
 
-            {/* Wordmark — fades/slides out when collapsed */}
+            {/* Wordmark — fades/slides out when collapsed on desktop; always visible in mobile drawer */}
             <span
-              className="flex flex-col min-w-0 leading-none overflow-hidden"
+              className={cn(
+                "flex flex-col min-w-0 leading-none overflow-hidden whitespace-nowrap",
+                collapsed ? "md:opacity-0 md:[max-width:0px]" : "opacity-100 [max-width:160px]"
+              )}
               style={{
-                opacity: collapsed ? 0 : 1,
-                maxWidth: collapsed ? 0 : "160px",
+                opacity: undefined,
+                maxWidth: collapsed ? undefined : "160px",
                 transition: "opacity 0.2s ease, max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
@@ -267,7 +282,7 @@ export function AppSidebar({
           <button
             type="button"
             onClick={() => onMobileOpenChange(false)}
-            className="md:hidden flex items-center justify-center w-9 h-9 -mr-1 rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+            className="md:hidden flex items-center justify-center w-11 h-11 -mr-2 rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
             aria-label="Fermer le menu"
             style={{ color: "hsl(0 0% 100% / 0.55)" }}
           >
@@ -330,7 +345,7 @@ export function AppSidebar({
                         title={collapsed ? item.label : undefined}
                         aria-current={isActive ? "page" : undefined}
                         className={cn(
-                          "group relative flex items-center gap-3 h-10 rounded-lg text-[13px] font-medium overflow-hidden",
+                          "group relative flex items-center gap-3 h-11 rounded-lg text-[13px] font-medium overflow-hidden",
                           "transition-all duration-150 ease-out",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
                           collapsed ? "md:justify-center md:px-0 px-3" : "px-3",
@@ -503,7 +518,7 @@ export function AppSidebar({
                 onClick={handleLogout}
                 title="Déconnexion"
                 aria-label="Déconnexion"
-                className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                className="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                 style={{ color: "hsl(0 0% 100% / 0.35)" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.background = "hsl(0 72% 50% / 0.15)";

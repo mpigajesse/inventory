@@ -302,7 +302,7 @@ function PremiumKpi({
           className="tabular-nums text-foreground mb-1 leading-none"
           style={{
             fontFamily: "'Fraunces', 'Georgia', serif",
-            fontSize: "clamp(1.6rem, 3vw, 2rem)",
+            fontSize: "clamp(1.4rem, 4.5vw, 2rem)",
             fontWeight: "700",
             letterSpacing: "-0.03em",
           }}
@@ -398,7 +398,7 @@ function SectionHeader({
           </p>
         )}
         <h2
-          className="text-base md:text-[0.95rem] font-bold text-foreground leading-none"
+          className="text-sm md:text-base font-bold text-foreground leading-none"
           style={{ letterSpacing: "-0.02em" }}
         >
           {title}
@@ -489,6 +489,7 @@ function GradientButton({
         color: "white",
         borderRadius: "12px",
         padding: "0.625rem 1.25rem",
+        minHeight: "44px",
         fontWeight: "700",
         fontSize: "0.875rem",
         letterSpacing: "0.025em",
@@ -543,7 +544,7 @@ function VendeurActivitySection() {
   );
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginTop: 8 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: 16, marginTop: 8 }}>
       {summary.map(v => (
         <div key={v.user_id} style={{
           background: 'hsl(var(--card))',
@@ -570,16 +571,16 @@ function VendeurActivitySection() {
             </div>
           </div>
           {/* Stats row */}
-          <div style={{ display: 'flex', gap: 16 }}>
-            <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 60px', minWidth: 0 }}>
               <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>Ventes</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: 'hsl(22 72% 48%)', fontFamily: 'var(--font-amount, Fraunces, serif)' }}>{v.sales_count}</div>
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '2 1 100px', minWidth: 0 }}>
               <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>Chiffre</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'hsl(var(--foreground))' }}>{(v.total_revenue || 0).toLocaleString('fr-FR')} FCFA</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'hsl(var(--foreground))', wordBreak: 'break-word' }}>{(v.total_revenue || 0).toLocaleString('fr-FR')} FCFA</div>
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 60px', minWidth: 0 }}>
               <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}>Actions</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: 'hsl(152 38% 38%)' }}>{v.action_count}</div>
             </div>
@@ -706,14 +707,14 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <Link
                 to="/statistics"
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border bg-card text-sm font-semibold hover:bg-secondary/60 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl border bg-card text-sm font-semibold hover:bg-secondary/60 transition-colors"
               >
                 <BarChart2 className="w-4 h-4" />
                 Statistiques
               </Link>
               <button
                 onClick={() => navigate("/reports")}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border bg-card text-sm font-semibold hover:bg-secondary/60 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl border bg-card text-sm font-semibold hover:bg-secondary/60 transition-colors"
               >
                 <TrendingUp className="w-4 h-4" />
                 Rapports
@@ -1023,7 +1024,7 @@ export default function DashboardPage() {
                     </div>
                     <button
                       onClick={() => navigate("/stock")}
-                      className="mt-4 w-full inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold rounded-xl transition-all active:scale-[0.98]"
+                      className="mt-4 w-full inline-flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-xs font-semibold rounded-xl transition-all active:scale-[0.98]"
                       style={{
                         color: "hsl(22 72% 48%)",
                         border: "1px solid hsl(22 72% 48% / 0.3)",
@@ -1156,11 +1157,11 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Activité vendeurs ── */}
-        <section style={{ marginTop: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 3, height: 20, borderRadius: 2, background: 'hsl(22 72% 48%)' }} />
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: 'hsl(var(--foreground))' }}>Activité vendeurs — aujourd'hui</h2>
-            <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', marginLeft: 'auto' }}>Rafraîchit toutes les 60s</span>
+        <section className="mt-8">
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <div style={{ width: 3, height: 20, borderRadius: 2, background: 'hsl(22 72% 48%)', flexShrink: 0 }} />
+            <h2 className="text-sm sm:text-base font-bold" style={{ color: 'hsl(var(--foreground))' }}>Activité vendeurs — aujourd'hui</h2>
+            <span className="text-[11px] ml-auto shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }}>Rafraîchit toutes les 60s</span>
           </div>
           <VendeurActivitySection />
         </section>

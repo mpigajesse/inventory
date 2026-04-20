@@ -143,7 +143,7 @@ function PrintableCard({ product }: PrintableCardProps) {
       {/* Visible print button */}
       <button
         type="button"
-        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold"
+        className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 text-xs font-semibold"
         style={{
           background: 'hsl(22 72% 48% / 0.1)',
           color: 'hsl(22 72% 48%)',
@@ -223,24 +223,28 @@ function ProductBarcodeCard({
     >
       {/* Header */}
       <div className="flex items-start gap-3">
-        {/* Checkbox custom */}
+        {/* Checkbox custom — zone touch 44x44 avec padding */}
         <button
           type="button"
           onClick={() => onToggleSelect(product.id)}
-          className={[
-            "mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors",
-            selected
-              ? "bg-primary border-primary"
-              : "border-border hover:border-primary",
-          ].join(" ")}
+          className="-m-2 p-2 shrink-0 flex items-center justify-center transition-colors"
           aria-pressed={selected}
           aria-label={selected ? "Désélectionner" : "Sélectionner"}
         >
-          {selected && (
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
+          <span
+            className={[
+              "w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
+              selected
+                ? "bg-primary border-primary"
+                : "border-border hover:border-primary",
+            ].join(" ")}
+          >
+            {selected && (
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
         </button>
 
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -260,7 +264,7 @@ function ProductBarcodeCard({
 
       {/* Barcode display or placeholder */}
       <div
-        className="flex flex-col items-center justify-center min-h-[76px] overflow-hidden px-2 py-2"
+        className="flex flex-col items-center justify-center min-h-[76px] overflow-x-auto px-2 py-2"
         style={{
           background: '#ffffff',
           borderRadius: 10,
@@ -271,9 +275,9 @@ function ProductBarcodeCard({
           <>
             <Barcode
               value={product.barcode}
-              width={1.2}
-              height={48}
-              fontSize={10}
+              width={1.1}
+              height={44}
+              fontSize={9}
               margin={0}
             />
             {/* EAN digits in plain text — user can verify without printing */}
@@ -466,7 +470,8 @@ export default function BarcodesPage() {
         </div>
 
         {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
+        <div className="flex flex-col gap-3 mb-5 sm:mb-6">
+          {/* Titre + badge */}
           <div className="flex items-center gap-3 min-w-0">
             <span
               className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
@@ -497,52 +502,53 @@ export default function BarcodesPage() {
             </div>
           </div>
 
-          {/* Bouton générer les manquants */}
-          <div className="shrink-0 flex items-center gap-2">
+          {/* Boutons d'action — rangée sur toutes tailles */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Bouton générer les manquants */}
             <Button
               variant="outline"
               size="sm"
-              className="h-10 rounded-xl gap-2"
+              className="h-10 rounded-xl gap-2 flex-1 sm:flex-none justify-center"
               disabled={missingCount === 0 || isGeneratingAll || isLoading}
               onClick={handleGenerateAll}
             >
-              <Wand2 className="w-4 h-4" />
-              Générer les manquants
+              <Wand2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Générer les manquants</span>
               {missingCount > 0 && (
-                <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-muted text-[10px] font-bold px-1.5 text-muted-foreground">
-                  {missingCount} manquant{missingCount > 1 ? "s" : ""}
+                <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-muted text-[10px] font-bold px-1.5 text-muted-foreground shrink-0">
+                  {missingCount}
                 </span>
               )}
             </Button>
-          </div>
 
-          {/* Bouton imprimer la sélection — with tooltip when disabled */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {/* span wrapper required: Tooltip needs a focusable child even when button is disabled */}
-              <span className="shrink-0 inline-flex">
-                <button
-                  type="button"
-                  disabled={selectedWithBarcode.length === 0}
-                  onClick={() => handlePrintSelection()}
-                  className="btn-primary h-10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  <PrinterCheck className="w-4 h-4" />
-                  Imprimer la sélection
-                  {selectedWithBarcode.length > 0 && (
-                    <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[hsl(0_0%_100%/0.22)] text-[10px] font-bold px-1.5">
-                      {selectedWithBarcode.length}
-                    </span>
-                  )}
-                </button>
-              </span>
-            </TooltipTrigger>
-            {selectedWithBarcode.length === 0 && (
-              <TooltipContent side="bottom">
-                Sélectionnez des produits avec un code-barres
-              </TooltipContent>
-            )}
-          </Tooltip>
+            {/* Bouton imprimer la sélection — with tooltip when disabled */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* span wrapper required: Tooltip needs a focusable child even when button is disabled */}
+                <span className="flex-1 sm:flex-none inline-flex">
+                  <button
+                    type="button"
+                    disabled={selectedWithBarcode.length === 0}
+                    onClick={() => handlePrintSelection()}
+                    className="btn-primary w-full h-10 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none justify-center"
+                  >
+                    <PrinterCheck className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Imprimer la sélection</span>
+                    {selectedWithBarcode.length > 0 && (
+                      <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[hsl(0_0%_100%/0.22)] text-[10px] font-bold px-1.5 shrink-0">
+                        {selectedWithBarcode.length}
+                      </span>
+                    )}
+                  </button>
+                </span>
+              </TooltipTrigger>
+              {selectedWithBarcode.length === 0 && (
+                <TooltipContent side="bottom">
+                  Sélectionnez des produits avec un code-barres
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </div>
         </div>
 
         {isError && (
@@ -553,33 +559,36 @@ export default function BarcodesPage() {
 
         {/* ── Toolbar : sélection + recherche ── */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-          {/* Select-all */}
-          <button
-            type="button"
-            onClick={handleSelectAll}
-            disabled={isLoading || filteredProducts.length === 0}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 shrink-0"
-          >
-            <span
-              className={[
-                "w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
-                allSelected ? "bg-primary border-primary" : "border-border",
-              ].join(" ")}
+          {/* Ligne supérieure sur mobile : select-all + compteur */}
+          <div className="flex items-center gap-3">
+            {/* Select-all — cible touch 44px */}
+            <button
+              type="button"
+              onClick={handleSelectAll}
+              disabled={isLoading || filteredProducts.length === 0}
+              className="flex items-center gap-2 min-h-[44px] text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 shrink-0"
             >
-              {allSelected && (
-                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                  <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </span>
-            {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
-          </button>
+              <span
+                className={[
+                  "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                  allSelected ? "bg-primary border-primary" : "border-border",
+                ].join(" ")}
+              >
+                {allSelected && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+              {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
+            </button>
 
-          {selected.size > 0 && (
-            <span className="text-xs text-muted-foreground hidden sm:inline shrink-0">
-              {selected.size} produit{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}
-            </span>
-          )}
+            {selected.size > 0 && (
+              <span className="text-xs text-muted-foreground shrink-0">
+                {selected.size} sélectionné{selected.size > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
 
           {/* Champ de recherche par nom de produit */}
           <div className="relative flex-1 sm:max-w-xs sm:ml-auto">
@@ -589,7 +598,7 @@ export default function BarcodesPage() {
               placeholder="Rechercher un produit…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 pl-9 border-border/60 text-sm"
+              className="h-11 sm:h-9 pl-9 border-border/60 text-sm w-full"
               style={{
                 borderRadius: 14,
                 boxShadow: '0 1px 4px hsl(0 0% 0% / 0.05)',

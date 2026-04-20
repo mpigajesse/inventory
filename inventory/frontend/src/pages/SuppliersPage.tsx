@@ -148,22 +148,22 @@ export default function SuppliersPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {can("manage_suppliers") && (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => exportSuppliers(suppliers)}
-                className="h-9 rounded-lg border-border hover:border-primary/30 hover:text-primary transition-colors"
+                className="h-11 min-w-[44px] rounded-lg border-border hover:border-primary/30 hover:text-primary transition-colors"
               >
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Exporter Excel
+                <FileSpreadsheet className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Exporter Excel</span>
               </Button>
             )}
             {can("manage_suppliers") && (
               <Button
                 size="sm"
-                className="h-9 text-white font-semibold transition-all hover:brightness-105 hover:-translate-y-px border-0"
+                className="h-11 min-w-[44px] text-white font-semibold transition-all hover:brightness-105 hover:-translate-y-px border-0"
                 style={{
                   background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                   boxShadow: "0 4px 16px hsl(22 72% 48% / 0.38), 0 1px 3px hsl(22 72% 48% / 0.2)",
@@ -171,8 +171,8 @@ export default function SuppliersPage() {
                 }}
                 onClick={() => navigate("/suppliers/new")}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Nouveau fournisseur
+                <Plus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nouveau fournisseur</span>
               </Button>
             )}
           </div>
@@ -384,12 +384,11 @@ function SupplierCard({
             )}
             {isActive ? "Actif" : "Inactif"}
           </span>
-          {/* Actions (visibles au hover si gestionnaire) */}
+          {/* Actions : toujours visibles sur mobile, hover-only sur desktop */}
           {canManage && (
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ml-1">
+            <div className="flex items-center gap-0.5 ml-1 sm:opacity-0 sm:group-hover:opacity-100 sm:transition-opacity">
               <button
-                className="p-1.5 rounded-lg transition-colors"
-                style={{}}
+                className="p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 title="Modifier"
                 onClick={onEdit}
                 onMouseEnter={(e) => {
@@ -402,14 +401,14 @@ function SupplierCard({
                   (e.currentTarget as HTMLButtonElement).style.color = "";
                 }}
               >
-                <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <Edit2 className="w-4 h-4 text-muted-foreground" />
               </button>
               <button
-                className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                className="p-2.5 rounded-lg hover:bg-destructive/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 title="Archiver"
                 onClick={onDelete}
               >
-                <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+                <Trash2 className="w-4 h-4 text-destructive/70" />
               </button>
             </div>
           )}
@@ -440,7 +439,7 @@ function SupplierCard({
 
       {/* ── Card footer ─────────────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between pt-3"
+        className="flex items-center justify-between gap-2 pt-3 min-w-0"
         style={{ borderTop: "1px solid hsl(var(--border) / 0.6)" }}
       >
         <div className="flex items-center gap-1.5">
@@ -467,7 +466,7 @@ function SupplierCard({
         {supplier.balance !== undefined && supplier.balance !== 0 && (
           supplier.balance > 0 ? (
             <span
-              className="text-xs font-bold tabular-nums"
+              className="text-xs font-bold tabular-nums truncate max-w-[100px] xs:max-w-none"
               style={{
                 fontFamily: "Fraunces, serif",
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
@@ -480,7 +479,7 @@ function SupplierCard({
             </span>
           ) : (
             <span
-              className="text-xs font-bold tabular-nums"
+              className="text-xs font-bold tabular-nums truncate max-w-[100px] xs:max-w-none"
               style={{
                 fontFamily: "Fraunces, serif",
                 color: "hsl(4 72% 52%)",

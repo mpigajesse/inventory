@@ -48,6 +48,12 @@ export default function AlertsPanel({ alerts, onDismiss, isLoading }: AlertsPane
           from { opacity: 0; transform: translateX(20px); }
           to   { opacity: 1; transform: translateX(0); }
         }
+        @media (hover: none) {
+          .alert-dismiss-btn {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+          }
+        }
       `}</style>
 
       <div style={{
@@ -171,20 +177,21 @@ export default function AlertsPanel({ alerts, onDismiss, isLoading }: AlertsPane
                       <button
                         onClick={() => onDismiss(alert.id)}
                         title="Ignorer"
+                        className="alert-dismiss-btn"
                         style={{
-                          width: 20,
-                          height: 20,
+                          minWidth: 44,
+                          minHeight: 44,
                           border: 'none',
-                          background: isHovered ? 'hsl(220 13% 88%)' : 'transparent',
-                          borderRadius: 4,
+                          background: 'transparent',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0,
                           opacity: isHovered ? 1 : 0,
-                          transition: 'opacity 150ms ease, background 150ms ease',
+                          transition: 'opacity 150ms ease',
                           padding: 0,
+                          margin: '-10px -10px -10px 0',
                         }}
                       >
                         <X size={12} color="hsl(220 13% 46%)" />

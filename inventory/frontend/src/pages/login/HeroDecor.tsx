@@ -51,7 +51,7 @@ export function HeroDecor() {
         style={{
           position: 'absolute',
           bottom: '40%',
-          right: '-5%',
+          right: 0,
           zIndex: 0,
           fontSize: 'clamp(4rem, 8vw, 7rem)',
           fontWeight: 900,
@@ -60,7 +60,7 @@ export function HeroDecor() {
           fontFamily: "'Plus Jakarta Sans', sans-serif",
           userSelect: 'none',
           pointerEvents: 'none',
-          whiteSpace: 'nowrap',
+          overflow: 'hidden',
           transform: 'rotate(-15deg)',
         }}
       >

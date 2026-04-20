@@ -120,6 +120,15 @@ export function StatsKPI({
           background-color: hsl(30, 40%, 88%);
           flex-shrink: 0;
         }
+        .stats-kpi-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: #1a1a2e;
+          white-space: nowrap;
+        }
+        .stats-kpi-live-badge {
+          display: inline-flex;
+        }
         @media (max-width: 600px) {
           .stats-kpi-root {
             flex-direction: column !important;
@@ -132,6 +141,15 @@ export function StatsKPI({
             gap: 10px !important;
           }
           .stats-kpi-divider {
+            display: none !important;
+          }
+        }
+        @media (max-width: 360px) {
+          .stats-kpi-title {
+            font-size: 13px !important;
+            white-space: normal !important;
+          }
+          .stats-kpi-live-badge {
             display: none !important;
           }
         }
@@ -168,21 +186,14 @@ export function StatsKPI({
         {/* Title + subtitle */}
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: '#1a1a2e',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <span className="stats-kpi-title">
               Surveillance vendeurs
             </span>
 
             {/* Pulsing "En direct" badge */}
             <span
+              className="stats-kpi-live-badge"
               style={{
-                display: 'inline-flex',
                 alignItems: 'center',
                 gap: 5,
                 padding: '2px 8px',

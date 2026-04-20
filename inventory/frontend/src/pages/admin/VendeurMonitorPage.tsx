@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Topbar } from '@/components/layout/Topbar';
 import { useVendeurMonitor } from '@/hooks/useVendeurMonitor';
@@ -9,6 +10,20 @@ import { VendeurDetailDrawer } from '@/components/vendeur-monitor/VendeurDetailD
 import type { AppLayoutContext } from '@/components/layout/AppLayout';
 import { Users } from 'lucide-react';
 import type { MonitorPeriod } from '@/hooks/useVendeurMonitor';
+
+function useFeedMaxHeight(): number {
+  const [maxHeight, setMaxHeight] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 480 ? 300 : 520
+  );
+  const update = useCallback(() => {
+    setMaxHeight(window.innerWidth < 480 ? 300 : 520);
+  }, []);
+  useEffect(() => {
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [update]);
+  return maxHeight;
+}
 
 // ─── Period pill ───────────────────────────────────────────────────────────────
 
@@ -48,6 +63,7 @@ function PeriodPill({ value: _value, label, active, onClick }: PeriodPillProps) 
 
 export default function VendeurMonitorPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
+  const feedMaxHeight = useFeedMaxHeight();
 
   const {
     summary,
@@ -132,9 +148,12 @@ export default function VendeurMonitorPage() {
           }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 479px) {
           .vm-cards-grid {
             grid-template-columns: 1fr !important;
+          }
+          .vm-live-feed-wrap {
+            min-height: 0 !important;
           }
         }
       `}</style>
@@ -247,7 +266,7 @@ export default function VendeurMonitorPage() {
 
           {/* ── Center: live activity feed ── */}
           <div
-            className="vm-center"
+            className="vm-center vm-live-feed-wrap"
             style={{
               background: '#fff',
               borderRadius: 16,
@@ -262,7 +281,7 @@ export default function VendeurMonitorPage() {
               logs={recentLogs}
               newLogIds={newLogIds}
               isLoading={isLoading}
-              maxHeight={520}
+              maxHeight={feedMaxHeight}
             />
           </div>
 

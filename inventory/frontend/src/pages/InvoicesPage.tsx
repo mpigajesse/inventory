@@ -631,9 +631,9 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
               <p className="text-xs" style={{ color: "hsl(22 72% 65%)" }}>INVENTORY</p>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right min-w-0 max-w-[180px] sm:max-w-none">
             <p
-              className="font-bold text-xl leading-tight font-editorial"
+              className="font-bold text-base sm:text-xl leading-tight font-editorial truncate"
               style={{
                 background: "linear-gradient(135deg, hsl(36 88% 82%), hsl(22 72% 65%))",
                 WebkitBackgroundClip: "text",
@@ -641,6 +641,7 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
                 backgroundClip: "text",
                 letterSpacing: "-0.02em",
               }}
+              title={invoice.invoice_number}
             >
               {invoice.invoice_number}
             </p>
@@ -679,7 +680,8 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
 
         {/* Items table */}
         {invoice.items && invoice.items.length > 0 ? (
-          <table className="w-full text-xs" style={{ borderRadius: "8px", overflow: "hidden" }}>
+          <div className="overflow-x-auto -mx-1 px-1">
+          <table className="w-full text-xs" style={{ borderRadius: "8px", overflow: "hidden", minWidth: "280px" }}>
             <thead>
               <tr style={{ background: "hsl(30 15% 95%)" }}>
                 <th
@@ -731,6 +733,7 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
               ))}
             </tbody>
           </table>
+          </div>
         ) : (
           <p className="text-xs text-muted-foreground text-center py-2">Aucun article</p>
         )}
@@ -742,29 +745,29 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
           className="rounded-xl p-4 space-y-2"
           style={{ background: "hsl(22 72% 48% / 0.05)", border: "1px solid hsl(22 72% 48% / 0.15)" }}
         >
-          <div className="flex justify-between text-muted-foreground text-sm">
-            <span>Somme payée</span>
-            <span>{formatFCFA(amountPaid)}</span>
+          <div className="flex justify-between items-baseline gap-2 text-muted-foreground text-sm">
+            <span className="shrink-0">Somme payée</span>
+            <span className="tabular-nums text-right">{formatFCFA(amountPaid)}</span>
           </div>
           {changeGiven > 0 && (
-            <div className="flex justify-between text-success text-sm font-medium">
-              <span>Monnaie rendue</span>
-              <span>{formatFCFA(changeGiven)}</span>
+            <div className="flex justify-between items-baseline gap-2 text-success text-sm font-medium">
+              <span className="shrink-0">Monnaie rendue</span>
+              <span className="tabular-nums text-right">{formatFCFA(changeGiven)}</span>
             </div>
           )}
           {balanceDue > 0 && (
-            <div className="flex justify-between text-warning text-sm font-medium">
-              <span>Reste à payer</span>
-              <span>{formatFCFA(balanceDue)}</span>
+            <div className="flex justify-between items-baseline gap-2 text-warning text-sm font-medium">
+              <span className="shrink-0">Reste à payer</span>
+              <span className="tabular-nums text-right">{formatFCFA(balanceDue)}</span>
             </div>
           )}
           <div
-            className="flex justify-between items-center pt-3 mt-1"
+            className="flex justify-between items-center gap-2 pt-3 mt-1"
             style={{ borderTop: "1px solid hsl(22 72% 48% / 0.2)" }}
           >
-            <span className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Total</span>
+            <span className="font-bold text-sm uppercase tracking-wide text-muted-foreground shrink-0">Total</span>
             <span
-              className="font-bold text-2xl font-editorial"
+              className="font-bold text-base sm:text-2xl font-editorial tabular-nums text-right"
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
                 WebkitBackgroundClip: "text",
@@ -778,11 +781,12 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
         </div>
       </div>
 
-      <DialogFooter className="mt-4">
-        <Button variant="outline" onClick={onClose}>Fermer</Button>
+      <DialogFooter className="mt-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+        <Button variant="outline" onClick={onClose} className="min-h-[44px] sm:min-h-0 w-full sm:w-auto">Fermer</Button>
         <Button
           variant="outline"
           onClick={() => downloadInvoicePDF(invoice)}
+          className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
         >
           <Download className="w-4 h-4 mr-2" />
           Télécharger PDF
@@ -790,6 +794,7 @@ function InvoiceDetail({ invoice, onClose }: InvoiceDetailProps) {
         <Button
           onClick={() => handlePrint()}
           style={{ background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))", border: "none" }}
+          className="min-h-[44px] sm:min-h-0 w-full sm:w-auto"
         >
           <Printer className="w-4 h-4 mr-2" />
           Imprimer
@@ -940,15 +945,16 @@ export default function InvoicesPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center flex-wrap gap-2">
               {can("view_reports") && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => exportInvoicesToExcel(invoices)}
+                  className="min-h-[44px] sm:min-h-0"
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Exporter Excel
+                  <span className="hidden xs:inline">Exporter</span> Excel
                 </Button>
               )}
               <Button
@@ -959,7 +965,7 @@ export default function InvoicesPage() {
                   border: "none",
                   boxShadow: "0 2px 8px hsl(22 72% 48% / 0.35)",
                 }}
-                className="hover:opacity-90 transition-opacity"
+                className="hover:opacity-90 transition-opacity min-h-[44px] sm:min-h-0"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvelle facture
@@ -987,12 +993,12 @@ export default function InvoicesPage() {
           </div>
 
           {/* Filtre statut — pills */}
-          <div className="flex flex-wrap items-center gap-1 bg-muted/40 rounded-xl p-1 w-fit shrink-0">
+          <div className="flex flex-wrap items-center gap-1 bg-muted/40 rounded-xl p-1 w-full sm:w-fit shrink-0 overflow-x-auto">
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.value}
                 onClick={() => { setStatusFilter(f.value); setPage(1); }}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                className="px-3 py-2.5 sm:py-1.5 rounded-lg text-sm font-medium transition-all min-h-[44px] sm:min-h-0 flex-shrink-0"
                 style={
                   statusFilter === f.value
                     ? {
@@ -1293,34 +1299,38 @@ export default function InvoicesPage() {
 
                   {/* Footer row : total + paiement + actions */}
                   <div
-                    className="flex items-center justify-between gap-3 pt-3"
+                    className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-3"
                     style={{ borderTop: "1px solid hsl(var(--border))" }}
                   >
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
-                        Total
-                      </span>
+                    {/* Total + méthode de paiement */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                          Total
+                        </span>
+                        <span
+                          className="font-bold text-base tabular-nums leading-tight font-editorial"
+                          style={{
+                            background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            backgroundClip: "text",
+                          }}
+                        >
+                          {formatFCFA(inv.total_amount)}
+                        </span>
+                      </div>
                       <span
-                        className="font-bold text-lg font-editorial tabular-nums leading-tight"
-                        style={{
-                          background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          backgroundClip: "text",
-                        }}
-                      >
-                        {formatFCFA(inv.total_amount)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className="text-[11px]"
+                        className="text-[11px] shrink-0"
                         style={{ ...getPaymentStyle(inv.payment_method), transition: "background 0.2s, color 0.2s" }}
                       >
                         {getPaymentLabel(inv.payment_method)}
                       </span>
+                    </div>
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 shrink-0 ml-auto">
                       <button
-                        className="p-2 rounded-lg hover:bg-muted transition-colors"
+                        className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-muted transition-colors flex items-center justify-center"
                         title="Voir la facture"
                         onClick={() => setViewingInvoice(inv)}
                       >
@@ -1328,7 +1338,7 @@ export default function InvoicesPage() {
                       </button>
                       <InlinePrintButton
                         invoice={inv}
-                        className="p-2 rounded-lg hover:bg-muted transition-colors"
+                        className="p-2.5 min-h-[44px] min-w-[44px] rounded-lg hover:bg-muted transition-colors flex items-center justify-center"
                         iconSize="w-4 h-4"
                       />
                     </div>
@@ -1359,7 +1369,7 @@ export default function InvoicesPage() {
           if (!open) setViewingInvoice(null);
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:max-w-lg sm:w-auto overflow-y-auto max-h-[90dvh]">
           <DialogHeader>
             <DialogTitle className="sr-only">Détail de la facture</DialogTitle>
           </DialogHeader>

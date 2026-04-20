@@ -356,7 +356,7 @@ function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProp
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
         <FieldWrapper label="Prénom" required error={errors.first_name?.message}>
           <Input id="create-first-name" placeholder="Ex : Fatou" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("first_name")} />
         </FieldWrapper>
@@ -373,7 +373,7 @@ function CreateUserForm({ onSubmit, onCancel, isSubmitting }: CreateUserFormProp
         <Input id="create-email" type="email" placeholder="utilisateur@naoservices.ga" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("email")} />
       </FieldWrapper>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
         <FieldWrapper label="Rôle" required error={errors.role?.message}>
           <Controller
             control={control}
@@ -504,7 +504,7 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
         <FieldWrapper label="Prénom" required error={errors.first_name?.message}>
           <Input id="edit-first-name" placeholder="Ex : Fatou" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("first_name")} />
         </FieldWrapper>
@@ -521,7 +521,7 @@ function EditUserForm({ user, onSubmit, onCancel, isSubmitting }: EditUserFormPr
         <Input id="edit-email" type="email" className="h-11 rounded-xl border-border/80 focus-visible:ring-1 focus-visible:ring-[hsl(22_72%_48%/0.5)] focus-visible:border-[hsl(22_72%_48%/0.6)]" {...register("email")} />
       </FieldWrapper>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
         <FieldWrapper label="Rôle" required error={errors.role?.message}>
           <Controller
             control={control}
@@ -1105,7 +1105,7 @@ export default function UsersPage() {
                   Gestion des utilisateurs
                 </h2>
               </div>
-              <div className="flex items-center gap-3 ml-3.5">
+              <div className="flex items-center gap-2 ml-3.5 flex-wrap">
                 <p className="text-sm text-muted-foreground">
                   {totalUsers} utilisateur{totalUsers > 1 ? "s" : ""} ·{" "}
                   <span style={{ color: "hsl(152 38% 38%)" }} className="font-medium">
@@ -1125,7 +1125,7 @@ export default function UsersPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <Link
                 to="/admin/permissions"
                 className="inline-flex items-center gap-2 text-sm font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-90"
@@ -1567,8 +1567,8 @@ export default function UsersPage() {
           if (!createMutation.isPending && !open) setModal({ type: "none" });
         }}
       >
-        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl">
-          <DialogHeader className="pb-3 border-b border-border/60">
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl max-h-[90dvh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-3 border-b border-border/60 shrink-0">
             <div className="flex items-center gap-3">
               <span
                 className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
@@ -1584,7 +1584,7 @@ export default function UsersPage() {
               </div>
             </div>
           </DialogHeader>
-          <div className="pt-2">
+          <div className="pt-2 overflow-y-auto flex-1 min-h-0">
             <CreateUserForm
               onSubmit={handleCreate}
               onCancel={() => setModal({ type: "none" })}
@@ -1601,8 +1601,8 @@ export default function UsersPage() {
           if (!updateMutation.isPending && !open) setModal({ type: "none" });
         }}
       >
-        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl">
-          <DialogHeader className="pb-3 border-b border-border/60">
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl max-h-[90dvh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-3 border-b border-border/60 shrink-0">
             <div className="flex items-center gap-3">
               <span
                 className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
@@ -1620,7 +1620,7 @@ export default function UsersPage() {
               </div>
             </div>
           </DialogHeader>
-          <div className="pt-2">
+          <div className="pt-2 overflow-y-auto flex-1 min-h-0">
             {modal.type === "edit" && (
               <EditUserForm
                 user={modal.user}
@@ -1640,8 +1640,8 @@ export default function UsersPage() {
           if (!permissionsMutation.isPending && !open) setModal({ type: "none" });
         }}
       >
-        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl">
-          <DialogHeader className="pb-3 border-b border-border/60">
+        <DialogContent className="sm:max-w-md data-[state=open]:animate-[formCardEntrance_0.35s_cubic-bezier(0.16,1,0.3,1)_both] data-[state=closed]:animate-[page-exit_0.15s_ease-in_both] rounded-2xl max-h-[90dvh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-3 border-b border-border/60 shrink-0">
             <div className="flex items-center gap-3">
               <span
                 className="inline-flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
@@ -1662,7 +1662,7 @@ export default function UsersPage() {
               </div>
             </div>
           </DialogHeader>
-          <div className="pt-2 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="pt-2 overflow-y-auto flex-1 min-h-0 pr-1">
             {modal.type === "permissions" && (
               <PermissionsModal
                 user={modal.user}

@@ -612,7 +612,7 @@ export default function VendeurPosPage() {
       </div>
 
       <div
-        className="flex-1 flex flex-col md:flex-row overflow-hidden"
+        className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0"
         style={{
           background:
             "linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted) / 0.25))",
@@ -662,7 +662,7 @@ export default function VendeurPosPage() {
           className={cn(
             "flex flex-col min-w-0 md:flex-1 md:border-r border-[hsl(var(--border))]",
             mobileTab === "catalog"
-              ? "flex flex-1 overflow-hidden"
+              ? "flex-1 overflow-hidden"
               : "hidden md:flex",
           )}
         >
@@ -705,7 +705,7 @@ export default function VendeurPosPage() {
           </div>
 
           {/* Catalog grid */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-5">
+          <div className="flex-1 overflow-y-auto p-3 md:p-5">
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16">
                 <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
@@ -719,13 +719,13 @@ export default function VendeurPosPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4">
                 {filtered.map((product, index) => (
                   <button
                     key={product.id}
                     onClick={() => addToCart(product)}
                     className={cn(
-                      "group relative bg-card rounded-xl border border-[hsl(var(--border))] p-3 text-left",
+                      "group relative bg-card rounded-xl border border-[hsl(var(--border))] p-2 sm:p-3 text-left",
                       "transition-all duration-200 ease-out",
                       "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/8 hover:-translate-y-0.5",
                       "active:scale-[0.97] active:translate-y-0",
@@ -780,7 +780,7 @@ export default function VendeurPosPage() {
         {/* ── Cart / ticket panel ──────────────────────────────────── */}
         <div
           className={cn(
-            "flex flex-col md:w-[440px] md:shrink-0",
+            "flex flex-col md:w-[420px] md:shrink-0 min-w-0",
             mobileTab === "cart"
               ? "flex-1 overflow-hidden"
               : "hidden md:flex",
@@ -1020,7 +1020,7 @@ export default function VendeurPosPage() {
 
           {/* Cart footer */}
           {cart.length > 0 && (
-            <div className="border-t bg-card p-4 md:p-5 shrink-0 space-y-3.5">
+            <div className="border-t bg-card p-3 md:p-5 shrink-0 space-y-3">
               {!showPayment ? (
                 <>
                   {/* Total block */}
@@ -1057,7 +1057,7 @@ export default function VendeurPosPage() {
                         Total
                       </span>
                       <span
-                        className="text-[30px] font-black tabular-nums leading-none"
+                        className="text-[26px] md:text-[30px] font-black tabular-nums leading-none"
                         style={{
                           fontFamily: "'Fraunces', Georgia, serif",
                           background:
@@ -1088,7 +1088,7 @@ export default function VendeurPosPage() {
                   </button>
                 </>
               ) : (
-                <div className="animate-slide-in-right space-y-3.5">
+                <div className="animate-slide-in-right space-y-3 overflow-y-auto max-h-[80vh]">
                   {/* Total à payer */}
                   <div
                     className="rounded-xl p-4"
@@ -1106,7 +1106,7 @@ export default function VendeurPosPage() {
                     </p>
                     <p
                       key={total}
-                      className="text-[34px] font-black tabular-nums leading-none animate-count-up"
+                      className="text-[28px] md:text-[34px] font-black tabular-nums leading-none animate-count-up"
                       style={{
                         color: "hsl(var(--foreground))",
                         transition: "all 0.3s ease",
@@ -1126,10 +1126,11 @@ export default function VendeurPosPage() {
                     <Input
                       type="number"
                       inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder="0"
                       value={amountGiven}
                       onChange={(e) => setAmountGiven(e.target.value)}
-                      className="mt-1.5 text-2xl font-black h-16 tabular-nums tracking-tight border-2 focus-visible:border-primary/60 rounded-xl"
+                      className="mt-1.5 text-xl md:text-2xl font-black h-14 md:h-16 tabular-nums tracking-tight border-2 focus-visible:border-primary/60 rounded-xl"
                       autoFocus
                     />
                   </div>
@@ -1139,19 +1140,19 @@ export default function VendeurPosPage() {
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-1.5">
                       Montant rapide
                     </p>
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="grid grid-cols-4 gap-1">
                       {quickAmounts.map((amt) => (
                         <button
                           key={amt}
                           onClick={() => setAmountGiven(String(amt))}
-                          className="min-h-[44px] px-2 py-2 text-[12px] rounded-lg border-2 border-[hsl(var(--border))] hover:border-primary/40 hover:bg-primary/5 active:scale-95 transition-all font-bold tabular-nums"
+                          className="min-h-[44px] px-1 py-2 text-[11px] rounded-lg border-2 border-[hsl(var(--border))] hover:border-primary/40 hover:bg-primary/5 active:scale-95 transition-all font-bold tabular-nums touch-manipulation"
                         >
                           {amt.toLocaleString("fr-FR")}
                         </button>
                       ))}
                       <button
                         onClick={() => setAmountGiven(String(total))}
-                        className="min-h-[44px] px-2 py-2 text-[12px] rounded-lg bg-primary/10 text-primary hover:bg-primary/20 border-2 border-primary/20 active:scale-95 transition-all font-bold col-span-1"
+                        className="min-h-[44px] px-1 py-2 text-[11px] rounded-lg bg-primary/10 text-primary hover:bg-primary/20 border-2 border-primary/20 active:scale-95 transition-all font-bold col-span-1 touch-manipulation"
                       >
                         Exact
                       </button>
@@ -1177,7 +1178,7 @@ export default function VendeurPosPage() {
                       </p>
                       <p
                         key={change}
-                        className="text-[30px] font-black text-success tabular-nums leading-tight animate-count-up"
+                        className="text-[26px] md:text-[30px] font-black text-success tabular-nums leading-tight animate-count-up"
                         style={{ fontFamily: "'Fraunces', Georgia, serif" }}
                       >
                         {change.toLocaleString("fr-FR")}{" "}

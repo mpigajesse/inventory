@@ -291,7 +291,7 @@ export default function SettingsPage() {
         onMenuClick={onMenuClick}
       />
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <div className="page-container animate-slide-in pb-32 sm:pb-6">
+        <div className="page-container animate-slide-in pb-24 sm:pb-6">
 
           {/* ── Apparence ── */}
           <SettingsSection
@@ -317,7 +317,7 @@ export default function SettingsPage() {
                     role="radio"
                     aria-checked={isActive}
                     aria-label={`Thème ${option.label}`}
-                    className="group relative flex flex-col items-center gap-3 p-4 min-h-[112px] bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="group relative flex flex-col items-center gap-2 sm:gap-3 p-3 sm:p-4 min-h-[96px] sm:min-h-[112px] bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     style={{
                       borderRadius: "12px",
                       border: isActive ? `2px solid ${option.palette.primary}` : "2px solid hsl(var(--border))",
@@ -365,7 +365,7 @@ export default function SettingsPage() {
             {/* Display mode */}
             <h3 className={`${FIELD_LABEL_CLASSES} mb-3`}>Mode d'affichage</h3>
             <div
-              className="flex flex-wrap gap-2"
+              className="grid grid-cols-3 xs:flex xs:flex-wrap gap-2"
               role="radiogroup"
               aria-label="Mode d'affichage"
             >
@@ -378,7 +378,7 @@ export default function SettingsPage() {
                     onClick={() => setDisplayMode(option.id)}
                     role="radio"
                     aria-checked={isActive}
-                    className="inline-flex items-center gap-2 px-4 min-h-[44px] text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 min-h-[44px] text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     style={{
                       borderRadius: "12px",
                       border: isActive ? "2px solid hsl(22 72% 48% / 0.30)" : "2px solid hsl(var(--border))",
@@ -476,8 +476,9 @@ export default function SettingsPage() {
               WebkitBackdropFilter: "blur(16px)",
               borderTop: "1px solid hsl(var(--border) / 0.5)",
               boxShadow: "0 -4px 16px rgba(0,0,0,0.06)",
-              transform: isDirty ? "translateY(0)" : "translateY(100%)",
+              transform: isDirty ? "translateY(0)" : "translateY(110%)",
               transition: "transform 0.3s ease",
+              pointerEvents: isDirty ? "auto" : "none",
             }}
           >
             <Button
@@ -485,7 +486,7 @@ export default function SettingsPage() {
               variant="outline"
               disabled={!isDirty || isSubmitting || saveMutation.isPending}
               onClick={() => reset()}
-              className="min-h-[44px] rounded-xl border-border/80"
+              className="w-full sm:w-auto min-h-[44px] rounded-xl border-border/80"
             >
               <X className="w-4 h-4 mr-2" />
               Annuler
@@ -493,7 +494,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={isSubmitting || saveMutation.isPending}
-              className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl font-semibold text-sm text-white transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl font-semibold text-sm text-white transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                 boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",

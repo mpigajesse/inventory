@@ -74,6 +74,7 @@ const NotFound = () => {
               fontSize: '0.9rem',
               boxShadow: '0 8px 20px hsl(22 72% 48% / 0.35)',
               cursor: 'pointer',
+              minHeight: '44px',
               transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 400ms ease 350ms',
               opacity: mounted ? 1 : 0,
               transform: mounted ? 'translateY(0)' : 'translateY(10px)',
@@ -94,7 +95,7 @@ const NotFound = () => {
         <p
           className="text-muted-foreground/50 mt-8"
           style={{
-            fontSize: 11,
+            fontSize: 12,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
             opacity: mounted ? 0.5 : 0,

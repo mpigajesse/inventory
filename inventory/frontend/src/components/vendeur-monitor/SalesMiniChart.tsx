@@ -90,6 +90,7 @@ export function SalesMiniChart({
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
+        style={{ maxWidth: '100%', display: 'block' }}
       >
         <line
           x1={padding}
@@ -118,6 +119,7 @@ export function SalesMiniChart({
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
+        style={{ maxWidth: '100%', display: 'block' }}
       >
         <line
           x1={padding}

@@ -178,7 +178,7 @@ function IdentityCard() {
         aria-hidden="true"
       />
 
-      <div className="relative px-6 pt-6 pb-7 flex flex-col sm:flex-row sm:items-center gap-5">
+      <div className="relative px-4 pt-5 pb-6 sm:px-6 sm:pt-6 sm:pb-7 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
         {/* Avatar with upload overlay */}
         <div className="relative shrink-0 self-start sm:self-auto">
           <button
@@ -481,14 +481,14 @@ function ProfileSection() {
             variant="outline"
             disabled={!isDirty || updateMutation.isPending}
             onClick={() => reset()}
-            className="min-h-[44px] rounded-lg"
+            className="w-full sm:w-auto min-h-[44px] rounded-lg"
           >
             Annuler
           </Button>
           <Button
             type="submit"
             disabled={updateMutation.isPending}
-            className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] active:scale-[0.97]"
+            className="w-full sm:w-auto min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] active:scale-[0.97]"
             style={{ transition: "transform 0.15s ease, box-shadow 0.2s ease" }}
           >
             {updateMutation.isPending ? (
@@ -635,11 +635,11 @@ function SecuritySection() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-1">
+        <div className="flex justify-stretch sm:justify-end pt-1">
           <Button
             type="submit"
             disabled={changePasswordMutation.isPending}
-            className="min-h-[44px] rounded-lg"
+            className="w-full sm:w-auto min-h-[44px] rounded-lg"
             style={{
               background: "linear-gradient(135deg, hsl(36 72% 42%), hsl(36 88% 52%))",
               boxShadow: "0 4px 14px hsl(36 88% 52% / 0.30)",
@@ -725,10 +725,10 @@ function PreferencesSection() {
           />
         </div>
 
-        <div className="sm:col-span-2 flex justify-end pt-1">
+        <div className="sm:col-span-2 flex justify-stretch sm:justify-end pt-1">
           <Button
             type="submit"
-            className="min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] active:scale-[0.97]"
+            className="w-full sm:w-auto min-h-[44px] rounded-lg shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.55)] active:scale-[0.97]"
             style={{ transition: "transform 0.15s ease, box-shadow 0.2s ease" }}
           >
             <Save className="w-4 h-4 mr-2" />

@@ -75,7 +75,7 @@ function AppLayoutInner() {
         />
         <main
           className="flex flex-col flex-1 h-screen min-w-0 max-w-full overflow-x-hidden overflow-y-auto"
-          style={{ background: "hsl(30 20% 97%)", minHeight: "100vh", scrollBehavior: "smooth" }}
+          style={{ background: "hsl(30 20% 97%)", scrollBehavior: "smooth" }}
         >
           <PageTransition>
             <Outlet

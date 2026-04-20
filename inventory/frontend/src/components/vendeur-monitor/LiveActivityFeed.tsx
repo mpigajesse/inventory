@@ -140,7 +140,7 @@ export function LiveActivityFeed({
         ref={scrollRef}
         style={{
           overflowY: 'auto',
-          maxHeight: `${maxHeight}px`,
+          maxHeight: `min(${maxHeight}px, 60svh)`,
           flex: 1,
         }}
       >

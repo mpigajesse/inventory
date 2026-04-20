@@ -38,7 +38,7 @@ export default function RegisterPage() {
   const [isSubmitting] = useState(false);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen overflow-x-hidden">
 
       {/* ═══════════════════════════════════════════════════════
           LEFT BRAND PANEL — desktop only (md+)
@@ -261,7 +261,7 @@ export default function RegisterPage() {
       {/* ═══════════════════════════════════════════════════════
           RIGHT FORM PANEL
       ═══════════════════════════════════════════════════════ */}
-      <main className="flex flex-1 items-center justify-center bg-background p-6 pt-24 md:pt-6 md:border-l border-border overflow-y-auto">
+      <main className="flex flex-1 items-center justify-center bg-background px-4 sm:px-6 pt-28 sm:pt-24 md:pt-6 md:border-l border-border overflow-y-auto">
         <div className="w-full max-w-sm space-y-6 py-4">
 
           {/* Heading */}
@@ -273,7 +273,7 @@ export default function RegisterPage() {
           </div>
 
           {/* ── Form card ── */}
-          <div className="bg-card rounded-xl border shadow-sm p-6 space-y-4 animate-form-entrance animate-delay-100">
+          <div className="bg-card rounded-xl border shadow-sm p-4 sm:p-6 space-y-4 animate-form-entrance animate-delay-100">
             <form className="space-y-4" noValidate>
 
               {/* Nom complet */}
@@ -290,7 +290,7 @@ export default function RegisterPage() {
                     id="reg-name"
                     type="text"
                     placeholder="ex : Jean Mouloungui"
-                    className="h-11 pl-9 rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
+                    className="h-12 pl-9 text-base rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
                     disabled={isSubmitting}
                     autoComplete="name"
                   />
@@ -311,7 +311,7 @@ export default function RegisterPage() {
                     id="reg-email"
                     type="email"
                     placeholder="ex : vendeur@naoservices.ga"
-                    className="h-11 pl-9 rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
+                    className="h-12 pl-9 text-base rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
                     disabled={isSubmitting}
                     autoComplete="email"
                   />
@@ -332,14 +332,14 @@ export default function RegisterPage() {
                     id="reg-password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Minimum 8 caractères"
-                    className="h-11 pl-9 pr-10 rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
+                    className="h-12 pl-9 pr-12 text-base rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
                     disabled={isSubmitting}
                     autoComplete="new-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                     aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -361,7 +361,7 @@ export default function RegisterPage() {
                     id="reg-company"
                     type="text"
                     placeholder="ex : Boutique MPJ HIGH-TECH"
-                    className="h-11 pl-9 rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
+                    className="h-12 pl-9 text-base rounded-lg border-border/60 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.35)] focus-visible:border-[hsl(var(--primary)/0.5)]"
                     disabled={isSubmitting}
                     autoComplete="organization"
                   />
@@ -371,7 +371,7 @@ export default function RegisterPage() {
               {/* Submit button — gradient animé identique LoginPage */}
               <Button
                 type="submit"
-                className="h-11 w-full font-semibold text-white border-0 shadow-md hover:brightness-110 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+                className="h-12 w-full font-semibold text-white border-0 shadow-md hover:brightness-110 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
                 style={
                   isSubmitting
                     ? { background: "hsl(var(--primary) / 0.5)" }

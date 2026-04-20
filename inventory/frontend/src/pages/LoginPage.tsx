@@ -40,7 +40,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", maxWidth: "100vw" }}>
 
       {/* Main split layout */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -98,7 +98,7 @@ export default function LoginPage() {
             display:        "flex",
             alignItems:     "center",
             justifyContent: "center",
-            padding:        "clamp(1.5rem, 4vw, 3rem)",
+            padding:        "clamp(1rem, 4vw, 3rem) clamp(0.75rem, 4vw, 3rem)",
           }}
         >
           {/* Form card */}
@@ -106,14 +106,16 @@ export default function LoginPage() {
             style={{
               maxWidth:     440,
               width:        "100%",
+              minWidth:     0,
               margin:       "0 auto",
-              padding:      "clamp(2rem, 4vw, 3rem)",
+              padding:      "clamp(1.25rem, 4vw, 3rem)",
               background:   "white",
               borderRadius: 24,
               boxShadow:    "0 4px 32px hsl(20 15% 15% / 0.08), 0 1px 4px hsl(20 15% 15% / 0.04)",
               display:      "flex",
               flexDirection: "column",
               gap:          24,
+              boxSizing:    "border-box" as const,
             }}
           >
             <form

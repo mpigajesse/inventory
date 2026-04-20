@@ -217,7 +217,7 @@ function TableSkeleton() {
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
       {Array.from({ length: 10 }).map((_, i) => (
         <div key={i} className="rounded-xl bg-card border p-3 flex flex-col gap-2 animate-pulse">
           <div className="flex items-start gap-2">
@@ -384,9 +384,10 @@ function AdjustStockForm({ item, onSubmit, onCancel, isSubmitting }: AdjustStock
           <Input
             id="quantity"
             type="number"
+            inputMode="numeric"
             min={1}
             placeholder="0"
-            className="mt-1"
+            className="mt-1 h-11"
             {...register("quantity", { valueAsNumber: true })}
           />
           {errors.quantity && (
@@ -500,7 +501,7 @@ function ThresholdForm({ item, onSubmit, onCancel, isSubmitting }: ThresholdForm
           </strong>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label htmlFor="min" className="text-sm font-medium">
               Stock minimum <span className="text-destructive">*</span>
@@ -508,6 +509,7 @@ function ThresholdForm({ item, onSubmit, onCancel, isSubmitting }: ThresholdForm
             <Input
               id="min"
               type="number"
+              inputMode="numeric"
               min={0}
               className="mt-1"
               {...register("min", { valueAsNumber: true })}
@@ -523,6 +525,7 @@ function ThresholdForm({ item, onSubmit, onCancel, isSubmitting }: ThresholdForm
             <Input
               id="max"
               type="number"
+              inputMode="numeric"
               min={1}
               className="mt-1"
               {...register("max", { valueAsNumber: true })}
@@ -592,15 +595,15 @@ function HealthBanner({
         transition: "opacity 0.4s ease-out, transform 0.4s ease-out",
       }}
     >
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
+        <div className="min-w-0 flex-1">
           <h3
             className="font-bold text-foreground"
             style={{ fontFamily: "var(--font-heading, inherit)" }}
           >
             Santé globale du stock
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5 break-words">
             {totalProducts} produit{totalProducts !== 1 ? "s" : ""} · Valeur totale :{" "}
             <span
               className="font-semibold"
@@ -612,7 +615,7 @@ function HealthBanner({
         </div>
         {criticalCount > 0 && (
           <span
-            className="text-xs font-bold px-3 py-1.5 rounded-full animate-pulse inline-flex items-center gap-1.5"
+            className="text-xs font-bold px-3 py-1.5 rounded-full animate-pulse inline-flex items-center gap-1.5 shrink-0"
             style={{
               background: "hsl(0 72% 52% / 0.10)",
               color: "hsl(0 72% 42%)",
@@ -662,7 +665,7 @@ function HealthBanner({
       </div>
 
       {/* Counters avec indicateurs colorés enrichis */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap">
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
           style={{ background: "hsl(142 72% 38% / 0.09)", border: "1px solid hsl(142 72% 38% / 0.20)" }}
@@ -805,7 +808,7 @@ function LevelFilterPills({
           <button
             key={tab.key}
             onClick={() => onChange(tab.key)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold"
+            className="flex items-center gap-2 px-3.5 py-2.5 sm:py-1.5 rounded-full text-xs font-semibold min-h-[44px] sm:min-h-0"
             style={{
               transition: "all 0.22s ease",
               ...(isActive
@@ -1112,11 +1115,11 @@ export default function StockPage() {
 
         {/* ── Valeur totale — inline pill ────────────────────────────────────── */}
         {!isLoading && totalStockValue > 0 && (
-          <div className="mb-5 flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm w-fit shadow-sm">
+          <div className="mb-5 flex items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm w-full sm:w-fit shadow-sm flex-wrap">
             <Wallet className="w-4 h-4 text-muted-foreground shrink-0" />
             <span className="text-muted-foreground">Valeur totale du stock :</span>
             <span
-              className="font-bold"
+              className="font-bold break-all"
               style={{ fontFamily: "'Fraunces', serif", color: COLOR.copper }}
             >
               {totalStockValue.toLocaleString("fr-FR")} FCFA
@@ -1228,7 +1231,7 @@ export default function StockPage() {
                 <p className="text-sm">Aucun produit trouvé.</p>
               </div>
             )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
               {typedPaginated.map((item, index) => {
                 const pct =
                   item.max > 0
@@ -1316,11 +1319,11 @@ export default function StockPage() {
 
                     {/* Bouton Ajuster */}
                     {can("manage_stock") && (
-                      <div className="mt-auto pt-1 border-t opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="mt-auto pt-1 border-t sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full h-7 text-xs"
+                          className="w-full h-9 text-xs"
                           style={{
                             borderColor: `${COLOR.copper}50`,
                             color: COLOR.copper,
@@ -1576,7 +1579,7 @@ export default function StockPage() {
                   {can("manage_stock") && (
                     <div className="flex items-center justify-end gap-2 pt-2 border-t">
                       <button
-                        className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors flex items-center gap-1.5 text-xs text-muted-foreground font-medium"
+                        className="px-3 min-h-[44px] rounded-md hover:bg-secondary transition-colors flex items-center gap-1.5 text-xs text-muted-foreground font-medium"
                         title="Définir les seuils"
                         onClick={() => setModal({ type: "threshold", item })}
                       >
@@ -1585,7 +1588,7 @@ export default function StockPage() {
                       </button>
                       <Button
                         size="sm"
-                        className="h-8 rounded-md text-white"
+                        className="h-11 rounded-md text-white"
                         style={{
                           background: `linear-gradient(135deg, ${COLOR.copper}, hsl(36 88% 52%))`,
                           boxShadow: `0 2px 8px ${COLOR.copper}44`,
@@ -1624,13 +1627,13 @@ export default function StockPage() {
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
           <DialogContent
-            className="sm:max-w-md max-h-[90vh] overflow-y-auto p-0"
+            className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto p-0"
             style={{ borderRadius: "20px", overflow: "hidden" }}
           >
             <DialogHeader
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%), hsl(28 80% 56%))",
-                padding: "20px 24px 16px",
+                padding: "16px 16px 14px",
               }}
             >
               <DialogTitle
@@ -1643,7 +1646,7 @@ export default function StockPage() {
                 Ajuster le stock — {modal.item.name}
               </DialogTitle>
             </DialogHeader>
-            <div className="px-6 pb-6">
+            <div className="px-4 pb-4 sm:px-6 sm:pb-6">
               <AdjustStockForm
                 item={modal.item}
                 onSubmit={handleAdjust}
@@ -1662,13 +1665,13 @@ export default function StockPage() {
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
           <DialogContent
-            className="sm:max-w-md max-h-[90vh] overflow-y-auto p-0"
+            className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto p-0"
             style={{ borderRadius: "20px", overflow: "hidden" }}
           >
             <DialogHeader
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%), hsl(28 80% 56%))",
-                padding: "20px 24px 16px",
+                padding: "16px 16px 14px",
               }}
             >
               <DialogTitle
@@ -1681,7 +1684,7 @@ export default function StockPage() {
                 Ajuster la sélection — {modal.ids.size} produit{modal.ids.size > 1 ? "s" : ""}
               </DialogTitle>
             </DialogHeader>
-            <div className="px-6 pb-6">
+            <div className="px-4 pb-4 sm:px-6 sm:pb-6">
               <AdjustStockForm
                 item={{ id: -1, stockId: -1, name: "", category: "", imageUrl: null, stock: 0, min: 0, max: 0, price: 0, stockValue: 0, status: "normal" }}
                 onSubmit={handleBulkAdjust}
@@ -1700,13 +1703,13 @@ export default function StockPage() {
           onOpenChange={(open) => !open && setModal({ type: "none" })}
         >
           <DialogContent
-            className="sm:max-w-sm max-h-[90vh] overflow-y-auto p-0"
+            className="w-[calc(100vw-2rem)] sm:max-w-sm max-h-[90vh] overflow-y-auto p-0"
             style={{ borderRadius: "20px", overflow: "hidden" }}
           >
             <DialogHeader
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%), hsl(28 80% 56%))",
-                padding: "20px 24px 16px",
+                padding: "16px 16px 14px",
               }}
             >
               <DialogTitle
@@ -1719,7 +1722,7 @@ export default function StockPage() {
                 Définir les seuils — {modal.item.name}
               </DialogTitle>
             </DialogHeader>
-            <div className="px-6 pb-6">
+            <div className="px-4 pb-4 sm:px-6 sm:pb-6">
             <ThresholdForm
               item={modal.item}
               onSubmit={handleThreshold}

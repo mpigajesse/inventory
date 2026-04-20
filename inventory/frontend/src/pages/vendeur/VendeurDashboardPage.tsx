@@ -298,6 +298,8 @@ export default function VendeurDashboardPage() {
                   fontSize: "13px",
                   color: "hsl(var(--muted-foreground))",
                   lineHeight: 1.4,
+                  overflowWrap: "break-word",
+                  wordBreak: "break-word",
                 }}
               >
                 {formatLongDate(today)} · Bonne journée de ventes !
@@ -307,7 +309,7 @@ export default function VendeurDashboardPage() {
         </div>
 
         {/* ── KPI cards — stagger in ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-7">
           {isLoading ? (
             <>
               {[0, 1, 2].map((i) => (

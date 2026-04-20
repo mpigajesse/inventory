@@ -604,8 +604,8 @@ export default function ProductFormPage() {
                       hint="Généré automatiquement à la création. Scannable avec un lecteur USB."
                     >
                       <div className="space-y-2">
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
+                        <div className="flex flex-wrap gap-2">
+                          <div className="relative flex-1 min-w-0" style={{ minWidth: '160px' }}>
                             <BarcodeIcon
                               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
                               style={{ color: 'hsl(var(--muted-foreground))' }}
@@ -620,7 +620,7 @@ export default function ProductFormPage() {
                           <button
                             type="button"
                             onClick={() => setValue("barcode", generateEAN13())}
-                            className="h-11 px-3 rounded-lg border border-border flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+                            className="h-11 px-3 rounded-lg border border-border flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors shrink-0"
                             title="Générer un code EAN-13 aléatoire"
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
@@ -666,6 +666,7 @@ export default function ProductFormPage() {
                       <Input
                         id="selling_price"
                         type="number"
+                        inputMode="decimal"
                         min={0}
                         placeholder="0"
                         className="h-11 focus-visible:ring-primary/50"
@@ -691,6 +692,7 @@ export default function ProductFormPage() {
                       <Input
                         id="purchase_price"
                         type="number"
+                        inputMode="decimal"
                         min={0}
                         placeholder="0"
                         className="h-11 focus-visible:ring-primary/50"
@@ -804,12 +806,12 @@ export default function ProductFormPage() {
             </div>
 
             {/* ── Actions ─────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-border">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 mt-6 pt-6 border-t border-border">
               <button
                 type="button"
                 onClick={() => navigate(-1)}
                 disabled={isPending}
-                className="px-4 py-2 rounded-xl text-sm font-semibold hover:bg-muted transition-colors text-muted-foreground disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold hover:bg-muted transition-colors text-muted-foreground disabled:opacity-50 text-center"
               >
                 Annuler
               </button>
@@ -818,6 +820,7 @@ export default function ProductFormPage() {
               <button
                 type="submit"
                 disabled={isPending}
+                className="w-full sm:w-auto"
                 style={{
                   background: isPending
                     ? 'hsl(22 72% 48% / 0.6)'
@@ -836,10 +839,10 @@ export default function ProductFormPage() {
                   cursor: isPending ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '0.375rem',
                   transition: 'transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s',
                   opacity: isPending ? 0.7 : 1,
-                  whiteSpace: 'nowrap',
                 }}
                 onMouseEnter={(e) => {
                   if (!isPending) {

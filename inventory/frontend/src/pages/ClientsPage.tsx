@@ -111,6 +111,122 @@ function TableRowSkeleton() {
   );
 }
 
+// ─── Client card (mobile view < md) ──────────────────────────────────────────
+
+interface ClientCardProps {
+  client: Client;
+  index: number;
+  canManage: boolean;
+  onHistory: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function ClientCard({ client, index, canManage, onHistory, onEdit, onDelete }: ClientCardProps) {
+  const creditBalance = client.credit_balance ?? 0;
+
+  return (
+    <div
+      className="rounded-xl border border-border/60 bg-card p-4"
+      style={{
+        animation: "slideInUp 0.3s ease forwards",
+        animationDelay: `${index * 45}ms`,
+        opacity: 0,
+      }}
+    >
+      {/* Ligne 1 : avatar + nom + actions */}
+      <div className="flex items-center gap-3">
+        <div
+          className="rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+          style={{
+            width: "40px",
+            height: "40px",
+            background: `linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))`,
+            boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
+          }}
+        >
+          {initials(client.name)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm text-foreground truncate">{client.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {client.purchases_count} achat{client.purchases_count !== 1 ? "s" : ""}
+          </p>
+        </div>
+        {/* Actions toujours visibles sur mobile */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            className="p-2 rounded-lg bg-muted/60 active:bg-muted transition-colors"
+            title="Historique d'achats"
+            onClick={onHistory}
+          >
+            <History className="w-4 h-4 text-muted-foreground" />
+          </button>
+          {canManage && (
+            <button
+              className="p-2 rounded-lg bg-muted/60 active:bg-muted transition-colors"
+              title="Modifier"
+              onClick={onEdit}
+            >
+              <Edit2 className="w-4 h-4 text-muted-foreground" />
+            </button>
+          )}
+          {canManage && (
+            <button
+              className="p-2 rounded-lg bg-destructive/10 active:bg-destructive/20 transition-colors"
+              title="Archiver"
+              onClick={onDelete}
+            >
+              <Trash2 className="w-4 h-4 text-destructive/70" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Ligne 2 : téléphone */}
+      {client.phone && (
+        <div className="flex items-center gap-1.5 mt-2.5 text-xs text-muted-foreground">
+          <Phone className="w-3 h-3 shrink-0" />
+          <a href={`tel:${client.phone}`} className="font-mono tabular-nums">
+            {client.phone}
+          </a>
+        </div>
+      )}
+
+      {/* Ligne 3 : solde + crédit */}
+      <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border/40">
+        <span
+          className="font-bold text-sm tabular-nums"
+          style={{
+            fontFamily: "Fraunces, Georgia, serif",
+            background: "linear-gradient(135deg, hsl(22 72% 42%), hsl(36 88% 52%))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          {formatFcfa(client.total_purchases)}
+        </span>
+        {creditBalance > 0 && (
+          <span
+            className="inline-flex items-center gap-1 text-xs font-bold"
+            style={{
+              borderRadius: "100px",
+              padding: "4px 10px",
+              background: "hsl(38 85% 50% / 0.13)",
+              color: "hsl(38 70% 32%)",
+              border: "1px solid hsl(38 85% 50% / 0.3)",
+            }}
+          >
+            <AlertCircle className="w-3 h-3 shrink-0" />
+            {creditBalance.toLocaleString("fr-FR")} FCFA
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Purchase history modal ───────────────────────────────────────────────────
 
 interface HistoryModalProps {
@@ -127,7 +243,7 @@ function HistoryModal({ client, onClose }: HistoryModalProps) {
 
   return (
     <Dialog open={client !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
             {client && (
@@ -299,23 +415,23 @@ export default function ClientsPage() {
                   size="sm"
                   variant="outline"
                   onClick={() => exportClients(clients)}
-                  className="h-9"
+                  className="h-9 hidden sm:inline-flex"
                 >
-                  <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Exporter Excel
+                  <FileSpreadsheet className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Exporter Excel</span>
                 </Button>
               )}
               {can("manage_clients") && (
                 <button
                   onClick={() => navigate("/clients/new")}
-                  className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95"
+                  className="inline-flex items-center gap-2 h-9 px-3 sm:px-4 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95"
                   style={{
                     background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})`,
                     boxShadow: `0 4px 14px hsl(22 72% 48% / 0.35)`,
                   }}
                 >
                   <UserPlus className="w-4 h-4" />
-                  Nouveau client
+                  <span className="hidden xs:inline sm:inline">Nouveau client</span>
                 </button>
               )}
             </div>
@@ -341,51 +457,83 @@ export default function ClientsPage() {
           />
         </div>
 
-        {/* ── Table ───────────────────────────────────────────────────────── */}
+        {/* ── Table (desktop md+) / Cards (mobile) ────────────────────────── */}
         {!isLoading && clients.length === 0 ? (
           <EmptyState
             message="Aucun client trouvé."
             icon={<Users className="w-10 h-10" />}
           />
         ) : (
-          <div className="rounded-xl border border-border/60 overflow-hidden bg-card">
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  className="border-b border-border/60"
-                  style={{ background: "hsl(30 15% 95%)" }}
-                >
-                  <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Client</th>
-                  <th className="px-4 py-3 text-left text-muted-foreground hidden md:table-cell" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                    Contact
-                  </th>
-                  <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Total achats</th>
-                  <th className="px-4 py-3 text-left text-muted-foreground hidden lg:table-cell" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                    Crédit dû
-                  </th>
-                  <th className="px-4 py-3 text-left text-muted-foreground hidden sm:table-cell" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                    Depuis
-                  </th>
-                  <th className="px-4 py-3 text-right text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody key={search}>
-                {isLoading
-                  ? [1, 2, 3, 4, 5, 6].map((i) => <TableRowSkeleton key={i} />)
-                  : clients.map((client, index) => (
-                      <ClientRow
-                        key={client.id}
-                        client={client}
-                        index={index}
-                        canManage={can("manage_clients")}
-                        onHistory={() => setHistoryClient(client)}
-                        onEdit={() => navigate(`/clients/${client.id}/edit`)}
-                        onDelete={() => setDeletingClient(client)}
-                      />
-                    ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* ── Vue cards — mobile uniquement (< md) ─────────────────────── */}
+            <div className="md:hidden space-y-3">
+              {isLoading
+                ? [1, 2, 3, 4].map((i) => (
+                    <div key={i} className="rounded-xl border border-border/60 bg-card p-4 animate-pulse">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="rounded-full bg-muted shrink-0" style={{ width: 40, height: 40 }} />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3.5 bg-muted rounded w-32" />
+                          <div className="h-3 bg-muted rounded w-20" />
+                        </div>
+                      </div>
+                      <div className="h-3 bg-muted rounded w-28 mb-2" />
+                      <div className="h-5 bg-muted rounded w-36" />
+                    </div>
+                  ))
+                : clients.map((client, index) => (
+                    <ClientCard
+                      key={client.id}
+                      client={client}
+                      index={index}
+                      canManage={can("manage_clients")}
+                      onHistory={() => setHistoryClient(client)}
+                      onEdit={() => navigate(`/clients/${client.id}/edit`)}
+                      onDelete={() => setDeletingClient(client)}
+                    />
+                  ))}
+            </div>
+
+            {/* ── Vue tableau — md et plus ──────────────────────────────────── */}
+            <div className="hidden md:block rounded-xl border border-border/60 overflow-hidden bg-card">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr
+                    className="border-b border-border/60"
+                    style={{ background: "hsl(30 15% 95%)" }}
+                  >
+                    <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Client</th>
+                    <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                      Contact
+                    </th>
+                    <th className="px-4 py-3 text-left text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Total achats</th>
+                    <th className="px-4 py-3 text-left text-muted-foreground hidden lg:table-cell" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                      Crédit dû
+                    </th>
+                    <th className="px-4 py-3 text-left text-muted-foreground hidden xl:table-cell" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                      Depuis
+                    </th>
+                    <th className="px-4 py-3 text-right text-muted-foreground" style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody key={search}>
+                  {isLoading
+                    ? [1, 2, 3, 4, 5, 6].map((i) => <TableRowSkeleton key={i} />)
+                    : clients.map((client, index) => (
+                        <ClientRow
+                          key={client.id}
+                          client={client}
+                          index={index}
+                          canManage={can("manage_clients")}
+                          onHistory={() => setHistoryClient(client)}
+                          onEdit={() => navigate(`/clients/${client.id}/edit`)}
+                          onDelete={() => setDeletingClient(client)}
+                        />
+                      ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -568,9 +716,9 @@ function ClientRow({ client, index, canManage, onHistory, onEdit, onDelete }: Cl
         </span>
       </td>
 
-      {/* Actions (visibles au hover) */}
+      {/* Actions — toujours visibles (hover sur desktop, permanent sur tactile) */}
       <td className="px-4 py-3.5">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button
             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
             title="Historique d'achats"

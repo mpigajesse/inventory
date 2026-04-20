@@ -243,22 +243,22 @@
 
 @layer components {
   .page-container {
-    @apply p-3 md:p-6 lg:p-8 w-full max-w-[1600px];
-    max-width: 100%;
+    @apply px-4 py-3 md:px-6 md:py-5 lg:px-8 lg:py-6 w-full;
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
     overflow-x: hidden;
   }
 
-  @screen md {
-    .page-container {
-      max-width: 1600px;
-    }
-  }
-
+  /* Wrapper de tableau : overflow horizontal sur mobile */
   .table-wrapper {
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
+    /* Indicateur visuel subtil de défilement sur mobile */
+    scrollbar-width: thin;
   }
 
   .animate-slide-in {
@@ -300,7 +300,8 @@
   }
 
   .stat-card {
-    @apply bg-card rounded-lg border p-5 transition-shadow hover:shadow-sm;
+    @apply bg-card rounded-lg border p-4 md:p-5 transition-shadow hover:shadow-sm;
+    min-width: 0; /* permet le shrink dans une grille flex/grid */
   }
 
   .stat-value {
@@ -311,8 +312,10 @@
     @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
   }
 
+  /* .data-table doit toujours être imbriqué dans .table-wrapper pour le scroll mobile */
   .data-table {
     @apply w-full text-sm;
+    min-width: 560px; /* empêche l'écrasement des colonnes sous 560px */
   }
 
   .data-table thead {
@@ -1488,11 +1491,18 @@ html.theme-couchant {
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius-lg);
-    padding: 1.5rem;
+    padding: 1rem;          /* 16px mobile */
     box-shadow: var(--shadow-warm-sm);
     transition: all var(--transition-base);
     position: relative;
     overflow: hidden;
+    min-width: 0;           /* shrink propre dans grille flex/grid */
+  }
+
+  @media (min-width: 768px) {
+    .kpi-card {
+      padding: 1.5rem;      /* 24px tablette/desktop */
+    }
   }
   .kpi-card::before {
     content: '';
@@ -1553,8 +1563,10 @@ html.theme-couchant {
   }
 
   /* === PREMIUM TABLE === */
+  /* Toujours imbriquer .premium-table dans .table-wrapper pour le scroll mobile */
   .premium-table {
     width: 100%;
+    min-width: 560px; /* garde la lisibilité sur petits écrans via scroll horizontal */
     border-collapse: separate;
     border-spacing: 0;
   }
@@ -1881,4 +1893,18 @@ html.theme-couchant {
   .stagger > *:nth-child(4) { animation-delay: 180ms; }
   .stagger > *:nth-child(5) { animation-delay: 240ms; }
   .stagger > *:nth-child(6) { animation-delay: 300ms; }
+}
+
+/* ── Responsive toast (Sonner) ─────────────────────────────────────────────
+   On viewports narrower than 480px the default sonner width (356px) overflows.
+   Cap the width to the usable viewport width with horizontal padding.
+   On ≥480px the default 356px fits comfortably — restore it.                 */
+@media (max-width: 479px) {
+  [data-sonner-toaster] {
+    --width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    right: 16px !important;
+    /* Keep top-right position readable — shift to top-left origin */
+    transform: none !important;
+  }
 }

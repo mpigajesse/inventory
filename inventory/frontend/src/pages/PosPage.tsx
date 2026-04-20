@@ -480,7 +480,7 @@ export default function PosPage() {
       </div>
 
       {/* ── Main split layout ── */}
-      <div className="flex h-[calc(100vh-var(--topbar-h,64px)-var(--mobiletab-h,0px))] md:h-[calc(100vh-64px)] overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
 
         {/* ── LEFT — Catalogue ── */}
         <div
@@ -490,7 +490,7 @@ export default function PosPage() {
           )}
         >
           {/* Search bar */}
-          <div className="p-4 border-b shrink-0" style={{ background: "hsl(var(--card))" }}>
+          <div className="p-3 md:p-4 border-b shrink-0" style={{ background: "hsl(var(--card))" }}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <input
@@ -536,7 +536,7 @@ export default function PosPage() {
           </div>
 
           {/* Product grid */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-3 md:p-4">
             {catalog.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16">
                 <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
@@ -548,7 +548,7 @@ export default function PosPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
                 {catalog.map((product, index) => {
                   const isOut = product.stock_quantity === 0;
                   const isLow = product.stock_quantity > 0 && product.stock_quantity <= 5;
@@ -559,7 +559,7 @@ export default function PosPage() {
                       disabled={isOut}
                       title={isOut ? "Rupture de stock" : product.name}
                       className={cn(
-                        "group relative rounded-xl p-3 text-left cursor-pointer transition-all duration-200 animate-slide-in",
+                        "group relative rounded-xl p-2 sm:p-3 text-left cursor-pointer transition-all duration-200 animate-slide-in",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]",
                         isOut
                           ? "opacity-50 cursor-not-allowed"
@@ -673,7 +673,7 @@ export default function PosPage() {
         {/* ── RIGHT — Ticket / Cart ── */}
         <div
           className={cn(
-            "flex flex-col md:w-[380px] md:shrink-0",
+            "flex flex-col md:w-[380px] md:shrink-0 min-w-0",
             mobileTab === "cart" ? "flex-1" : "hidden md:flex"
           )}
           style={{
@@ -698,7 +698,7 @@ export default function PosPage() {
           />
           {/* Ticket header */}
           <div
-            className="p-5 shrink-0"
+            className="p-3 md:p-5 shrink-0"
             style={{ borderBottom: "1px solid hsl(var(--sidebar-border))" }}
           >
             <div className="flex items-center justify-between">
@@ -720,7 +720,7 @@ export default function PosPage() {
               {cart.length > 0 && (
                 <button
                   onClick={() => setCart([])}
-                  className="text-xs font-semibold uppercase tracking-wider transition-all px-3 py-1.5 rounded-lg"
+                  className="text-xs font-semibold uppercase tracking-wider transition-all px-3 min-h-[44px] rounded-lg touch-manipulation"
                   style={{
                     color: "hsl(var(--sidebar-fg) / 0.5)",
                     background: "transparent",
@@ -843,33 +843,35 @@ export default function PosPage() {
                       </div>
 
                       {/* Quantity stepper */}
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center shrink-0">
                         <button
                           onClick={() => updateQty(item.id, -1)}
-                          className="w-6 h-6 rounded-md flex items-center justify-center transition-all touch-manipulation"
+                          className="w-9 h-9 rounded-l-md flex items-center justify-center transition-all touch-manipulation"
                           style={{ background: "hsl(var(--sidebar-border) / 0.5)", color: "hsl(var(--sidebar-fg))" }}
+                          aria-label="Diminuer la quantité"
                           onMouseEnter={e => { e.currentTarget.style.background = "hsl(var(--sidebar-border))"; e.currentTarget.style.color = "white"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = "hsl(var(--sidebar-border) / 0.5)"; e.currentTarget.style.color = "hsl(var(--sidebar-fg))"; }}
                         >
-                          <Minus className="w-3 h-3" />
+                          <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <span className="text-xs font-bold w-5 text-center tabular-nums" style={{ color: "hsl(var(--sidebar-fg-active))" }}>
+                        <span className="text-xs font-bold w-7 h-9 flex items-center justify-center tabular-nums" style={{ background: "hsl(var(--sidebar-border) / 0.3)", color: "hsl(var(--sidebar-fg-active))" }}>
                           {item.qty}
                         </span>
                         <button
                           onClick={() => updateQty(item.id, 1)}
-                          className="w-6 h-6 rounded-md flex items-center justify-center transition-all touch-manipulation"
+                          className="w-9 h-9 rounded-r-md flex items-center justify-center transition-all touch-manipulation"
                           style={{ background: "hsl(var(--sidebar-border) / 0.5)", color: "hsl(var(--sidebar-fg))" }}
+                          aria-label="Augmenter la quantité"
                           onMouseEnter={e => { e.currentTarget.style.background = "hsl(var(--sidebar-border))"; e.currentTarget.style.color = "white"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = "hsl(var(--sidebar-border) / 0.5)"; e.currentTarget.style.color = "hsl(var(--sidebar-fg))"; }}
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
                       {/* Line total */}
                       <p
-                        className="text-xs font-bold w-16 text-right shrink-0 tabular-nums"
+                        className="text-xs font-bold w-14 text-right shrink-0 tabular-nums"
                         style={{ fontFamily: "Fraunces, Georgia, serif", color: "hsl(var(--sidebar-fg-active))" }}
                       >
                         {lineTotal.toLocaleString("fr-FR")}
@@ -878,12 +880,13 @@ export default function PosPage() {
                       {/* Remove */}
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+                        className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all touch-manipulation"
                         style={{ color: "rgba(239,68,68,0.6)" }}
+                        aria-label={`Retirer ${item.name}`}
                         onMouseEnter={e => { e.currentTarget.style.color = "rgba(239,68,68,1)"; e.currentTarget.style.background = "rgba(239,68,68,0.12)"; }}
                         onMouseLeave={e => { e.currentTarget.style.color = "rgba(239,68,68,0.6)"; e.currentTarget.style.background = "transparent"; }}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   );
@@ -895,7 +898,7 @@ export default function PosPage() {
           {/* Footer — total + payment */}
           {cart.length > 0 && (
             <div
-              className="p-5 shrink-0"
+              className="p-3 md:p-5 shrink-0"
               style={{ borderTop: "1px solid hsl(var(--sidebar-border))" }}
             >
               {!showPayment ? (
@@ -928,7 +931,7 @@ export default function PosPage() {
                       className="font-black tabular-nums leading-none"
                       style={{
                         fontFamily: "Fraunces, Georgia, serif",
-                        fontSize: "clamp(2rem, 4vw, 2.8rem)",
+                        fontSize: "clamp(1.6rem, 6vw, 2.8rem)",
                         letterSpacing: "-0.03em",
                         background: "linear-gradient(135deg, hsl(22 72% 65%), hsl(36 88% 72%))",
                         WebkitBackgroundClip: "text",
@@ -971,7 +974,7 @@ export default function PosPage() {
                   </button>
                 </>
               ) : (
-                <div className="space-y-3.5 animate-slide-in">
+                <div className="space-y-3 animate-slide-in overflow-y-auto max-h-[80vh]">
                   {/* À payer */}
                   <div
                     className="rounded-xl p-4"
@@ -1005,10 +1008,11 @@ export default function PosPage() {
                     <Input
                       type="number"
                       inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder="0"
                       value={amountGiven}
                       onChange={e => setAmountGiven(e.target.value)}
-                      className="mt-1.5 text-xl font-black h-14 tabular-nums tracking-tight border-2 bg-white/10 text-white border-white/20 focus-visible:border-[hsl(22_72%_48%)] focus-visible:ring-0"
+                      className="mt-1.5 text-lg md:text-xl font-black h-14 tabular-nums tracking-tight border-2 bg-white/10 text-white border-white/20 focus-visible:border-[hsl(22_72%_48%)] focus-visible:ring-0"
                       style={{ borderRadius: "12px" }}
                       onFocus={e => { e.currentTarget.style.boxShadow = "0 0 0 3px hsl(22 72% 48% / 0.2)"; }}
                       onBlur={e => { e.currentTarget.style.boxShadow = "none"; }}
@@ -1021,12 +1025,12 @@ export default function PosPage() {
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-1.5" style={{ color: "hsl(var(--sidebar-fg) / 0.45)" }}>
                       Montant rapide
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="grid grid-cols-4 gap-1.5">
                       {quickAmounts.map(amt => (
                         <button
                           key={amt}
                           onClick={() => setAmountGiven(String(amt))}
-                          className="min-h-[34px] px-2.5 py-1 text-[11px] rounded-lg transition-all font-bold tabular-nums active:scale-95"
+                          className="min-h-[44px] px-1.5 py-2 text-[11px] rounded-lg transition-all font-bold tabular-nums active:scale-95 touch-manipulation"
                           style={{
                             color: "hsl(var(--sidebar-fg))",
                             background: "hsl(var(--sidebar-border) / 0.4)",
@@ -1048,7 +1052,7 @@ export default function PosPage() {
                       ))}
                       <button
                         onClick={() => setAmountGiven(String(total))}
-                        className="min-h-[34px] px-2.5 py-1 text-[11px] rounded-lg transition-all font-bold active:scale-95"
+                        className="min-h-[44px] px-1.5 py-2 text-[11px] rounded-lg transition-all font-bold active:scale-95 touch-manipulation"
                         style={{
                           color: "hsl(22 72% 65%)",
                           background: "hsl(22 72% 48% / 0.15)",
@@ -1086,7 +1090,7 @@ export default function PosPage() {
                     <button
                       onClick={() => setShowPayment(false)}
                       disabled={saleMutation.isPending}
-                      className="flex-1 h-12 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      className="flex-1 h-14 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 touch-manipulation"
                       style={{
                         color: "hsl(var(--sidebar-fg))",
                         background: "hsl(var(--sidebar-border) / 0.4)",

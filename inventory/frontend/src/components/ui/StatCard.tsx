@@ -100,26 +100,14 @@ export function StatCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl p-5 transition-all duration-300 ${className}`}
+      // p-4 sur mobile (320px), p-5 à partir de sm — évite le débordement des valeurs longues
+      // group + hover:* CSS pur → pas de déclenchement au tap iOS contrairement aux handlers JS
+      className={`group relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:scale-[1.01] hover:-translate-y-0.5 ${className}`}
       style={{
         background: "hsl(var(--card))",
         border: "1px solid hsl(var(--border))",
         boxShadow:
           "0 2px 8px hsl(22 30% 15% / 0.06), 0 8px 24px hsl(22 30% 15% / 0.04)",
-      }}
-      onMouseEnter={(e) => {
-        const el = e.currentTarget;
-        el.style.transform = "translateY(-3px)";
-        el.style.boxShadow =
-          "0 8px 24px hsl(22 30% 15% / 0.1), 0 16px 48px hsl(22 30% 15% / 0.07)";
-        el.style.borderColor = "hsl(22 72% 48% / 0.25)";
-      }}
-      onMouseLeave={(e) => {
-        const el = e.currentTarget;
-        el.style.transform = "translateY(0)";
-        el.style.boxShadow =
-          "0 2px 8px hsl(22 30% 15% / 0.06), 0 8px 24px hsl(22 30% 15% / 0.04)";
-        el.style.borderColor = "hsl(var(--border))";
       }}
     >
       {/* Orbe de fond décoratif */}
@@ -174,18 +162,23 @@ export function StatCard({
 
       {/* Valeur principale */}
       <p
-        className="text-3xl font-bold text-foreground leading-none mb-1"
+        className="font-bold text-foreground leading-none mb-1 break-words min-w-0"
         style={
           isAmount
             ? {
                 fontFamily: "Fraunces, Georgia, serif",
                 letterSpacing: "-0.03em",
                 fontSize:
-                  typeof value === "string" && value.length > 8
-                    ? "1.75rem"
-                    : "2rem",
+                  typeof value === "string" && value.length > 12
+                    ? "clamp(1rem, 3.5vw, 1.5rem)"
+                    : typeof value === "string" && value.length > 8
+                    ? "clamp(1.2rem, 4vw, 1.75rem)"
+                    : "clamp(1.4rem, 5vw, 2rem)",
               }
-            : { letterSpacing: "-0.02em" }
+            : {
+                letterSpacing: "-0.02em",
+                fontSize: "clamp(1.4rem, 5vw, 1.875rem)",
+              }
         }
       >
         {animated && numericValue !== undefined ? (
@@ -206,11 +199,11 @@ export function StatCard({
       )}
 
       {/* Label + trend/change label */}
-      <div className="flex items-center justify-between mt-2">
-        <p className="text-sm text-muted-foreground font-medium">{label}</p>
+      <div className="flex items-start justify-between gap-2 mt-2 min-w-0">
+        <p className="text-sm text-muted-foreground font-medium truncate min-w-0">{label}</p>
         {showLegacyChange && trend === undefined && (
           <p
-            className={`text-xs font-medium ${
+            className={`text-xs font-medium shrink-0 ${
               changeType === "positive"
                 ? "text-[hsl(152_38%_38%)]"
                 : changeType === "negative"
@@ -224,7 +217,7 @@ export function StatCard({
         {trend !== undefined &&
           trend !== null &&
           effectiveTrendLabel && (
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-muted-foreground/60 shrink-0">
               {effectiveTrendLabel}
             </p>
           )}

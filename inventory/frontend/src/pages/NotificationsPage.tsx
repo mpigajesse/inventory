@@ -410,15 +410,15 @@ export default function NotificationsPage() {
           }}
         >
           {/* Tabs + badge non-lues */}
-          <div className="flex items-center justify-between px-3 pt-3 pb-3 border-b overflow-x-auto gap-2">
-            <div className="flex gap-1.5">
+          <div className="flex flex-col gap-2 px-3 pt-3 pb-3 border-b sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 flex-wrap">
               {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => handleTabSwitch(tab)}
-                  className="relative flex items-center gap-1.5 whitespace-nowrap transition-all duration-200"
+                  className="relative flex items-center gap-1.5 whitespace-nowrap transition-all duration-200 flex-shrink-0"
                   style={{
-                    padding: "6px 14px",
+                    padding: "6px 12px",
                     borderRadius: "100px",
                     fontSize: "12px",
                     fontWeight: 600,
@@ -478,7 +478,7 @@ export default function NotificationsPage() {
               ))}
             </div>
             {unreadCount > 0 && (
-              <span className="shrink-0 mr-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-semibold">
+              <span className="self-start sm:self-auto sm:shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[11px] font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse-soft inline-block" />
                 {unreadCount} non {unreadCount > 1 ? "lues" : "lue"}
               </span>
@@ -550,7 +550,7 @@ export default function NotificationsPage() {
                         cursor: "pointer",
                       }}
                       className={cn(
-                        "group relative flex items-start gap-4 px-5 py-4",
+                        "group relative flex items-start gap-3 px-3 py-3 sm:gap-4 sm:px-5 sm:py-4",
                         "overflow-hidden",
                         removingId === notif.id ? "opacity-0 scale-95" : "",
                         notif.is_read ? "opacity-80 hover:opacity-100" : ""
@@ -568,8 +568,9 @@ export default function NotificationsPage() {
                       <div
                         className="flex items-center justify-center flex-shrink-0 mt-0.5"
                         style={{
-                          width: "38px",
-                          height: "38px",
+                          width: "36px",
+                          height: "36px",
+                          minWidth: "36px",
                           borderRadius: "10px",
                           padding: "8px",
                           background: `color-mix(in srgb, ${typeColor} 12%, transparent)`,
@@ -580,17 +581,35 @@ export default function NotificationsPage() {
                       </div>
 
                       {/* Content */}
-                      <div className="flex-1 min-w-0 pr-6">
-                        <p
-                          className={cn(
-                            "text-sm leading-snug font-heading",
-                            notif.is_read
-                              ? "font-normal text-foreground/80"
-                              : "font-semibold text-foreground"
-                          )}
-                        >
-                          {notif.title}
-                        </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p
+                            className={cn(
+                              "text-sm leading-snug font-heading flex-1 min-w-0",
+                              notif.is_read
+                                ? "font-normal text-foreground/80"
+                                : "font-semibold text-foreground"
+                            )}
+                          >
+                            {notif.title}
+                          </p>
+                          {/* Dismiss + dot regroupés en haut à droite */}
+                          <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+                            {!notif.is_read && (
+                              <div
+                                className="w-2 h-2 rounded-full animate-pulse-soft"
+                                style={{ background: typeColor }}
+                              />
+                            )}
+                            <button
+                              onClick={(e) => handleDelete(notif, e)}
+                              className="p-1.5 rounded-md opacity-40 hover:opacity-100 active:opacity-100 hover:bg-muted active:bg-muted transition-all duration-150 touch-manipulation"
+                              aria-label="Supprimer"
+                            >
+                              <X className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                          </div>
+                        </div>
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 font-body leading-relaxed">
                           {notif.message}
                         </p>
@@ -598,23 +617,6 @@ export default function NotificationsPage() {
                           {relativeTime(notif.created_at)}
                         </span>
                       </div>
-
-                      {/* Dot non lu */}
-                      {!notif.is_read && (
-                        <div
-                          className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 animate-pulse-soft"
-                          style={{ background: typeColor }}
-                        />
-                      )}
-
-                      {/* Dismiss button */}
-                      <button
-                        onClick={(e) => handleDelete(notif, e)}
-                        className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-muted transition-all duration-150"
-                        aria-label="Supprimer"
-                      >
-                        <X className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
                     </div>
                   );
                 })

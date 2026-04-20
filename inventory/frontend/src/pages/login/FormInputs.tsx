@@ -22,7 +22,7 @@ function inputStyle(focused: boolean, hasError: boolean): React.CSSProperties {
     borderRadius: "14px",
     border: `1.5px solid ${hasError ? "#ef4444" : focused ? COPPER : "hsl(var(--border))"}`,
     padding: "0 16px 0 44px",
-    fontSize: "15px",
+    fontSize: "16px",
     background: "hsl(var(--background))",
     color: "hsl(var(--foreground))",
     outline: "none",
@@ -137,16 +137,19 @@ export function FormInputs({
             aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
             style={{
               position: "absolute",
-              right: "14px",
+              right: "8px",
               top: "50%",
               transform: "translateY(-50%)",
               background: "none",
               border: "none",
-              padding: "0",
+              padding: "8px",
+              minWidth: "44px",
+              minHeight: "44px",
               cursor: isSubmitting ? "not-allowed" : "pointer",
               color: "hsl(var(--muted-foreground))",
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               transition: "color 200ms",
             }}
             onMouseEnter={(e) => {

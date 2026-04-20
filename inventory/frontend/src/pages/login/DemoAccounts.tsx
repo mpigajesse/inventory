@@ -129,7 +129,7 @@ export function DemoAccounts({ onSelect }: DemoAccountsProps) {
       <style>{`
         @media (max-width: 640px) {
           .demo-accounts-grid {
-            grid-template-columns: repeat(3, minmax(140px, 1fr)) !important;
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>

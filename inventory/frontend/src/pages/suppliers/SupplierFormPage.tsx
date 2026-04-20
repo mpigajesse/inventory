@@ -175,7 +175,7 @@ function SectionCard({ title, icon, children, animationDelay = 0 }: SectionCardP
     >
       {/* Section header strip */}
       <div
-        className="flex items-center gap-2.5 px-6 py-4"
+        className="flex items-center gap-2.5 px-4 sm:px-6 py-3 sm:py-4"
         style={{
           background: "hsl(var(--muted) / 0.6)",
           borderBottom: "1px solid hsl(var(--border) / 0.4)",
@@ -198,7 +198,7 @@ function SectionCard({ title, icon, children, animationDelay = 0 }: SectionCardP
           {title}
         </p>
       </div>
-      <div className="p-6 space-y-5">{children}</div>
+      <div className="p-4 sm:p-6 space-y-5">{children}</div>
     </div>
   );
 }
@@ -235,7 +235,7 @@ function TagInput({ value, onChange }: TagInputProps) {
 
   return (
     <div
-      className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-background min-h-[48px] transition-shadow"
+      className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-background min-h-[48px] transition-shadow w-full"
       style={{ border: "1.5px solid hsl(var(--border))" }}
       onFocus={(e) => {
         (e.currentTarget as HTMLDivElement).style.borderColor = "hsl(22 72% 48%)";
@@ -276,7 +276,7 @@ function TagInput({ value, onChange }: TagInputProps) {
         onKeyDown={handleKeyDown}
         onBlur={() => addTag(inputValue)}
         placeholder={value.length === 0 ? "Saisir un produit puis Entrée..." : ""}
-        className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder:text-muted-foreground"
+        className="flex-1 min-w-[80px] text-sm outline-none bg-transparent placeholder:text-muted-foreground"
       />
     </div>
   );
@@ -459,9 +459,9 @@ export default function SupplierFormPage() {
         </div>
 
         {/* ── Page heading ──────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-start gap-3 mb-8 min-w-0">
           <div
-            className="w-13 h-13 w-[52px] h-[52px] rounded-2xl flex items-center justify-center flex-shrink-0"
+            className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{
               background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
               boxShadow: "0 4px 14px hsl(22 72% 48% / 0.3)",
@@ -469,16 +469,16 @@ export default function SupplierFormPage() {
           >
             <Truck className="w-6 h-6 text-white" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-0.5">
               <div
-                className="w-1 h-5 rounded-full"
+                className="w-1 h-5 rounded-full flex-shrink-0"
                 style={{
                   background: "linear-gradient(to bottom, hsl(22 72% 48%), hsl(36 88% 52%))",
                 }}
               />
               <h1
-                className="text-xl font-extrabold text-foreground"
+                className="text-lg sm:text-xl font-extrabold text-foreground leading-tight"
                 style={{ letterSpacing: "-0.02em" }}
               >
                 {pageTitle}
@@ -538,6 +538,8 @@ export default function SupplierFormPage() {
                   />
                   <StyledInput
                     id="phone"
+                    type="tel"
+                    autoComplete="tel"
                     placeholder="+241 07 XX XX XX"
                     className="pl-9"
                     aria-invalid={errors.phone ? "true" : undefined}
@@ -557,6 +559,7 @@ export default function SupplierFormPage() {
                   <StyledInput
                     id="email"
                     type="email"
+                    autoComplete="email"
                     placeholder="contact@fournisseur.ga"
                     className="pl-9"
                     aria-invalid={errors.email ? "true" : undefined}
@@ -681,13 +684,13 @@ export default function SupplierFormPage() {
 
           {/* ── Actions ───────────────────────────────────────────────── */}
           <div
-            className="flex items-center gap-3 justify-end pt-6 mt-6"
+            className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3 sm:justify-end pt-6 mt-6"
             style={{ borderTop: "1px solid hsl(var(--border))" }}
           >
             <Button
               type="button"
               variant="outline"
-              className="px-5 font-medium transition-all"
+              className="px-5 font-medium transition-all w-full sm:w-auto"
               style={{
                 height: "52px",
                 borderRadius: "10px",
@@ -712,7 +715,7 @@ export default function SupplierFormPage() {
             </Button>
             <Button
               type="submit"
-              className="px-6 text-white font-semibold border-0 hover:brightness-105 hover:-translate-y-px"
+              className="px-6 text-white font-semibold border-0 hover:brightness-105 hover:-translate-y-px w-full sm:w-auto"
               style={{
                 height: "52px",
                 borderRadius: "14px",

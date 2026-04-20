@@ -75,7 +75,7 @@ export function TableToolbar({
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3",
+        "flex flex-wrap items-center justify-between gap-3 mb-3",
         className
       )}
     >
@@ -114,13 +114,13 @@ export function TableToolbar({
 
       {/* Zone droite : filtre + export + extras */}
       {hasRightContent && (
-        <div className="flex items-center gap-2 sm:ml-auto">
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
           {filterOptions && onFilterChange && (
             <select
               value={filterValue ?? ""}
               onChange={(e) => onFilterChange(e.target.value)}
               className={cn(
-                "h-8 rounded-md border border-input bg-background px-2 text-xs",
+                "h-9 rounded-md border border-input bg-background px-2 text-xs",
                 "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
                 "cursor-pointer min-w-[120px]"
               )}
@@ -138,7 +138,7 @@ export function TableToolbar({
             <button
               type="button"
               onClick={onExport}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold text-white transition-all"
+              className="flex items-center gap-1.5 h-9 px-3 rounded-md text-xs font-semibold text-white transition-all"
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                 border: "none",

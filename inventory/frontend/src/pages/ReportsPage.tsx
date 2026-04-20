@@ -235,7 +235,7 @@ export default function ReportsPage() {
 
         {/* ── Page header ── */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 min-w-0">
             <div
               className="flex-shrink-0"
               style={{
@@ -246,7 +246,7 @@ export default function ReportsPage() {
               }}
             />
             <h1
-              className="text-2xl font-extrabold font-heading"
+              className="text-xl sm:text-2xl font-extrabold font-heading truncate"
               style={{ letterSpacing: "-0.02em" }}
             >
               Rapports & Exports
@@ -298,25 +298,24 @@ export default function ReportsPage() {
 
           {/* Graphique barres — ventes par jour */}
           <div
-            className="card-premium"
+            className="card-premium p-4 sm:p-6"
             style={{
               borderRadius: "20px",
-              padding: "24px",
               boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
             }}
           >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-6">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Calendar className="w-4 h-4 text-primary" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2 className="text-sm font-semibold font-heading">Ventes par jour</h2>
                   <p className="text-xs text-muted-foreground">Cette semaine</p>
                 </div>
               </div>
               {!isLoading && weekRevenue > 0 && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-success bg-success/10 border border-success/20 px-2 py-1 rounded-full">
+                <span className="flex items-center gap-1 text-xs font-semibold text-success bg-success/10 border border-success/20 px-2 py-1 rounded-full shrink-0">
                   <ArrowUpRight className="w-3 h-3" />
                   {formatFcfa(weekRevenue)}
                 </span>
@@ -341,16 +340,16 @@ export default function ReportsPage() {
                 <p className="text-sm">Aucune donnée disponible</p>
               </div>
             ) : (
-              <div className="flex items-end gap-2 sm:gap-3 h-48">
+              <div className="flex items-end gap-1 sm:gap-2 md:gap-3 h-48">
                 {salesByDay.map((d, i) => {
                   const heightPct = Math.max(4, (d.total / maxSale) * 100);
                   return (
                     <div
                       key={d.day}
-                      className="flex-1 flex flex-col items-center gap-2 group"
+                      className="flex-1 flex flex-col items-center gap-1 group min-w-0"
                       style={{ animationDelay: `${i * 60}ms` }}
                     >
-                      <span className="text-[10px] text-muted-foreground font-mono font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono font-medium opacity-0 group-hover:opacity-100 transition-opacity leading-none">
                         {d.total >= 1000 ? `${(d.total / 1000).toFixed(0)}k` : String(d.total)}
                       </span>
                       <div
@@ -363,7 +362,7 @@ export default function ReportsPage() {
                       >
                         <div className="absolute inset-0 rounded-t-lg bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                       </div>
-                      <span className="text-[11px] text-muted-foreground font-medium">{formatDayLabel(d.day)}</span>
+                      <span className="text-[9px] sm:text-[11px] text-muted-foreground font-medium leading-none overflow-hidden text-ellipsis w-full text-center">{formatDayLabel(d.day)}</span>
                     </div>
                   );
                 })}
@@ -453,7 +452,7 @@ export default function ReportsPage() {
                         </div>
                       </div>
 
-                      <span className="text-sm font-semibold shrink-0 text-right font-editorial amount-editorial">
+                      <span className="text-xs sm:text-sm font-semibold shrink-0 text-right font-editorial amount-editorial">
                         {formatFcfa(p.revenue)}
                       </span>
                     </div>
@@ -478,7 +477,7 @@ export default function ReportsPage() {
 
             {/* Lien vers statistiques avancées */}
             <div
-              className="flex items-center gap-3 px-4 py-3"
+              className="flex items-center gap-3 px-4 py-3 w-full sm:w-auto"
               style={{
                 borderRadius: "16px",
                 background: "linear-gradient(135deg, hsl(22 72% 48% / 0.08), hsl(36 88% 52% / 0.05))",
@@ -486,13 +485,13 @@ export default function ReportsPage() {
               }}
             >
               <BarChart2 className="w-4 h-4 flex-shrink-0" style={{ color: "hsl(22 72% 48%)" }} />
-              <p className="text-xs text-foreground">
+              <p className="text-xs text-foreground flex-1 min-w-0">
                 Analyses avancées avec graphiques dans les{" "}
                 <strong>Statistiques</strong>
               </p>
               <Link
                 to="/statistics"
-                className="text-xs font-bold px-2.5 py-1 rounded-lg transition-all text-white whitespace-nowrap"
+                className="text-xs font-bold px-2.5 py-1 rounded-lg transition-all text-white whitespace-nowrap shrink-0"
                 style={{ background: "hsl(22 72% 48%)" }}
               >
                 Voir →
@@ -616,11 +615,11 @@ export default function ReportsPage() {
             animationDelay: "350ms",
           }}
         >
-          <div className="flex items-center gap-2 px-6 py-4 border-b">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div className="flex items-center gap-2 px-4 sm:px-6 py-4 border-b">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <UserCheck className="w-4 h-4 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="text-sm font-bold font-heading">Ventes par vendeur — Ce mois</h2>
               <p className="text-xs text-muted-foreground">Cumul des ventes par caissier sur les 30 derniers jours</p>
             </div>
@@ -641,9 +640,9 @@ export default function ReportsPage() {
               <table className="data-table w-full">
                 <thead>
                   <tr>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vendeur·se</th>
-                    <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ventes</th>
-                    <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Chiffre d'affaires</th>
+                    <th className="text-left px-3 sm:px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vendeur·se</th>
+                    <th className="text-right px-3 sm:px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ventes</th>
+                    <th className="text-right px-3 sm:px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">CA (FCFA)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -660,21 +659,21 @@ export default function ReportsPage() {
                           animationDelay: `${i * 40}ms`,
                         }}
                       >
-                        <td className="px-6 py-3">
-                          <div className="flex items-center gap-3">
+                        <td className="px-3 sm:px-6 py-3">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             <div
                               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                               style={{ background: "var(--gradient-primary)" }}
                             >
                               {stat.cashier_name.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-sm font-medium font-heading">{stat.cashier_name}</span>
+                            <span className="text-sm font-medium font-heading truncate">{stat.cashier_name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-3 text-right">
+                        <td className="px-3 sm:px-6 py-3 text-right whitespace-nowrap">
                           <span className="text-sm font-semibold">{stat.sales_count}</span>
                         </td>
-                        <td className="px-6 py-3 text-right">
+                        <td className="px-3 sm:px-6 py-3 text-right whitespace-nowrap">
                           <span className="text-sm font-bold amount-editorial">{formatFcfa(stat.total_revenue)}</span>
                         </td>
                       </tr>

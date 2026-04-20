@@ -649,6 +649,12 @@ export default function PermissionsPage() {
           )}
         </div>
 
+        {/* Indicateur de scroll horizontal — visible uniquement sur mobile/tablette */}
+        <p className="md:hidden text-[11px] text-muted-foreground flex items-center gap-1.5 -mt-1">
+          <span aria-hidden="true">←→</span>
+          Faites défiler horizontalement pour voir toutes les permissions
+        </p>
+
         {/* ── Matrix table ─────────────────────────────────────────────── */}
         <div
           className="overflow-x-auto rounded-2xl"
@@ -815,37 +821,28 @@ export default function PermissionsPage() {
 
         {/* ── Bulk save bar (slides up from bottom) ───────────────────── */}
         <div
+          className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-4 sm:pb-5"
           style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 50,
-            display: "flex",
-            justifyContent: "center",
-            padding: "0 1rem 1rem",
-            transform: pendingCount > 0 ? "translateY(0)" : "translateY(100%)",
+            transform: pendingCount > 0 ? "translateY(0)" : "translateY(110%)",
             transition: "transform 0.3s ease",
             pointerEvents: pendingCount > 0 ? "auto" : "none",
           }}
         >
           <div
+            className="flex items-center gap-3 sm:gap-4 w-full max-w-sm sm:max-w-md"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
-              background: "rgba(255,255,255,0.9)",
+              background: "rgba(255,255,255,0.92)",
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
               border: "1px solid hsl(var(--border))",
               borderTop: "2px solid hsl(22 72% 48% / 0.4)",
               borderRadius: "14px",
-              padding: "0.75rem 1.25rem",
+              padding: "0.75rem 1rem",
               boxShadow: "0 8px 32px hsl(22 30% 15% / 0.18)",
             }}
           >
             <span
-              className="text-xs font-semibold"
+              className="text-xs font-semibold flex-1 min-w-0"
               style={{ color: "hsl(22 72% 40%)" }}
             >
               {pendingCount} modification{pendingCount > 1 ? "s" : ""} en attente
@@ -853,7 +850,7 @@ export default function PermissionsPage() {
             <button
               onClick={handleSaveAll}
               disabled={saveBulkMutation.isPending}
-              className="flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
               style={{
                 background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                 boxShadow: "0 4px 14px hsl(22 72% 48% / 0.35)",
@@ -861,6 +858,7 @@ export default function PermissionsPage() {
                 border: "none",
                 borderRadius: "8px",
                 padding: "0.5rem 1.25rem",
+                minHeight: "44px",
                 fontWeight: "600",
                 fontSize: "0.8125rem",
                 cursor: "pointer",

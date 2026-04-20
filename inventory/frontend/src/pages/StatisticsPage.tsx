@@ -174,7 +174,7 @@ function OverviewKpiGrid({ data, isLoading }: { data: OverviewStats | undefined;
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => <KpiCardSkeleton key={i} />)}
       </div>
     );
@@ -188,7 +188,7 @@ function OverviewKpiGrid({ data, isLoading }: { data: OverviewStats | undefined;
   const alertTint: KpiTint = hasCrit ? "destructive" : hasLow ? "warning" : "success";
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       <KpiCard label="Revenus"           value={data ? fmt(data.revenue.current) : "—"}       hint={`Période préc. : ${data ? fmt(data.revenue.previous) : "—"}`}           changePct={data?.revenue.change_pct}      icon={DollarSign}     tint="primary"     isMoney  delay={0}   isVisible={isVisible} />
       <KpiCard label="Transactions"      value={data ? `${data.transactions.current}` : "—"}  hint={`Période préc. : ${data?.transactions.previous ?? "—"} txns`}             changePct={data?.transactions.change_pct} icon={ShoppingCart}   tint="accent"              delay={70}  isVisible={isVisible} />
       <KpiCard label="Panier moyen"      value={data ? fmt(data.avg_basket.current) : "—"}    hint={`Période préc. : ${data ? fmt(data.avg_basket.previous) : "—"}`}           changePct={data?.avg_basket.change_pct}   icon={ShoppingBag}    tint="info"        isMoney  delay={140} isVisible={isVisible} />
@@ -215,13 +215,13 @@ interface PeriodSelectorProps {
 
 function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
   return (
-    <div className="flex items-center gap-1 p-1 bg-secondary/60 border border-border" style={{ borderRadius: "100px" }}>
+    <div className="flex items-center gap-0.5 p-1 bg-secondary/60 border border-border" style={{ borderRadius: "100px" }}>
       {PERIOD_OPTIONS.map(({ value: p, label }) => (
         <button
           key={p}
           onClick={() => onChange(p)}
           className={cn(
-            "px-3.5 py-1.5 text-xs font-semibold",
+            "px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold",
           )}
           style={{
             borderRadius: "100px",
@@ -278,18 +278,21 @@ interface TabNavProps {
 function TabNav({ active, onChange }: TabNavProps) {
   return (
     <div
-      className="flex items-center gap-1 p-1 overflow-x-auto mb-6"
+      className="flex items-center gap-1 p-1 overflow-x-auto mb-6 scrollbar-none"
       style={{
         background: "hsl(var(--muted))",
         border: "1px solid hsl(var(--border))",
         borderRadius: "14px",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
       }}
     >
       {TABS.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           onClick={() => onChange(id)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold whitespace-nowrap shrink-0"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0"
           style={{
             borderRadius: "10px",
             transition: "background 0.25s cubic-bezier(0.16,1,0.3,1), color 0.2s ease, box-shadow 0.25s ease",
@@ -401,17 +404,17 @@ export default function StatisticsPage() {
         <div className="mb-2">
           <div className="flex items-center gap-2 mb-1">
             <div
-              className="w-1 h-7 rounded-full shrink-0"
+              className="w-1 h-6 sm:h-7 rounded-full shrink-0"
               style={{ background: "linear-gradient(to bottom, hsl(22, 72%, 48%), hsl(152, 38%, 38%))" }}
             />
             <h1
-              className="text-2xl font-extrabold text-foreground"
+              className="text-lg sm:text-2xl font-extrabold text-foreground"
               style={{ fontFamily: "var(--font-heading, inherit)", letterSpacing: "-0.025em" }}
             >
               Statistiques &amp; Analytics
             </h1>
           </div>
-          <p className="text-sm text-muted-foreground ml-3">Vue d'ensemble des performances du magasin</p>
+          <p className="text-xs sm:text-sm text-muted-foreground ml-3">Vue d'ensemble des performances du magasin</p>
         </div>
 
         {/* ── Period selector + real-time badge ── */}

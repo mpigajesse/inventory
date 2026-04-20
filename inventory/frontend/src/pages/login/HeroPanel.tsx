@@ -5,7 +5,7 @@ import { HeroStats } from './HeroStats'
 
 export function HeroPanel() {
   return (
-    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <div style={{ position: 'relative', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
       {/* Absolute dark animated background at z-0 */}
       <HeroBg />
 

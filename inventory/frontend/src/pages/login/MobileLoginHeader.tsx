@@ -17,7 +17,7 @@ export function MobileLoginHeader() {
       <div
         style={{
           background: 'linear-gradient(135deg, hsl(20 35% 7%), hsl(22 30% 11%))',
-          padding: '20px 24px',
+          padding: '16px 16px',
         }}
       >
         {/* Logo + brand in one row */}
@@ -41,7 +41,7 @@ export function MobileLoginHeader() {
 
           {/* Brand text + tagline */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexWrap: 'wrap' }}>
               <span
                 style={{
                   fontSize: 17,
@@ -97,7 +97,7 @@ export function MobileLoginHeader() {
       <div
         style={{
           background: 'linear-gradient(135deg, hsl(20 35% 7%), hsl(22 30% 11%))',
-          padding: '10px 24px 14px',
+          padding: '10px 16px 14px',
           display: 'flex',
           gap: 8,
           overflowX: 'auto' as const,

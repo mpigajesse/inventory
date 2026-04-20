@@ -17,10 +17,13 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        // h-11 = 44px → touch target minimum WCAG pour tous les boutons
+        default: "h-11 px-4 py-2",
+        // sm reste utilisable à 36px sur desktop mais atteint 44px grâce au min-h
+        sm: "h-9 min-h-[44px] rounded-md px-3",
+        lg: "h-12 rounded-md px-8",
+        // icon : carré 44px minimum sur mobile
+        icon: "h-11 w-11",
       },
     },
     defaultVariants: {

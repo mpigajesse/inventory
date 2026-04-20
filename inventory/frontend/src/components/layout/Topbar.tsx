@@ -287,7 +287,7 @@ export function Topbar({
               type="button"
               onClick={onMenuClick}
               className={cn(
-                "md:hidden shrink-0 flex items-center justify-center w-10 h-10 -ml-1 rounded-xl",
+                "md:hidden shrink-0 flex items-center justify-center w-11 h-11 -ml-1 rounded-xl",
                 "hover:bg-muted transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               )}
@@ -351,7 +351,7 @@ export function Topbar({
           <button
             type="button"
             onClick={onSearchClick}
-            className="sm:hidden flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            className="sm:hidden flex items-center justify-center w-11 h-11 rounded-xl hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
             aria-label="Recherche"
           >
             <Search className="w-5 h-5 text-muted-foreground" />
@@ -383,7 +383,7 @@ export function Topbar({
             <button
               type="button"
               onClick={() => setNotifOpen((v) => !v)}
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              className="relative flex items-center justify-center w-11 h-11 rounded-xl hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               aria-label={`Notifications (${unreadCount} non lues)`}
               aria-expanded={notifOpen}
               aria-haspopup="dialog"
@@ -753,7 +753,7 @@ function DropdownItem({
       role="menuitem"
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium transition-colors text-left",
+        "w-full flex items-center gap-2.5 px-3 py-3 min-h-[44px] text-[13px] font-medium transition-colors text-left",
         "focus-visible:outline-none",
         isDestructive
           ? "text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.08)]"

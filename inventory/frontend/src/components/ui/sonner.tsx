@@ -10,6 +10,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      // Show an explicit close button so touch users can dismiss without a swipe gesture
+      closeButton
       toastOptions={{
         classNames: {
           toast:

@@ -86,7 +86,7 @@ function NavLink({
           "group relative flex items-center gap-3 h-11 text-[13px] font-medium",
           "transition-all duration-150 ease-out",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
-          !isActive && "hover:bg-[hsl(0_0%_100%/0.07)] active:bg-[hsl(0_0%_100%/0.07)]",
+          !isActive && "hover:bg-[hsl(0_0%_100%/0.07)]",
           collapsed ? "md:justify-center md:px-0 px-3" : "px-3",
         )}
         style={{
@@ -176,7 +176,7 @@ export function VendeurSidebar({
           "fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-[width,transform] duration-200 ease-out",
           "md:translate-x-0",
           collapsed ? "md:w-[60px]" : "md:w-[240px]",
-          "w-[240px] max-w-[85vw]",
+          "w-[240px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
         style={{
@@ -475,7 +475,7 @@ export function VendeurSidebar({
               title="Déconnexion"
               aria-label="Déconnexion"
               className={cn(
-                "shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md transition-colors",
+                "shrink-0 flex items-center justify-center w-9 h-9 rounded-md transition-colors",
                 "hover:bg-[hsl(var(--destructive)/0.15)] hover:text-[hsl(var(--destructive))]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
                 collapsed && "md:hidden",
@@ -492,7 +492,7 @@ export function VendeurSidebar({
               onClick={handleLogout}
               title="Déconnexion"
               aria-label="Déconnexion"
-              className="hidden md:flex items-center justify-center w-full min-h-[44px] mt-1 rounded-md transition-colors hover:bg-[hsl(var(--destructive)/0.15)] hover:text-[hsl(var(--destructive))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+              className="hidden md:flex items-center justify-center w-full h-10 mt-1 rounded-md transition-colors hover:bg-[hsl(var(--destructive)/0.15)] hover:text-[hsl(var(--destructive))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
               style={{ color: "hsl(var(--sidebar-fg))" }}
             >
               <LogOut className="w-[16px] h-[16px]" />

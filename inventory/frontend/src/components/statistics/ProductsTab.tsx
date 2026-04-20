@@ -172,7 +172,7 @@ export function ProductsTab({ period }: ProductsTabProps) {
             <BarChart
               layout="vertical"
               data={topSellers}
-              margin={{ top: 0, right: 20, bottom: 0, left: 0 }}
+              margin={{ top: 0, right: 8, bottom: 0, left: 0 }}
             >
               <defs>
                 <linearGradient id="gradTopSellers" x1="0" y1="0" x2="1" y2="0">
@@ -184,15 +184,15 @@ export function ProductsTab({ period }: ProductsTabProps) {
               <XAxis
                 type="number"
                 tickFormatter={(v: number) => formatFcfa(v)}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 type="category"
                 dataKey="product_name"
-                width={150}
-                tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                width={110}
+                tick={{ fontSize: 10, fill: "hsl(var(--foreground))" }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -246,14 +246,14 @@ export function ProductsTab({ period }: ProductsTabProps) {
           <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
             {/* Graphique */}
             <div className="w-full lg:w-1/2">
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
                     data={byCategory}
                     cx="50%"
                     cy="50%"
-                    innerRadius={55}
-                    outerRadius={95}
+                    innerRadius={45}
+                    outerRadius={78}
                     paddingAngle={2}
                     dataKey="value"
                     nameKey="name"
@@ -389,26 +389,81 @@ export function ProductsTab({ period }: ProductsTabProps) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "400px" }}>
               <thead>
                 <tr style={{ background: "hsl(var(--muted) / 0.5)", borderBottom: "1px solid hsl(var(--border))" }}>
-                  {["Produit", "Catégorie", "Ventes (période)", "Jours sans vente", "Statut"].map((col, i) => (
-                    <th
-                      key={col}
-                      style={{
-                        padding: "10px 16px",
-                        textAlign: i < 2 ? "left" : i === 4 ? "center" : "right",
-                        fontSize: "11px",
-                        fontWeight: "700",
-                        fontFamily: "var(--font-heading)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                        color: "hsl(var(--muted-foreground))",
-                      }}
-                    >
-                      {col}
-                    </th>
-                  ))}
+                  <th
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "left",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Produit
+                  </th>
+                  <th
+                    className="hidden sm:table-cell"
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "left",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Catégorie
+                  </th>
+                  <th
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "right",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Ventes
+                  </th>
+                  <th
+                    className="hidden md:table-cell"
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "right",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Sans vente
+                  </th>
+                  <th
+                    style={{
+                      padding: "10px 16px",
+                      textAlign: "center",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      fontFamily: "var(--font-heading)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    Statut
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -421,10 +476,10 @@ export function ProductsTab({ period }: ProductsTabProps) {
                       : "default";
                   const soldLabel =
                     item.total_sold === 0
-                      ? "Aucune vente"
+                      ? "Aucune"
                       : item.total_sold < 5
-                      ? `${item.total_sold} vente${item.total_sold > 1 ? "s" : ""}`
-                      : `${item.total_sold} ventes`;
+                      ? `${item.total_sold} vte${item.total_sold > 1 ? "s" : ""}`
+                      : `${item.total_sold} vtes`;
 
                   return (
                     <tr
@@ -443,19 +498,19 @@ export function ProductsTab({ period }: ProductsTabProps) {
                         (e.currentTarget as HTMLTableRowElement).style.background = "transparent";
                       }}
                     >
-                      <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: "500", color: "hsl(var(--foreground))" }}>
+                      <td style={{ padding: "10px 16px", fontSize: "13px", fontWeight: "500", color: "hsl(var(--foreground))", maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {item.product_name}
                       </td>
-                      <td style={{ padding: "12px 16px", fontSize: "13px", color: "hsl(var(--muted-foreground))" }}>
+                      <td className="hidden sm:table-cell" style={{ padding: "10px 16px", fontSize: "12px", color: "hsl(var(--muted-foreground))", maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {item.category}
                       </td>
-                      <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                      <td style={{ padding: "10px 16px", textAlign: "right" }}>
                         <StatusBadge label={soldLabel} variant={soldBadge as "danger" | "warning" | "default"} />
                       </td>
-                      <td style={{ padding: "12px 16px", textAlign: "right", fontSize: "13px", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", color: "hsl(var(--muted-foreground))" }}>
+                      <td className="hidden md:table-cell" style={{ padding: "10px 16px", textAlign: "right", fontSize: "13px", fontFamily: "monospace", fontVariantNumeric: "tabular-nums", color: "hsl(var(--muted-foreground))" }}>
                         {item.days_without_sale}j
                       </td>
-                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                      <td style={{ padding: "10px 16px", textAlign: "center" }}>
                         <StatusBadge
                           label={item.total_sold === 0 ? "Inactif" : "Lent"}
                           variant={item.total_sold === 0 ? "danger" : "warning"}

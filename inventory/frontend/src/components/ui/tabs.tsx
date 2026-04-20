@@ -12,7 +12,12 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+      // overflow-x-auto + scrollbar-none: allows horizontal scrolling when tabs
+      // overflow the 320px/375px viewport without wrapping or clipping.
+      // w-full + flex (not inline-flex): fills the container instead of shrinking,
+      // preventing horizontal page overflow on small screens.
+      // min-h-[44px]: list itself meets touch target height per WCAG 2.5.5.
+      "flex w-full overflow-x-auto scrollbar-none min-h-[44px] items-center rounded-md bg-muted p-1 text-muted-foreground",
       className,
     )}
     {...props}
@@ -27,7 +32,11 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+      // min-h-[44px]: WCAG 2.5.5 touch target height.
+      // min-w-[44px]: WCAG 2.5.5 touch target width — prevents label-only-wide triggers.
+      // px-3 py-2: comfortable tap area; shrink-0 prevents squishing in flex scroll context.
+      // text-xs sm:text-sm: readable at 320px without overflow.
+      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-2 min-h-[44px] min-w-[44px] shrink-0 text-xs sm:text-sm font-medium ring-offset-background transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
       className,
     )}
     {...props}
