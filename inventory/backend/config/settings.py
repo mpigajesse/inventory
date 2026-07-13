@@ -45,6 +45,14 @@ _tunnel_hosts = (
 
 ALLOWED_HOSTS = _base_hosts + _tunnel_hosts
 
+# ─── Reverse proxy (Cloudflare Worker → cloudflared) ──────────────────────────
+# Le Worker envoie X-Forwarded-Host (= son domaine .workers.dev) et
+# X-Forwarded-Proto: https. On les honore pour que request.build_absolute_uri()
+# génère des URLs (ex: image_url) pointant vers le Worker en HTTPS, et non vers
+# le host interne du tunnel en HTTP.
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
