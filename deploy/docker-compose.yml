@@ -1,0 +1,59 @@
+# ─── NAOSERVICES INVENTORY — Stack de production (VM Daytona) ─────────────────
+# Services : PostgreSQL + backend Django (gunicorn).
+# Le frontend est déployé séparément sur Cloudflare et tape l'API exposée ici.
+#
+# Lancement (depuis /srv/app/compose sur la VM) :
+#   docker compose --env-file .env up -d --build
+#   docker compose ps
+#   docker compose logs -f backend
+#
+# Les données PostgreSQL sont bind-mountées vers /srv/app/data/postgres
+# pour survivre à un recyclage des conteneurs (voir DeployREADME.md).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ${DATA_DIR:-/srv/app/data}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Pas de port exposé sur l'hôte : la DB n'est joignable que par le backend.
+
+  backend:
+    build:
+      context: ../inventory/backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Construit DATABASE_URL à partir des identifiants Postgres du même .env.
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
+      MEDIA_ROOT: /app/media
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+    volumes:
+      # Persiste les images uploadées hors du conteneur (survit aux rebuilds).
+      - ${DATA_DIR:-/srv/app/data}/uploads:/app/media
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      # /admin/login/ renvoie 200 sans auth (contrairement à /api/ qui est 404).
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/admin/login/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s

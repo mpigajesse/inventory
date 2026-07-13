@@ -2,9 +2,11 @@
 URL configuration for NAOSERVICES INVENTORY backend.
 """
 
+from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.generic import RedirectView
+from django.views.static import serve
 from rest_framework_simplejwt.views import TokenRefreshView
 from config.dashboard import DashboardStatsView
 from users.views import CustomTokenObtainPairView
@@ -28,4 +30,11 @@ urlpatterns = [
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard-stats'),
     path('api/statistics/', include('statistics_app.urls')),
     path('api/settings/', include('settings_app.urls')),
+    # Fichiers médias (images produits, avatars) — servis en dev ET en prod
+    # gunicorn (pas de nginx dans la stack Docker backend-only).
+    re_path(
+        r'^media/(?P<path>.*)$',
+        serve,
+        {'document_root': settings.MEDIA_ROOT},
+    ),
 ]

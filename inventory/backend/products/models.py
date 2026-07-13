@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from cloudinary.models import CloudinaryField
 
 
 class Category(models.Model):
@@ -37,9 +36,8 @@ class Product(models.Model):
         default=0,
         help_text='Prix vente en FCFA',
     )
-    image = CloudinaryField(
-        'image',
-        folder='inventory/products',
+    image = models.ImageField(
+        upload_to='products/',
         blank=True,
         null=True,
     )

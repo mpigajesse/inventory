@@ -59,8 +59,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
-    'cloudinary',
-    'cloudinary_storage',
     # Local apps
     'products',
     'stock',
@@ -77,6 +75,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Sert les fichiers statiques en prod (gunicorn)
     'corsheaders.middleware.CorsMiddleware',  # Must be before CommonMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -106,11 +105,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database — Supabase PostgreSQL via dj-database-url
+# Database — PostgreSQL via dj-database-url (DATABASE_URL dans l'environnement)
+# Local (dev) : PostgreSQL sur le PC. Prod : conteneur PostgreSQL (Docker).
 DATABASES = {
     'default': dj_database_url.parse(
         os.environ['DATABASE_URL'],
-        conn_max_age=0,  # Supabase pooler: disable persistent connections
+        conn_max_age=int(os.environ.get('DB_CONN_MAX_AGE', '0')),
     )
 }
 
@@ -132,9 +132,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Media files — served via Cloudinary
+# Media files — stockés sur le système de fichiers local (dev + VM prod).
+# En prod (Docker), MEDIA_ROOT est bind-monté vers /srv/app/data/uploads.
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(os.environ.get('MEDIA_ROOT', BASE_DIR / 'media'))
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -204,11 +205,16 @@ else:
 
 CORS_ALLOW_CREDENTIALS = True
 
-# ─── Cloudinary ───────────────────────────────────────────────────────────────
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
-}
+# ─── Fichiers médias (images produits, avatars) ───────────────────────────────
+# Stockage local via FileSystemStorage (défaut Django). Servis par la vue
+# `serve` (voir config/urls.py) aussi bien en dev qu'en prod gunicorn.
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# ─── CSRF ─────────────────────────────────────────────────────────────────────
+# Requis pour l'admin Django servi derrière un domaine HTTPS (Cloudflare, VM).
+# Ex : CSRF_TRUSTED_ORIGINS=https://api.mondomaine.com,https://*.workers.dev
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if o.strip()
+]
+

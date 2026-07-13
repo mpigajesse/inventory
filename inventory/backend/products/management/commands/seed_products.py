@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
+import certifi
 import requests
-import cloudinary.uploader
 from products.models import Category, Product
 from stock.models import Stock
 
@@ -116,9 +117,19 @@ class Command(BaseCommand):
             action='store_true',
             help='Ne pas télécharger les images depuis Unsplash',
         )
+        parser.add_argument(
+            '--update-images',
+            action='store_true',
+            help='(Ré)uploader uniquement les images des produits existants, sans rien créer',
+        )
 
     def handle(self, *args, **options):
         skip_images = options['skip_images']
+
+        # Mode ciblé : ne (ré)uploader que les images des produits déjà en base.
+        if options['update_images']:
+            self._update_existing_images()
+            return
 
         # 1. Create categories
         self.stdout.write('Création des catégories...')
@@ -188,38 +199,54 @@ class Command(BaseCommand):
             f'{len(CATEGORIES_DATA)} catégories.'
         ))
 
-    def _upload_image(self, product: Product, barcode: str) -> None:
-        """Download an image from Unsplash (direct CDN URL) and upload it to Cloudinary.
+    def _update_existing_images(self) -> None:
+        """Réuploade les images pour les produits déjà en base (par code-barres)."""
+        self.stdout.write('Mise à jour des images des produits existants...')
+        updated = 0
+        for barcode in PRODUCT_IMAGE_IDS:
+            product = Product.objects.filter(barcode=barcode).first()
+            if product is None:
+                continue
+            self._upload_image(product, barcode)
+            if product.image:
+                updated += 1
+        self.stdout.write(self.style.SUCCESS(f'Terminé — {updated} image(s) à jour.'))
 
-        Uses images.unsplash.com direct photo URLs (stable, no API key required).
-        source.unsplash.com was deprecated and returns errors since 2022.
+    def _upload_image(self, product: Product, barcode: str) -> None:
+        """Télécharge une image et l'enregistre localement (ImageField → MEDIA_ROOT).
+
+        Essaie d'abord l'URL directe Unsplash ; en cas d'échec (IDs obsolètes,
+        404…), bascule sur Lorem Picsum (déterministe par code-barres, toujours
+        disponible). `verify=certifi.where()` évite de dépendre d'une variable
+        d'environnement SSL_CERT_FILE potentiellement cassée sur la machine hôte.
         """
-        photo_id = PRODUCT_IMAGE_IDS.get(barcode)
-        if not photo_id:
-            self.stdout.write(f"  [+] {product.name} (aucun photo_id défini — image ignorée)")
+        content = self._fetch_image_bytes(barcode)
+        if content is None:
+            self.stdout.write(f"  [~] {product.name} (image indisponible)")
             return
 
-        unsplash_url = (
-            f"https://images.unsplash.com/photo-{photo_id}"
-            "?w=400&auto=format&fit=crop&q=80"
-        )
-        try:
-            response = requests.get(unsplash_url, timeout=15, allow_redirects=True)
-            if response.status_code == 200:
-                result = cloudinary.uploader.upload(
-                    response.content,
-                    folder='inventory/products',
-                    public_id=f'product_{barcode.lower()}',
-                    overwrite=True,
+        product.image.save(f"{barcode.lower()}.jpg", ContentFile(content), save=True)
+        self.stdout.write(f"  [+] {product.name} (image enregistrée)")
+
+    def _fetch_image_bytes(self, barcode: str) -> bytes | None:
+        """Retourne le contenu binaire d'une image, ou None si tout échoue."""
+        urls = []
+        photo_id = PRODUCT_IMAGE_IDS.get(barcode)
+        if photo_id:
+            urls.append(
+                f"https://images.unsplash.com/photo-{photo_id}"
+                "?w=400&h=400&auto=format&fit=crop&q=80"
+            )
+        # Fallback déterministe (toujours disponible, sans clé API)
+        urls.append(f"https://picsum.photos/seed/{barcode.lower()}/400/400")
+
+        for url in urls:
+            try:
+                resp = requests.get(
+                    url, timeout=15, allow_redirects=True, verify=certifi.where()
                 )
-                product.image = result['public_id']
-                product.save(update_fields=['image'])
-                self.stdout.write(f"  [+] {product.name} (image uploadée)")
-            else:
-                self.stdout.write(
-                    f"  [+] {product.name} (image ignorée — statut HTTP {response.status_code})"
-                )
-        except requests.RequestException as exc:
-            self.stdout.write(f"  [+] {product.name} (image échouée — {exc})")
-        except Exception as exc:
-            self.stdout.write(f"  [+] {product.name} (upload Cloudinary échoué — {exc})")
+                if resp.status_code == 200 and resp.content:
+                    return resp.content
+            except requests.RequestException:
+                continue
+        return None

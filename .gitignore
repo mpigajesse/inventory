@@ -48,6 +48,10 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Django — médias uploadés & statiques collectés (régénérés, non versionnés)
+inventory/backend/media/
+inventory/backend/staticfiles/
+
 # External tools (not part of this project)
 qwen-code-main/
 

@@ -46,7 +46,10 @@ class ProductListSerializer(serializers.ModelSerializer):
         ]
 
     def get_image_url(self, obj):
-        return obj.image.url if obj.image else None
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        return request.build_absolute_uri(obj.image.url) if request else obj.image.url
 
     def get_stock_quantity(self, obj):
         return obj.stock.quantity if hasattr(obj, 'stock') else 0
@@ -70,7 +73,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_by', 'created_at', 'updated_at']
 
     def get_image_url(self, obj):
-        return obj.image.url if obj.image else None
+        if not obj.image:
+            return None
+        request = self.context.get('request')
+        return request.build_absolute_uri(obj.image.url) if request else obj.image.url
 
     def create(self, validated_data):
         from django.db import IntegrityError

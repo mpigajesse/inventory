@@ -1,0 +1,27 @@
+# Environnements & secrets — ne JAMAIS copier dans l'image
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+env/
+venv/
+.venv/
+
+# Django
+staticfiles/
+media/
+*.sqlite3
+db.sqlite3
+
+# Divers
+.git/
+.gitignore
+*.log
+.DS_Store
+Thumbs.db

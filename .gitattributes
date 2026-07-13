@@ -1,0 +1,7 @@
+# Forcer les fins de ligne LF pour les scripts shell : indispensable pour que
+# l'entrypoint Docker fonctionne dans le conteneur Linux (un CRLF casse le shebang).
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+
+# Normalisation par défaut
+* text=auto

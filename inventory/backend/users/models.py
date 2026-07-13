@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from cloudinary.models import CloudinaryField
 
 
 class UserProfile(models.Model):
@@ -16,7 +15,7 @@ class UserProfile(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='vendeur')
     genre = models.CharField(max_length=1, choices=GENRE_CHOICES, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True)
-    avatar = CloudinaryField('avatar', folder='inventory/avatars', blank=True, null=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     permissions = models.JSONField(
         default=list,

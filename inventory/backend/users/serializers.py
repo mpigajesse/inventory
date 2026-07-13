@@ -13,7 +13,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['role', 'genre', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions', 'last_seen', 'is_online']
 
     def get_avatar_url(self, obj):
-        return obj.avatar.url if obj.avatar else None
+        if not obj.avatar:
+            return None
+        request = self.context.get('request')
+        return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
 
     def get_is_online(self, obj) -> bool:
         return obj.is_online
@@ -127,7 +130,10 @@ class MeProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['role', 'is_active', 'permissions', 'last_seen', 'is_online']
 
     def get_avatar_url(self, obj):
-        return obj.avatar.url if obj.avatar else None
+        if not obj.avatar:
+            return None
+        request = self.context.get('request')
+        return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
 
     def get_is_online(self, obj) -> bool:
         return obj.is_online

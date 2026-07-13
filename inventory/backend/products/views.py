@@ -128,7 +128,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 )
             except Exception:
                 pass
-        return Response(ProductListSerializer(product).data)
+        return Response(ProductListSerializer(product, context={'request': request}).data)
 
     @action(detail=False, methods=['get'], url_path='barcode/(?P<code>[^/.]+)')
     def by_barcode(self, request, code=None):
@@ -139,7 +139,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             product = Product.objects.select_related('category', 'stock').get(
                 barcode__iexact=code, is_active=True
             )
-            return Response(ProductListSerializer(product).data)
+            return Response(ProductListSerializer(product, context={'request': request}).data)
         except Product.DoesNotExist:
             return Response({'detail': 'Produit non trouvé.'}, status=404)
 
@@ -176,4 +176,4 @@ class ProductViewSet(viewsets.ModelViewSet):
                 )
             except Exception:
                 pass
-        return Response(ProductListSerializer(product).data)
+        return Response(ProductListSerializer(product, context={'request': request}).data)
