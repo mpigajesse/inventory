@@ -68,6 +68,10 @@ Prérequis VM : Docker + arborescence `/srv/app` (voir `../DeployREADME.md`).
 sudo mkdir -p /srv/app && cd /srv/app
 git clone https://github.com/mpigajesse/inventory.git repo
 # le compose vit dans repo/deploy
+
+# Volumes persistants + droits (le conteneur backend écrit en uid 1000)
+sudo mkdir -p /srv/app/data/postgres /srv/app/data/uploads
+sudo chown -R 1000:1000 /srv/app/data/uploads   # sinon PermissionError sur /app/media
 ```
 
 ### b) Configurer le `.env` du compose
