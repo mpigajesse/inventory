@@ -14,8 +14,12 @@ function getCorsHeaders(request: Request): Record<string, string> {
     origin.endsWith('.ngrok-free.app') ||
     origin.endsWith('.ngrok-free.dev') ||
     origin.endsWith('.trycloudflare.com') ||
+    origin.endsWith('.pages.dev') ||
+    origin.endsWith('.workers.dev') ||
     origin === 'http://localhost:8080' ||
-    origin === 'http://localhost:5173';
+    origin === 'http://localhost:5173' ||
+    origin === 'http://127.0.0.1:8080' ||
+    origin === 'http://127.0.0.1:5173';
 
   return {
     'Access-Control-Allow-Origin': allowed ? origin : '',

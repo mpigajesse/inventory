@@ -99,15 +99,69 @@ Créer un superuser :
 docker compose exec backend python manage.py createsuperuser
 ```
 
-### d) Frontend Cloudflare
+### d) Exposition publique — Cloudflare (VM Oracle Free Tier)
 
-Builder le frontend avec l'URL de l'API de la VM :
+L'inbound direct Oracle (port 8000) étant capricieux (Security List / NSG),
+l'API est exposée via une connexion **sortante** cloudflared, masquée derrière
+un **Cloudflare Worker** qui fournit une URL HTTPS stable.
+
 ```
-VITE_API_URL=https://<api-vm>/api
+Navigateur
+  └─ https://inventory-frontend-71j.pages.dev        (Cloudflare Pages — frontend)
+        └─ VITE_API_URL
+             └─ https://inventory-backend.mpj-dev.workers.dev   (Worker — URL API stable)
+                   └─ TUNNEL_URL
+                        └─ https://<xxxx>.trycloudflare.com      (quick tunnel, éphémère)
+                              └─ cloudflared (service systemd sur la VM)
+                                    └─ http://localhost:8000       (Django/gunicorn Docker)
 ```
-puis déployer `inventory/frontend/dist` sur **Cloudflare Pages**.
-Reporter ce domaine Cloudflare dans `CORS_ALLOWED_ORIGINS` et
-`CSRF_TRUSTED_ORIGINS` du `.env` prod, puis `docker compose up -d` à nouveau.
+
+**cloudflared en service permanent** (déjà installé) :
+```bash
+sudo systemctl status cloudflared-quick
+sudo journalctl -u cloudflared-quick | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1
+```
+
+**Worker** (`inventory/tunnel/backend-proxy/`) : proxifie HTTPS → tunnel, gère le
+CORS (autorise `*.pages.dev`). Déploiement/refresh depuis le PC :
+```bash
+cd inventory/tunnel/backend-proxy
+# mettre à jour TUNNEL_URL dans wrangler.toml si le tunnel a changé, puis :
+npx wrangler deploy
+```
+
+**Frontend Pages** — build + déploiement depuis le PC :
+```bash
+cd inventory/frontend
+VITE_API_URL="https://inventory-backend.mpj-dev.workers.dev/api" npm run build
+npx wrangler pages deploy dist --project-name inventory-frontend
+```
+
+---
+
+## 2bis. Mises à jour en production
+
+### Backend (VM Oracle) — après un `git push`
+```bash
+cd /srv/app/repo
+sudo git pull
+cd deploy
+sudo docker compose --env-file .env up -d --build   # rebuild si le code backend a changé
+# (sans --build si seul le .env a changé)
+```
+
+### Frontend (Cloudflare Pages) — depuis le PC
+Rebuild + redeploy (voir §2d). L'URL `inventory-frontend-71j.pages.dev` reste stable.
+
+### Si cloudflared redémarre (reboot VM) → l'URL trycloudflare change
+```bash
+# 1) Récupérer la nouvelle URL sur la VM
+sudo journalctl -u cloudflared-quick | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1
+# 2) La mettre dans inventory/tunnel/backend-proxy/wrangler.toml (TUNNEL_URL) sur le PC
+# 3) Redéployer le Worker
+cd inventory/tunnel/backend-proxy && npx wrangler deploy
+```
+> Le frontend n'a PAS besoin d'être rebuildé : il ne connaît que l'URL du Worker.
 
 ---
 

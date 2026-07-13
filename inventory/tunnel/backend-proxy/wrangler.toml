@@ -1,4 +1,10 @@
 name = "inventory-backend"
 main = "index.ts"
 compatibility_date = "2024-01-01"
-account_id = "713e717b970688a1426c8953630853bf"
+account_id = "ac6ac6d11f0c32b5b83dc478a9cac196"
+workers_dev = true
+
+# URL du tunnel cloudflared (change à chaque redémarrage du quick tunnel).
+# Mettre à jour ici puis `npx wrangler deploy`, OU via le dashboard Cloudflare.
+[vars]
+TUNNEL_URL = "https://jelsoft-apparel-facing-outcomes.trycloudflare.com"
