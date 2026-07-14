@@ -28,6 +28,9 @@ export interface NotificationListParams {
   is_read?: boolean;
   since?: string;
   type?: NotificationType;
+  // Admins : récupère le pool complet des notifications (métier), pas seulement
+  // celles dont on est le destinataire. Ignoré côté backend pour les non-staff.
+  all?: boolean;
 }
 
 export const notificationService = {
@@ -36,9 +39,9 @@ export const notificationService = {
       .get<{ results: Notification[]; count: number }>('/notifications/', { params })
       .then((r) => r.data),
 
-  getUnreadCount: () =>
+  getUnreadCount: (params?: NotificationListParams) =>
     api
-      .get<UnreadCountResponse>('/notifications/unread-count/')
+      .get<UnreadCountResponse>('/notifications/unread-count/', { params })
       .then((r) => r.data),
 
   markRead: (id: number) =>

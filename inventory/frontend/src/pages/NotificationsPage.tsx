@@ -24,6 +24,7 @@ import {
   type Notification,
 } from "@/services/notificationService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -122,6 +123,10 @@ export default function NotificationsPage() {
   const location = useLocation();
   const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
   const queryClient = useQueryClient();
+  const { currentUser } = useAuth();
+  // Les admins voient le pool complet des notifications métier (pas seulement
+  // celles dont ils sont destinataires) — sinon un admin sans notif propre voit vide.
+  const isAdmin = currentUser?.role === "admin";
 
   const [activeTab, setActiveTab] = useState<TabKey>("toutes");
   const [removingId, setRemovingId] = useState<number | null>(null);
@@ -132,8 +137,8 @@ export default function NotificationsPage() {
   // ── Queries & mutations ────────────────────────────────────────────────────
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => notificationService.getAll(),
+    queryKey: ["notifications", isAdmin],
+    queryFn: () => notificationService.getAll(isAdmin ? { all: true } : undefined),
     refetchInterval: 60_000,
   });
 

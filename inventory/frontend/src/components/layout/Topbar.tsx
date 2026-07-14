@@ -177,9 +177,10 @@ export function Topbar({
   const notifRef = useRef<HTMLDivElement | null>(null);
 
   // ── Unread count query (polled every 30 s) ─────────────────────────────────
+  const isAdmin = currentUser?.role === "admin";
   const { data: unreadData } = useQuery({
-    queryKey: ["notifications", "unread"],
-    queryFn: () => notificationService.getUnreadCount(),
+    queryKey: ["notifications", "unread", isAdmin],
+    queryFn: () => notificationService.getUnreadCount(isAdmin ? { all: true } : undefined),
     refetchInterval: 30_000,
     enabled: !!currentUser,
   });
