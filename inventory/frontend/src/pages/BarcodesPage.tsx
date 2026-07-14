@@ -1,4 +1,4 @@
-import { useOutletContext, Navigate } from "react-router-dom";
+import { useOutletContext, Navigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
@@ -330,9 +330,11 @@ function ProductBarcodeCard({
 export default function BarcodesPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const { can } = usePermissions();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
 
   if (!can('view_barcodes')) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={`${basePath}/dashboard`} replace />;
   }
 
   const { data, isLoading, isError } = useQuery({
