@@ -34,7 +34,7 @@ function AppLayoutInner() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-dvh items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -50,7 +50,7 @@ function AppLayoutInner() {
 
   return (
     <div
-      className="flex h-screen w-screen max-w-full overflow-hidden"
+      className="flex h-dvh w-screen max-w-full overflow-hidden"
       style={{ background: "hsl(30 20% 97%)" }}
     >
       <AppSidebar
@@ -64,7 +64,7 @@ function AppLayoutInner() {
         On desktop (md+): push content right with a spacer div matching sidebar width.
         On mobile: sidebar overlays content — no spacer, content uses full width.
       */}
-      <div className="flex-1 flex h-screen min-w-0 max-w-full overflow-hidden">
+      <div className="flex-1 flex h-dvh min-w-0 max-w-full overflow-hidden">
         {/* Spacer — only rendered on md+ to reserve sidebar space */}
         <div
           className={[
@@ -74,7 +74,7 @@ function AppLayoutInner() {
           style={{ transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
         />
         <main
-          className="flex flex-col flex-1 h-screen min-w-0 max-w-full overflow-x-hidden overflow-y-auto"
+          className="flex flex-col flex-1 h-dvh min-w-0 max-w-full overflow-x-hidden overflow-y-auto"
           style={{ background: "hsl(30 20% 97%)", scrollBehavior: "smooth" }}
         >
           <PageTransition>
