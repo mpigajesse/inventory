@@ -8,6 +8,7 @@ import { VendeurLayout } from "@/components/layout/VendeurLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RoleGuard } from "@/components/auth/RoleGuard";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import { lazy, Suspense } from "react";
 
@@ -205,27 +206,29 @@ const App = () => (
               <Route path="/vendeur/clients"              element={<ClientsPage />} />
               <Route path="/vendeur/clients/new"          element={<ClientFormPage />} />
               <Route path="/vendeur/clients/:id/edit"     element={<ClientFormPage />} />
-              {/* Produits, stock, fournisseurs : admin uniquement */}
+              {/* Produits & stock : accessibles aux vendeur·ses AYANT la permission
+                  (aligné sur la sidebar). L'admin passe toujours. */}
               <Route path="/vendeur/products"             element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_products" redirectTo="/vendeur/dashboard">
                   <ProductsPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/products/new"         element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_products" redirectTo="/vendeur/dashboard">
                   <ProductFormPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/products/:id/edit"    element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_products" redirectTo="/vendeur/dashboard">
                   <ProductFormPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/stock"                element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_stock" redirectTo="/vendeur/dashboard">
                   <StockPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
+              {/* Fournisseurs : admin uniquement (inchangé) */}
               <Route path="/vendeur/suppliers"            element={
                 <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
                   <SuppliersPage />
