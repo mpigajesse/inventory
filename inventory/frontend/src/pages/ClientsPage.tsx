@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { exportClients } from "@/lib/exportClients";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { clientService } from "@/services/clientService";
 import type { Client } from "@/services/clientService";
@@ -315,6 +315,8 @@ export default function ClientsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const { can } = usePermissions();
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
@@ -423,7 +425,7 @@ export default function ClientsPage() {
               )}
               {can("manage_clients") && (
                 <button
-                  onClick={() => navigate("/clients/new")}
+                  onClick={() => navigate(`${basePath}/clients/new`)}
                   className="inline-flex items-center gap-2 h-9 px-3 sm:px-4 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95"
                   style={{
                     background: `linear-gradient(135deg, ${TERRACOTTA}, ${TERRACOTTA_LIGHT})`,
@@ -488,7 +490,7 @@ export default function ClientsPage() {
                       index={index}
                       canManage={can("manage_clients")}
                       onHistory={() => setHistoryClient(client)}
-                      onEdit={() => navigate(`/clients/${client.id}/edit`)}
+                      onEdit={() => navigate(`${basePath}/clients/${client.id}/edit`)}
                       onDelete={() => setDeletingClient(client)}
                     />
                   ))}
@@ -526,7 +528,7 @@ export default function ClientsPage() {
                           index={index}
                           canManage={can("manage_clients")}
                           onHistory={() => setHistoryClient(client)}
-                          onEdit={() => navigate(`/clients/${client.id}/edit`)}
+                          onEdit={() => navigate(`${basePath}/clients/${client.id}/edit`)}
                           onDelete={() => setDeletingClient(client)}
                         />
                       ))}

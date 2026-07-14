@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { exportSuppliers } from "@/lib/exportSuppliers";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supplierService } from "@/services/supplierService";
 import type { Supplier } from "@/services/supplierService";
 import type { AppLayoutContext } from "@/components/layout/AppLayout";
@@ -41,6 +41,8 @@ export default function SuppliersPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const { can } = usePermissions();
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
@@ -169,7 +171,7 @@ export default function SuppliersPage() {
                   boxShadow: "0 4px 16px hsl(22 72% 48% / 0.38), 0 1px 3px hsl(22 72% 48% / 0.2)",
                   borderRadius: "10px",
                 }}
-                onClick={() => navigate("/suppliers/new")}
+                onClick={() => navigate(`${basePath}/suppliers/new`)}
               >
                 <Plus className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Nouveau fournisseur</span>
@@ -224,7 +226,7 @@ export default function SuppliersPage() {
                   locationLabel={locationLabel}
                   initials={getInitials(supplier.name)}
                   canManage={can("manage_suppliers")}
-                  onEdit={() => navigate(`/suppliers/${supplier.id}/edit`)}
+                  onEdit={() => navigate(`${basePath}/suppliers/${supplier.id}/edit`)}
                   onDelete={() => setDeletingSupplier(supplier)}
                   animationDelay={index * 65}
                 />

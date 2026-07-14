@@ -1,4 +1,4 @@
-import { useOutletContext, useNavigate, useParams, Link } from "react-router-dom";
+import { useOutletContext, useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -321,6 +321,8 @@ function StyledInput(props: React.ComponentProps<typeof Input>) {
 export default function SupplierFormPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
   const { id } = useParams<{ id: string }>();
 
   const isEdit = id !== undefined;
@@ -390,7 +392,7 @@ export default function SupplierFormPage() {
         reset();
         setProductTags([]);
       }
-      navigate("/suppliers");
+      navigate(`${basePath}/suppliers`);
     },
     onError: (error: unknown) => {
       let message = "Une erreur est survenue. Réessayez.";
@@ -435,7 +437,7 @@ export default function SupplierFormPage() {
         {/* ── Breadcrumb ────────────────────────────────────────────── */}
         <div className="mb-6">
           <Link
-            to="/suppliers"
+            to={`${basePath}/suppliers`}
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground group"
             style={{
               padding: "6px 12px 6px 8px",
@@ -707,7 +709,7 @@ export default function SupplierFormPage() {
                 btn.style.borderColor = "";
                 btn.style.color = "";
               }}
-              onClick={() => navigate("/suppliers")}
+              onClick={() => navigate(`${basePath}/suppliers`)}
               disabled={saveMutation.isPending}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />

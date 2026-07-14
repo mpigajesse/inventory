@@ -1,4 +1,4 @@
-import { useOutletContext, Link } from "react-router-dom";
+import { useOutletContext, Link, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Topbar } from "@/components/layout/Topbar";
 import { Button } from "@/components/ui/button";
@@ -908,6 +908,8 @@ export default function UsersPage() {
   const queryClient = useQueryClient();
   const { can } = usePermissions();
   const { currentUser } = useAuth();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
 
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [roleFilter, setRoleFilter] = useState("");
@@ -1291,7 +1293,7 @@ export default function UsersPage() {
                             </div>
                             <div className="min-w-0">
                               <Link
-                                to={`/users/${user.id}`}
+                                to={`${basePath}/users/${user.id}`}
                                 className="font-semibold text-sm text-foreground truncate block hover:underline transition-colors"
                                 style={{ color: undefined }}
                                 onMouseEnter={(e) => { e.currentTarget.style.color = "hsl(22 72% 48%)"; }}
@@ -1340,7 +1342,7 @@ export default function UsersPage() {
                           {can('manage_users') && (
                             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                               <Link
-                                to={`/users/${user.id}`}
+                                to={`${basePath}/users/${user.id}`}
                                 className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 title="Voir le détail"
                                 aria-label={`Voir le détail de ${displayName}`}
@@ -1476,7 +1478,7 @@ export default function UsersPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <Link
-                      to={`/users/${user.id}`}
+                      to={`${basePath}/users/${user.id}`}
                       className="font-semibold text-sm text-foreground truncate block hover:underline transition-colors"
                     >
                       {displayName}
@@ -1494,7 +1496,7 @@ export default function UsersPage() {
                   {can('manage_users') && (
                     <div className="flex flex-col gap-1 shrink-0">
                       <Link
-                        to={`/users/${user.id}`}
+                        to={`${basePath}/users/${user.id}`}
                         className="inline-flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                         title="Voir le détail"
                         aria-label={`Voir le détail de ${displayName}`}

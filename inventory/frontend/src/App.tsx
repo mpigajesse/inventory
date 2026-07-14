@@ -197,15 +197,28 @@ const App = () => (
               <Route path="/vendeur" element={<Navigate to="/vendeur/dashboard" replace />} />
               <Route path="/vendeur/dashboard" element={<VendeurDashboardPage />} />
               <Route path="/vendeur/pos"       element={<VendeurPosPage />} />
-              {/* Routes conditionnelles selon les permissions du vendeur */}
+              {/* Routes gardées par permission (alignées sur la sidebar vendeur).
+                  L'admin passe toujours (usePermissions.can → true pour admin). */}
               <Route path="/vendeur/invoices"  element={
-                <RoleGuard allowedRoles={["admin", "vendeur"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="view_invoices" redirectTo="/vendeur/dashboard">
                   <InvoicesPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
-              <Route path="/vendeur/clients"              element={<ClientsPage />} />
-              <Route path="/vendeur/clients/new"          element={<ClientFormPage />} />
-              <Route path="/vendeur/clients/:id/edit"     element={<ClientFormPage />} />
+              <Route path="/vendeur/clients"              element={
+                <PermissionGuard permission="manage_clients" redirectTo="/vendeur/dashboard">
+                  <ClientsPage />
+                </PermissionGuard>
+              } />
+              <Route path="/vendeur/clients/new"          element={
+                <PermissionGuard permission="manage_clients" redirectTo="/vendeur/dashboard">
+                  <ClientFormPage />
+                </PermissionGuard>
+              } />
+              <Route path="/vendeur/clients/:id/edit"     element={
+                <PermissionGuard permission="manage_clients" redirectTo="/vendeur/dashboard">
+                  <ClientFormPage />
+                </PermissionGuard>
+              } />
               {/* Produits & stock : accessibles aux vendeur·ses AYANT la permission
                   (aligné sur la sidebar). L'admin passe toujours. */}
               <Route path="/vendeur/products"             element={
@@ -228,48 +241,45 @@ const App = () => (
                   <StockPage />
                 </PermissionGuard>
               } />
-              {/* Fournisseurs : admin uniquement (inchangé) */}
               <Route path="/vendeur/suppliers"            element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_suppliers" redirectTo="/vendeur/dashboard">
                   <SuppliersPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/suppliers/new"        element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_suppliers" redirectTo="/vendeur/dashboard">
                   <SupplierFormPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/suppliers/:id/edit"   element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_suppliers" redirectTo="/vendeur/dashboard">
                   <SupplierFormPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/reports"              element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="view_reports" redirectTo="/vendeur/dashboard">
                   <ReportsPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/barcodes"             element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="view_barcodes" redirectTo="/vendeur/dashboard">
                   <BarcodesPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
-              {/* Gestion des utilisateurs : admin uniquement */}
               <Route path="/vendeur/users"                element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_users" redirectTo="/vendeur/dashboard">
                   <UsersPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/users/:id"            element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_users" redirectTo="/vendeur/dashboard">
                   <UserDetailPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
-              {/* Paramètres : admin uniquement */}
               <Route path="/vendeur/settings"  element={
-                <RoleGuard allowedRoles={["admin"]} redirectTo="/vendeur/dashboard">
+                <PermissionGuard permission="manage_settings" redirectTo="/vendeur/dashboard">
                   <SettingsPage />
-                </RoleGuard>
+                </PermissionGuard>
               } />
               <Route path="/vendeur/profile"   element={<ProfilePage />} />
             </Route>
