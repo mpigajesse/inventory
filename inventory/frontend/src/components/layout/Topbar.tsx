@@ -154,6 +154,9 @@ export function Topbar({
 }: TopbarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  // Préfixe contextuel : dans l'espace vendeur, la cloche pointe vers
+  // /vendeur/notifications (et non la route admin /notifications).
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
   const { currentUser, logout } = useAuth();
   const { can } = usePermissions();
   const queryClient = useQueryClient();
@@ -361,7 +364,7 @@ export function Topbar({
           {currentUser?.role === "vendeur" && (
             <button
               type="button"
-              onClick={() => navigate("/pos")}
+              onClick={() => navigate(`${basePath}/pos`)}
               className={cn(
                 "hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-xl",
                 "text-[12px] font-semibold transition-colors",
@@ -439,7 +442,7 @@ export function Topbar({
                     )}
                   </div>
                   <Link
-                    to="/notifications"
+                    to={`${basePath}/notifications`}
                     onClick={() => setNotifOpen(false)}
                     className="text-[11px] font-medium text-primary hover:underline"
                   >
@@ -472,7 +475,7 @@ export function Topbar({
                                 markRead.mutate(notif.id);
                               }
                               setNotifOpen(false);
-                              navigate("/notifications");
+                              navigate(`${basePath}/notifications`);
                             }}
                             className={cn(
                               "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors",
@@ -666,7 +669,7 @@ export function Topbar({
                       label="Utilisateurs"
                       onClick={() => {
                         setMenuOpen(false);
-                        navigate("/users");
+                        navigate(`${basePath}/users`);
                       }}
                     />
                   )}
@@ -696,7 +699,7 @@ export function Topbar({
           style={{ scrollbarWidth: "none" }}
         >
           <Link
-            to="/dashboard"
+            to={`${basePath}/dashboard`}
             className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <Home className="w-3 h-3" />
