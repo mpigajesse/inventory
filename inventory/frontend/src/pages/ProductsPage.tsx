@@ -40,7 +40,7 @@ import { exportProducts } from "@/lib/exportProducts";
 import { ProductIcon } from "@/components/ui/ProductIcon";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productService } from "@/services/productService";
@@ -106,6 +106,10 @@ function StockOverlayBadge({ product }: { product: Product }) {
 export default function ProductsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Préfixe de contexte : sous /vendeur, naviguer dans l'espace vendeur ;
+  // sinon (admin) préfixe vide. Évite d'envoyer un·e vendeur·se vers une route admin.
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
   const queryClient = useQueryClient();
   const { can } = usePermissions();
 
@@ -338,7 +342,7 @@ export default function ProductsPage() {
               </Button>
               {can("manage_products") && (
                 <button
-                  onClick={() => navigate("/products/new")}
+                  onClick={() => navigate(`${basePath}/products/new`)}
                   className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 active:scale-95"
                   style={{
                     background:
@@ -591,7 +595,7 @@ export default function ProductsPage() {
                     key={product.id}
                     product={product}
                     canManage={can("manage_products")}
-                    onEdit={() => navigate(`/products/${product.id}/edit`)}
+                    onEdit={() => navigate(`${basePath}/products/${product.id}/edit`)}
                     onDelete={() => setModal({ type: "delete", product })}
                     onView={() => setModal({ type: "view", product })}
                     animIndex={index}
@@ -713,7 +717,7 @@ export default function ProductsPage() {
                     <button
                       className="p-2 rounded-lg hover:bg-secondary transition-colors"
                       title="Modifier"
-                      onClick={() => navigate(`/products/${product.id}/edit`)}
+                      onClick={() => navigate(`${basePath}/products/${product.id}/edit`)}
                     >
                       <Pencil className="w-4 h-4 text-muted-foreground" />
                     </button>
@@ -912,7 +916,7 @@ export default function ProductsPage() {
                               className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
                               title="Modifier"
                               onClick={() =>
-                                navigate(`/products/${product.id}/edit`)
+                                navigate(`${basePath}/products/${product.id}/edit`)
                               }
                             >
                               <Pencil className="w-4 h-4 text-muted-foreground" />
@@ -1058,7 +1062,7 @@ export default function ProductsPage() {
                 <Button
                   onClick={() => {
                     setModal({ type: "none" });
-                    navigate(`/products/${modal.product.id}/edit`);
+                    navigate(`${basePath}/products/${modal.product.id}/edit`);
                   }}
                 >
                   <Pencil className="w-4 h-4 mr-2" />

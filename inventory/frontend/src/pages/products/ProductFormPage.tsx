@@ -1,4 +1,4 @@
-import { useOutletContext, useNavigate, useParams } from "react-router-dom";
+import { useOutletContext, useNavigate, useParams, useLocation } from "react-router-dom";
 import { Topbar } from "@/components/layout/Topbar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -274,6 +274,8 @@ function ImageUploadZone({
 export default function ProductFormPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
   const queryClient = useQueryClient();
   const { id } = useParams<{ id: string }>();
 
@@ -344,7 +346,7 @@ export default function ProductFormPage() {
       if (product.barcode) {
         setValue("barcode", product.barcode);
       }
-      navigate("/products");
+      navigate(`${basePath}/products`);
     },
     onError: () => {
       toast.error("Erreur lors de la création", {
@@ -364,7 +366,7 @@ export default function ProductFormPage() {
       toast.success("Produit modifié", {
         description: `${product.name} a été mis à jour avec succès.`,
       });
-      navigate("/products");
+      navigate(`${basePath}/products`);
     },
     onError: () => {
       toast.error("Erreur lors de la modification", {
