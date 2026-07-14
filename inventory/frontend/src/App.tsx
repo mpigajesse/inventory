@@ -282,6 +282,8 @@ const App = () => (
                 </PermissionGuard>
               } />
               <Route path="/vendeur/profile"   element={<ProfilePage />} />
+              {/* Notifications : personnelles, accessibles à tou·te·s les vendeur·ses */}
+              <Route path="/vendeur/notifications" element={<NotificationsPage />} />
             </Route>
 
             {/* Admin — routes /admin/* */}

@@ -1,4 +1,4 @@
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -119,6 +119,8 @@ function filterByTab(notifications: Notification[], tab: TabKey): Notification[]
 export default function NotificationsPage() {
   const { onMenuClick } = useOutletContext<AppLayoutContext>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/vendeur") ? "/vendeur" : "";
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<TabKey>("toutes");
@@ -233,7 +235,7 @@ export default function NotificationsPage() {
     const display = resolveType(notif.notification_type);
     const url = ACTION_URL_MAP[display];
     if (url) {
-      navigate(url);
+      navigate(`${basePath}${url}`);
     }
   }
 

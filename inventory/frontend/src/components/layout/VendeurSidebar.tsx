@@ -16,6 +16,7 @@ import {
   Truck,
   Archive,
   UserCog,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +31,7 @@ interface NavItem {
 
 const accountItems: NavItem[] = [
   { label: "Mon profil", path: "/vendeur/profile", icon: UserCircle },
+  { label: "Notifications", path: "/vendeur/notifications", icon: Bell },
   { label: "Paramètres", path: "/vendeur/settings", icon: Settings, permission: "manage_settings" },
 ];
 
