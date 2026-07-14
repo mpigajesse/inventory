@@ -13,7 +13,12 @@ def create_user_profile(sender, instance: User, created: bool, **kwargs) -> None
     ou d'appel multiple (seed, migration, tests).
     """
     if created:
-        UserProfile.objects.get_or_create(user=instance)
+        profile, _ = UserProfile.objects.get_or_create(user=instance)
+        # Un superuser (créé via createsuperuser) doit être admin côté app :
+        # sinon son profil garde le rôle par défaut 'vendeur'.
+        if instance.is_superuser and profile.role != 'admin':
+            profile.role = 'admin'
+            profile.save(update_fields=['role'])
 
 # NOTE: Le second signal save_user_profile (qui appelait instance.profile.save()
 # à chaque sauvegarde d'un User) a été supprimé intentionnellement :

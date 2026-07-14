@@ -123,11 +123,19 @@ class MeProfileSerializer(serializers.ModelSerializer):
     """Only phone and avatar are writable for self-update — role/is_active/permissions are read-only."""
     avatar_url = serializers.SerializerMethodField()
     is_online = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
         fields = ['role', 'genre', 'phone', 'avatar', 'avatar_url', 'is_active', 'permissions', 'last_seen', 'is_online']
-        read_only_fields = ['role', 'is_active', 'permissions', 'last_seen', 'is_online']
+        read_only_fields = ['is_active', 'permissions', 'last_seen', 'is_online']
+
+    def get_role(self, obj) -> str:
+        # Un superuser Django est TOUJOURS admin côté application, quel que soit
+        # le rôle stocké en base (createsuperuser laisse le défaut 'vendeur').
+        if obj.user.is_superuser:
+            return 'admin'
+        return obj.role
 
     def get_avatar_url(self, obj):
         if not obj.avatar:

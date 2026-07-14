@@ -127,7 +127,8 @@ class UserViewSet(viewsets.ModelViewSet):
     def stats(self, request, pk=None):
         """Comprehensive stats for a specific vendeur (admin only)."""
         profile = getattr(request.user, 'profile', None)
-        if profile is None or profile.role != 'admin':
+        is_admin = request.user.is_superuser or (profile is not None and profile.role == 'admin')
+        if not is_admin:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Admin only")
 
