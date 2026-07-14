@@ -14,7 +14,7 @@ interface DemoAccountsProps {
 }
 
 const ACCOUNTS: DemoAccount[] = [
-  { name: "Admin Principal", username: "admin", password: "Admin1234!", roleLabel: "Admin", initials: "AP", isAdmin: true },
+  { name: "Admin Inventory", username: "Admin-inventory", password: "Admin1234@@!", roleLabel: "Admin", initials: "AI", isAdmin: true },
   { name: "Marie Koumba", username: "vendeur1", password: "Vendeur1234!", roleLabel: "Vendeur·se", initials: "MK" },
   { name: "Paul Moussavou", username: "vendeur2", password: "Vendeur1234!", roleLabel: "Vendeur·se", initials: "PM" },
 ];
