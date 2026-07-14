@@ -37,25 +37,42 @@ def get_admin_users() -> list[User]:
     return list(User.objects.filter(id__in=all_admin_ids, is_active=True))
 
 
-def notify_admins(
+def get_vendeur_users() -> list[User]:
+    """Retourne tous les utilisateurs actifs dont le profil a le rôle 'vendeur'."""
+    try:
+        from users.models import UserProfile
+        vendeur_ids = UserProfile.objects.filter(
+            role='vendeur', is_active=True
+        ).values_list('user_id', flat=True)
+        return list(User.objects.filter(id__in=vendeur_ids, is_active=True))
+    except Exception:
+        return []
+
+
+def _bulk_notify(
+    users: list[User],
     notification_type: str,
     title: str,
     message: str,
     related_product: 'Product | None' = None,
 ) -> None:
-    """Crée une notification pour tous les admins. Ne lève jamais d'exception."""
+    """Crée une notification pour chaque user (dédupliqué). Ne lève jamais d'exception."""
     try:
-        admins = get_admin_users()
-        notifications = [
-            Notification(
-                recipient=admin,
-                notification_type=notification_type,
-                title=title,
-                message=message,
-                related_product=related_product,
+        seen: set[int] = set()
+        notifications = []
+        for user in users:
+            if user.id in seen:
+                continue
+            seen.add(user.id)
+            notifications.append(
+                Notification(
+                    recipient=user,
+                    notification_type=notification_type,
+                    title=title,
+                    message=message,
+                    related_product=related_product,
+                )
             )
-            for admin in admins
-        ]
         if notifications:
             Notification.objects.bulk_create(notifications)
     except Exception:
@@ -66,8 +83,20 @@ def notify_admins(
         )
 
 
+def notify_admins(
+    notification_type: str,
+    title: str,
+    message: str,
+    related_product: 'Product | None' = None,
+) -> None:
+    """Crée une notification pour tous les admins."""
+    _bulk_notify(get_admin_users(), notification_type, title, message, related_product)
+
+
 def notify_sale(sale: 'Sale') -> None:
-    """Notification nouvelle vente pour tous les admins."""
+    """Notification nouvelle vente pour les admins ET les vendeur·ses (visibilité
+    de l'activité entre vendeur·ses). Le·la caissier·ère de la vente est exclu·e
+    (il/elle vient de l'enregistrer)."""
     try:
         items = list(sale.items.select_related('product').all()[:3])
         items_summary = ", ".join(
@@ -80,7 +109,12 @@ def notify_sale(sale: 'Sale') -> None:
             f"Articles : {items_summary}. "
             f"Total : {sale.total_amount:,.0f} FCFA."
         )
-        notify_admins('new_sale', title, message)
+        cashier_id = getattr(sale.cashier, 'id', None)
+        recipients = [
+            u for u in (get_admin_users() + get_vendeur_users())
+            if u.id != cashier_id
+        ]
+        _bulk_notify(recipients, 'new_sale', title, message)
     except Exception:
         logger.exception("Échec de notify_sale (sale_id=%s)", getattr(sale, 'pk', None))
 
