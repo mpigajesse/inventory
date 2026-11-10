@@ -173,14 +173,17 @@ class CreateSaleView(generics.CreateAPIView):
 
 
 class SalesDailyStatsView(APIView):
-    """Returns sales stats per cashier for admin monitoring."""
+    """Ventes par caisse : toutes pour l'admin, la sienne seule pour un·e vendeur·se.
+
+    Le tableau de bord vendeur appelle aussi ce point d'accès pour afficher son
+    chiffre du jour ; un 403 lui laissait des KPI à zéro. Un non-admin ne voit
+    que sa propre ligne, jamais celles des autres caisses.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         profile = getattr(request.user, 'profile', None)
-        if profile is None or profile.role != 'admin':
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("Admin only")
+        est_admin = profile is not None and profile.role == 'admin'
 
         today = timezone.now().date()
         since = request.query_params.get('since', 'today')
@@ -191,9 +194,11 @@ class SalesDailyStatsView(APIView):
         else:
             start_dt = timezone.make_aware(datetime.datetime.combine(today, datetime.time.min))
 
+        ventes = Sale.objects.filter(created_at__gte=start_dt)
+        if not est_admin:
+            ventes = ventes.filter(cashier=request.user)
         stats = (
-            Sale.objects
-            .filter(created_at__gte=start_dt)
+            ventes
             .values('cashier__id', 'cashier__first_name', 'cashier__last_name', 'cashier__username')
             .annotate(
                 sales_count=Count('id'),
