@@ -14,9 +14,9 @@ interface DemoAccountsProps {
 }
 
 const ACCOUNTS: DemoAccount[] = [
-  { name: "Admin Inventory", username: "Admin-inventory", password: "Admin1234@@!", roleLabel: "Admin", initials: "AI", isAdmin: true },
-  { name: "Marie Koumba", username: "vendeur1", password: "Vendeur1234!", roleLabel: "Vendeur·se", initials: "MK" },
-  { name: "Paul Moussavou", username: "vendeur2", password: "Vendeur1234!", roleLabel: "Vendeur·se", initials: "PM" },
+  { name: "Admin Démo", username: "admin", password: "Demo-Inventory-2026", roleLabel: "Admin", initials: "AD", isAdmin: true },
+  { name: "Marie Koumba", username: "vendeur1", password: "Demo-Inventory-2026", roleLabel: "Vendeur·se", initials: "MK" },
+  { name: "Paul Moussavou", username: "vendeur2", password: "Demo-Inventory-2026", roleLabel: "Vendeur·se", initials: "PM" },
 ];
 
 const COPPER_GRADIENT = "linear-gradient(135deg, hsl(22 72% 48%), hsl(30 80% 38%))";

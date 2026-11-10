@@ -1,5 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Route, Routes, Navigate } from "react-router-dom";
+
+// Démo publique sur hébergement statique : routage par fragment (/#/ventes),
+// sans réécriture d'URL côté serveur.
+const Routeur = import.meta.env.VITE_DEMO === "1" ? HashRouter : BrowserRouter;
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -58,7 +62,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner richColors position="top-right" />
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Routeur future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ChunkErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -326,7 +330,7 @@ const App = () => (
           </Routes>
         </Suspense>
         </ChunkErrorBoundary>
-      </BrowserRouter>
+      </Routeur>
     </TooltipProvider>
   </QueryClientProvider>
   </ThemeProvider>

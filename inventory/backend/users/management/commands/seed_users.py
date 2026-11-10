@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 
 # (username, email, first, last, password, role, is_staff, is_superuser)
 USERS_DATA = [
-    ("admin", "admin@naoservices.ga", "Admin", "Principal", "Admin1234!", "admin", True, True),
-    ("vendeur1", "marie@naoservices.ga", "Marie", "Koumba", "Vendeur1234!", "vendeur", False, False),
-    ("vendeur2", "paul@naoservices.ga", "Paul", "Moussavou", "Vendeur1234!", "vendeur", False, False),
+    # Comptes FICTIFS de la démo publique, affichés sur la page de connexion.
+    ("admin", "admin@example.com", "Admin", "Démo", "Demo-Inventory-2026", "admin", True, True),
+    ("vendeur1", "vendeuse1@example.com", "Marie", "Koumba", "Demo-Inventory-2026", "vendeur", False, False),
+    ("vendeur2", "vendeur2@example.com", "Paul", "Moussavou", "Demo-Inventory-2026", "vendeur", False, False),
 ]
 
 

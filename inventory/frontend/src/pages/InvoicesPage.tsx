@@ -959,7 +959,7 @@ export default function InvoicesPage() {
               )}
               <Button
                 size="sm"
-                onClick={() => { window.location.href = "/pos"; }}
+                onClick={() => { window.location.href = import.meta.env.VITE_DEMO === "1" ? "/#/pos" : "/pos"; }}
                 style={{
                   background: "linear-gradient(135deg, hsl(22 72% 48%), hsl(36 88% 52%))",
                   border: "none",

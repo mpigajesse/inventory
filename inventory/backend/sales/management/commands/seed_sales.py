@@ -38,7 +38,8 @@ class Command(BaseCommand):
         total_sales = 0
         today = timezone.now().date()
 
-        for day_offset in range(days, 0, -1):
+        # Jusqu'à aujourd'hui inclus : le tableau de bord de la démo a ses ventes du jour.
+        for day_offset in range(days, -1, -1):
             sale_date = today - timedelta(days=day_offset)
             daily_sales = random.randint(max(1, sales_per_day - 2), sales_per_day + 3)
 

@@ -117,7 +117,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Local (dev) : PostgreSQL sur le PC. Prod : conteneur PostgreSQL (Docker).
 DATABASES = {
     'default': dj_database_url.parse(
-        os.environ['DATABASE_URL'],
+        # Démo publique : SQLite sur le disque du service, repeuplée à chaque démarrage.
+        os.environ.get('DATABASE_URL', f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
         conn_max_age=int(os.environ.get('DB_CONN_MAX_AGE', '0')),
     )
 }

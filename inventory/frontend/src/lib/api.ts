@@ -27,8 +27,11 @@ function clearSession(): void {
   refreshPromise = null;
   // Use history.replaceState so React Router keeps control; avoid
   // redirect loops by only navigating when not already on login page.
-  if (!window.location.pathname.startsWith('/auth/login')) {
-    window.location.replace('/auth/login');
+  // Démo publique : routage par fragment (/#/auth/login).
+  const demo = import.meta.env.VITE_DEMO === '1';
+  const chemin = demo ? window.location.hash.replace(/^#/, '') : window.location.pathname;
+  if (!chemin.startsWith('/auth/login')) {
+    window.location.replace(demo ? '/#/auth/login' : '/auth/login');
   }
 }
 
