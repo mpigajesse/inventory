@@ -1,0 +1,1 @@
+import{y as e}from"./index-zewb1YCK.js";const l={create:a=>e.post("/sales/create/",a).then(t=>t.data),getAll:a=>e.get("/sales/",{params:a}).then(t=>t.data),getById:a=>e.get(`/sales/${a}/`).then(t=>t.data),getDailyStats:(a="today")=>e.get("/sales/daily-stats/",{params:{since:a}}).then(t=>t.data)};export{l as s};

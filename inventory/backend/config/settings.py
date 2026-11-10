@@ -141,6 +141,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Démo publique : l'API sert aussi le front (frontend/dist, construit avec
+# VITE_DEMO=1 et VITE_API_URL=/api) — un seul service Render, même origine.
+_FRONT_DEMO = BASE_DIR.parent / 'frontend' / 'dist'
+if os.environ.get('DEMO_PUBLIQUE') == '1' and _FRONT_DEMO.exists():
+    WHITENOISE_ROOT = _FRONT_DEMO
+    WHITENOISE_INDEX_FILE = True
+
 # Media files — stockés sur le système de fichiers local (dev + VM prod).
 # En prod (Docker), MEDIA_ROOT est bind-monté vers /srv/app/data/uploads.
 MEDIA_URL = '/media/'

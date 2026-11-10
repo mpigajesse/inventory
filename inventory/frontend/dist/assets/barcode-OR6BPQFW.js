@@ -1,0 +1,1 @@
+function s(n){if(typeof n!="string")return null;const e=n.trim().replace(/[^A-Za-z0-9\-_]/g,"").slice(0,64);return e.length>0?e:null}function a(){const n=Array.from({length:12},()=>Math.floor(Math.random()*10)),t=(10-n.reduce((r,o,c)=>r+o*(c%2===0?1:3),0)%10)%10;return[...n,t].join("")}export{a as g,s};
